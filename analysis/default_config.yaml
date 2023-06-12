@@ -1,9 +1,83 @@
 ########################################################
+#Path to root directory relative to where analysis script is executed from
+rootpath : '../'
+
+#Parameters for loading up data from raw snpytxtfiles
 load_data_parameters :
   #Exclude these files because snpy fails to load due to filters
   exclude_paths : ['RATIR/snpytxtfiles/14yw_snpy.txt','CfA/snpytxtfiles/SN2009dc_snpy.txt']
 
   #i.e. when all lcs available, pick CSP over CfA over RATIR over Avelino over Misc
   Pecking_Order : ['CSP','CfA','RATIR','Avelino','Misc']
+
+  load_path_file_survey : [['cspdr3/snpytxtfiles/','snpy_SNS_CSP.pkl','CSP'],
+                ['CfA/snpytxtfiles/','snpy_SNS_CfA.pkl','CfA'],
+                ['RATIR/snpytxtfiles/','snpy_SNS_RATIR.pkl','RATIR'],
+                ['BayeSNLCs/snpytxtfiles/','snpy_SNS_Avelino.pkl','AvelinoM20'],
+                ['Misc/snpytxtfiles/','snpy_SNS_Misc.pkl','Misc']]
+
+
+  #Way in which we load up data for analysis
+  load_mode : 'snpytxtfiles'  #Load up dict of snpy files
+  #load_mode : 'snanalcs'     #Load up dict of snana files
+  #load_mode : 'magslist'     #Load up df of peak magnitudes
+
+  #Choice of whether to apply SNooPy Milky-Way Extinction Corrections and/or K-corrections
+  #apply_snpy_corrections : False
+  apply_snpy_corrections : True
+
+  #If True, manually overwrite pre-existing snana files
+  #rewrite_snana : True
+  rewrite_snana : False
+
+snpy_parameters:
+  #SNooPy Parameters Here
+  #Apply SNRCut or not
+  #apply_SNR_cut : False
+  apply_SNR_cut : True
+  #SNRCut
+  snrcut  : 3
+
+  #Which snpy_model and shape parameter to use (stick to these pairs)
+  #snpy_model : 'EBV_model'
+  #snpy_shape : 'dm15'
+  #snpy_model : 'EBV_model2'
+  #snpy_shape : 'st'
+  #Default Choice here
+  snpy_model : False
+  snpy_shape : False
+
+  #Method for applying Milky Way Extinction Corrections
+  #apply_EBVMW_corrections : False
+  #apply_EBVMW_corrections : 'Presubtract' #if Presubtract applies corrections before snpy fitting, and can assume any dust law in extinction package
+  apply_EBVMW_corrections : 'Model'       #if Model, use SNooPys EBVMW corrections
+
+  #~~~#Only if EBVMW is set to 'Presubtract' are these used
+  #Value of RV used in Milky Way
+  RVMW    : 3.1
+  #If Presubtracting Milky Way Dust Extintion, need to define a dust law for this
+  #dustlaw : 'ccm89_o94'
+  #dustlaw : 'ccm89'
+  dustlaw : 'fitzpatrick99'
+  #~~~
+
+  #Can specify a value of Tmax during snpy fitting
+  #insert_pre_defined_Tmax : True
+  insert_pre_defined_Tmax : False
+
+
+  #Kcorrections
+  #Whether to apply it or not
+  #apply_K_corrections     : False
+  apply_K_corrections     : True
+
+  #Whether to mangle or not
+  #mangle : False
+  mangle : True
+
+  #Interpolation Filters
+  #interpflts    : 'all'
+  #interpflts    : 'BVriJH'
+  interpflts    : 'uBgVriYJH'
 
 ########################################################
