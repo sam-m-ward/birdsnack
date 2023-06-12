@@ -1,0 +1,9 @@
+########################################################
+load_data_parameters :
+  #Exclude these files because snpy fails to load due to filters
+  exclude_paths : ['RATIR/snpytxtfiles/14yw_snpy.txt','CfA/snpytxtfiles/SN2009dc_snpy.txt']
+
+  #i.e. when all lcs available, pick CSP over CfA over RATIR over Avelino over Misc
+  Pecking_Order : ['CSP','CfA','RATIR','Avelino','Misc']
+
+########################################################
