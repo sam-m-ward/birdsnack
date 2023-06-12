@@ -1,0 +1,160 @@
+Table 2 
+Photometric and Spectroscopic Properties of the Supernovae
+
+
+SN	${\rm{\Delta }}{m}_{15}$(B)^a		Wang	Branch	${N}_{\mathrm{opt}}$ ^e	${N}_{\mathrm{IR}}$ ^f	${t}_{\mathrm{sp}}$ ^g	
+Name	(mag)	Subtype^b	Subtype^c	Subtype^d			(days)	
+2004dt	1.067(081)	normal	HV	BL	49	0	23.6	
+2004ef	1.371(060)	normal	HV	BL	49	4	-1.8	
+2004eo	1.339(060)	normal	N	CL	42	9	-10.3	
+2004ey	0.950(061)	normal	N	CN	32	8	-0.8	
+2004gc	1.103(084)	normal	 ... 	 ... 	29	0	11.1	
+2004gs	1.587(060)	normal	N	CL	54	9	-3.4	
+2004gu	0.796(067)	06gz-like	91T	SS	31	3	-3.1	
+2005A	0.977(072)	normal	HV	BL	36	9	25.4	
+2005M	0.796(061)	91T-like	91T	SS	59	13	-0.1	
+2005W	1.196(061)	 ... 	N	BL	22	0	 ... 	
+								
+2005ag	0.917(062)	normal	N	BL	46	4	0.4	
+2005al	1.302(062)	normal	 ... 	 ... 	35	5	14.0	
+2005am	1.491(061)	normal	HV	BL	38	6	7.7	
+2005be	1.418(071)	normal	 ... 	 ... 	13	0	7.2	
+2005bg	0.922(075)	normal	N	SS	17	0	2.0	
+2005bl	2.000(063)	91bg-like	91bg	CL	12	0	-4.6	
+2005bo	1.237(069)	normal	N	CN	10	0	-1.0	
+2005el	1.354(061)	normal	N	CN	25	22	-6.4	
+2005eq	0.796(063)	91T-like	91T	SS	27	15	-5.4	
+2005gj	 ... 	Ia-CSM	 ... 	 ... 	23	25	66.0	
+								
+2005hc	0.834(061)	normal	N	CN	25	13	-5.4	
+2005hj	0.796(078)	normal	N	SS	17	7	-4	
+2005hk	 ... 	Iax	 ... 	 ... 	24	22	 ... 	
+2005iq	1.254(061)	normal	N	CN	20	12	 ... 	
+2005ir	0.796(085)	 ... 	 ... 	 ... 	14	0	 ... 	
+2005kc	1.191(063)	normal	N	CN	13	9	0.8	
+2005ke	1.736(061)	91bg-like	91bg	CL	39	27	-1.4	
+2005ki	1.334(062)	normal	N	CN	47	15	-5.8	
+2005ku	0.990(081)	normal	HV	CN	7	3	-1.0	
+2005lu	0.796(098)	normal	 ... 	 ... 	17	4	12.7	
+								
+2005mc	1.528(104)	normal	N	CN	17	0	-2.2	
+2005na	1.033(063)	normal	N	CN	27	9	11.7	
+2006D	1.364(060)	normal	N	CN	43	14	-6.1	
+2006X	1.095(066)	normal	HV	BL	36	33	-6.3	
+2006ax	0.976(061)	normal	N	CN	25	19	-10.6	
+2006bd	2.256(105)	91bg-like	91bg	CL	8	4	 ... 7.0	
+2006bh	1.410(060)	normal	 ... 	 ... 	25	12	8.2	
+2006br	0.886(094)	normal	HV	BL	10	5	0.0	
+2006bt	 ... 	06bt-like	 ... 	 ... 	11	5	 ... 	
+2006dd	 ... 	normal	 ... 	 ... 	41	1	 ... 	
+								
+2006ef	1.406(077)	normal	HV	BL	10	0	37.0	
+2006ej	1.367(070)	normal	HV	BL	13	3	30.0	
+2006eq	1.448(081)	normal	N	CL	18	10	26.4	
+2006et	0.837(061)	normal	N	CN	27	21	9.0	
+2006ev	1.326(077)	normal	N	BL	12	14	 ... 	
+2006fw	1.132(198)	normal	N	CN	6	0	2.0	
+2006gj	1.555(064)	normal	N	CL	19	11	4.0	
+2006gt	1.641(064)	91bg-like	91bg	CL	14	10	-0.3	
+2006hb	1.460(071)	86G-like	91bg	 ... 	28	10	6.0	
+2006hx	0.987(074)	normal	N	SS	12	4	-3.0	
+								
+2006is	0.796(078)	normal	HV	CN	28	9	4.0	
+2006kf	1.503(062)	normal	N	CL	21	17	30.0	
+2006lu	0.938(074)	normal	 ... 	 ... 	29	4	8.0	
+2006mr	1.929(079)	91bg-like	91bg	CL	31	24	-2.3	
+2006ob	1.467(072)	normal	N	CN	13	7	1	
+2006os	1.172(112)	normal	N	CL	16	10	-2.0	
+2006ot	 ... 	06bt-like	HV	BL	17	14	17.0	
+2006py	1.177(107)	normal	HV	SS	7	0	16.0	
+2007A	0.853(071)	normal	N	CN	10	9	-1.0	
+2007N	2.121(083)	91bg-like	91bg	CL	23	15	12.0	
+								
+2007S	0.795(064)	91T-like	91T	SS	20	17	-2.0	
+2007af	1.193(061)	normal	N	BL	28	26	-11.0	
+2007ai	0.796(119)	91T-like	91T	SS	17	5	-2.0	
+2007al	1.782(082)	91bg-like	91bg	CL	16	10	 ... 	
+2007as	1.120(076)	normal	HV	BL	19	11	-2.0	
+2007ax	2.036(066)	91bg-like	91bg	CL	13	8	-2.0	
+2007ba	1.668(062)	91bg-like	91bg	CL	18	14	6.0	
+2007bc	1.331(061)	normal	N	CL	15	12	3.0	
+2007bd	1.241(063)	normal	HV	BL	12	12	-4.0	
+2007bm	1.157(064)	normal	N	CN	10	8	-4.0	
+								
+2007ca	0.853(062)	normal	N	CN	12	10	-4.0	
+2007cg	0.811(052)	 ... 	 ... 	 ... 	8	5	 ... 	
+2007hj	1.630(062)	 ... 	N	CL	28	24	 ... 	
+2007hx	0.905(057)	normal	 ... 	 ... 	12	8	 ... 	
+2007if	 ... 	SC	N	SS	18	8	-2.0	
+2007jd	1.330(091)	normal	HV	BL	14	4	0	
+2007jg	1.242(066)	normal	HV	BL	20	9	10.0	
+2007jh	1.700(069)	86G-like	91bg	 ... 	13	2	14.0	
+2007le	0.931(061)	normal	HV	BL	25	17	-9.0	
+2007mm	2.142(095)	86G-like	 ... 	 ... 	9	0	 ... 	
+								
+2007nq	1.507(064)	normal	HV	BL	26	19	-4.0	
+2007ol	1.357(140)	normal	N	CN	7	0	-3.6	
+2007on	1.648(061)	normal	N	CL	38	29	-4.0	
+2007so	1.071(129)	normal	 ... 	 ... 	8	7	23.0	
+2007sr	0.978(073)	normal	 ... 	 ... 	30	27	13.0	
+2007st	1.638(077)	normal	 ... 	 ... 	14	15	8.0	
+2007ux	1.660(062)	86G-like	N	CL	22	15	 ... 	
+2008C	1.192(106)	normal	N	SS	22	12	5.0	
+2008J	 ... 	Ia-CSM		 ... 	10	7	 ... 	
+2008O	1.655(062)	normal	HV	 ... 	25	10	0.4	
+								
+2008R	1.600(073)	normal	91bg	CL	13	9	4.0	
+2008ae	 ... 	Iax	 ... 	 ... 	18	13	-0.7	
+2008ar	1.001(061)	normal	N	CN	18	13	-0.7	
+2008bc	0.873(060)	normal	N	CN	31	12	-10.0	
+2008bd	1.929(104)	91bg-like	91bg	 ... 	18	5	7.9	
+2008bf	0.905(060)	normal	N	CN	27	7	0.7	
+2008bi	2.092(094)	91bg-like	91bg	 ... 	18	6	9.9	
+2008bq	0.895(062)	normal	N	CN	17	4	0.0	
+2008bt	1.743(063)	91bg-like	91bg	CL	14	3	1	
+2008bz	0.984(093)	normal	N	CN	14	1	2.2	
+								
+2008cc	1.380(073)	normal	 ... 	 ... 	21	10	9.4	
+2008cd	1.071(158)	normal	 ... 	 ... 	5	0	12.3	
+2008cf	0.796(084)	normal	N	SS	13	9	2.7	
+2008ff	0.903(062)	normal	 ... 	 ... 	24	19	19.7	
+2008fl	1.354(071)	normal	N	CN	23	20	3.2	
+2008fp	0.756(061)	normal	N	CN	30	23	-4.0	
+2008fr	0.933(074)	normal	N	CN	21	16	3.8	
+2008fu	1.620(140)	normal	N	SS	21	10	4.5	
+2008fw	0.794(072)	91T-like	91T	SS	25	7	5.6	
+2008gg	0.796(077)	normal	HV	BL	26	13	4.8	
+								
+2008gl	1.320(062)	normal	N	BL	22	11	 ... 	
+2008go	1.105(136)	normal	 ... 	 ... 	6	4	-0.6	
+2008gp	1.031(061)	normal	 ... 	 ... 	21	11	-6.0	
+2008ha	 ... 	Iax	 ... 	 ... 	18	5	7.1	
+2008hj	0.946(061)	normal	HV	CN	16	11	-7.4	
+2008hu	1.413(067)	normal	HV	BL	17	8	 ... 	
+2008hv	1.305(061)	normal	N	CN	24	18	-6.0	
+2008ia	1.297(063)	normal	N	BL	20	15	-2.0	
+2009D	0.905(062)	normal	N	CN	21	10	 ... 	
+2009F	1.973(061)	91bg-like	91bg	CL	18	10	-5.0	
+2009I	0.796(115)	normal	N	CN	5	5	-3.3	
+2009J	 ... 	Iax	 ... 	 ... 	7	4	 ... 	
+2009P	0.796(091)	normal	HV	SS	15	7	1.8	
+2009Y	0.969(063)	normal	HV	BL	32	19	 ... 	
+2009aa	1.212(061)	normal	N	CN	22	19	 ... 	
+2009ab	1.279(061)	normal	N	CN	10	7	 ... 	
+2009ad	0.961(061)	normal	N	SS	12	12	 ... 	
+2009ag	1.046(066)	normal	N	BL	19	18	 ... 	
+2009al	0.734(087)	normal	 ... 	 ... 	16	8	13.1	
+2009cz	0.762(065)	normal	N	CN	11	7	-5.1	
+								
+2009dc	 ... 	SC	N	SS	10	10	-8.5	
+2009ds	0.796(075)	normal	HV	SS	12	7	-9.9	
+2009le	1.023(036)	normal	N	BL	9	2	-4.7	
+2010ae	 ... 	Iax	 ... 	 ... 	2	9	16.0	
+Notes.
+^a Values of ${\rm{\Delta }}{m}_{15}$(B) were determined from the template fits. In parentheses are the 1sigma uncertainties in units of 0.001 mag.
+^b Type Ia subtypes from SNID (Blondin & Tonry 2007). Members of Type Iax and Ia+CSM subtypes are listed as "Iax" and "Ia+CSM," respectively; super-Chandrasekhar candidates are denoted by "SC"; SN 2006bt-like objects are listed as "06bt-like."
+^c Wang et al. (2009) classification. N = normal; HV = high velocity; 91bg = SN 1991bg-like.
+^d CN = core normal; CL = cool; SS = shallow silicon; BL = broad line (Branch et al. 2006).
+^e Number of nights with optical photometry.
+^f Number of nights with near-IR photometry.
+^g Epoch of the spectrum, in days, with respect to T(${B}_{\max }$) used to determine spectral subtype. If no epoch is given, the spectral classification was taken from the literature.
