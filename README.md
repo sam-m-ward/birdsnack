@@ -1,5 +1,5 @@
 # \textsc{Bird-Snack}
-Bayesian Inference of Rv Distributions using SN Ia Apparent Colours at peaK
+\bf{B}ayesian Inference of Rv Distributions using SN Ia Apparent Colours at peaK
 
 This pipeline uses:
 
