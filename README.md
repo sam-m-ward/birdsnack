@@ -1,5 +1,5 @@
 # Bird-Snack
-\textbf{B}ayesian \textbf{I}nference of \textbf{R}v \textbf{D}istributions using \textbf{SN} Ia \textbf{A}pparent \textbf{C}olours at pea\textbf{K}
+**B**ayesian **I**nference of **R**v **D**istributions using **SN** Ia **A**pparent **C**olours at pea**K**
 
 This pipeline uses:
 
