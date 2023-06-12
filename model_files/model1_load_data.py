@@ -6,7 +6,7 @@ Module to load SN metadata, and SNooPy .txt files, then convert them to snana fi
 Contains
 --------------------
 LOAD_DATA class
-    inputs: rootpath='../',configname='default_config.yaml'
+    inputs: configname='loader_config.yaml'
 
     Methods are:
         load_all_SNSsnpy()
@@ -24,9 +24,10 @@ Written by Sam M. Ward: smw92@cam.ac.uk
 """
 
 from glob import glob
-import snpy
-import pickle,re,yaml,os
+import os,pickle,re,yaml
 import pandas as pd
+import snpy
+from miscellaneous import ensure_folders_to_file_exist
 
 class LOAD_DATA:
     """
@@ -38,9 +39,6 @@ class LOAD_DATA:
 
 	Parameters
 	----------
-	rootpath : str
-        path/to/root/directory from which e.g. datapath, productspath are accessible
-
 	configname: str
 		name of config.yaml file used for analysis
 
@@ -56,7 +54,7 @@ class LOAD_DATA:
     	loads up SN metadata, such as eg host masses, spectroscopic classification, using data compiled from literature
 	"""
 
-    def __init__(self,rootpath='../',configname='default_config.yaml'):
+    def __init__(self,configname='loader_config.yaml'):
         """
         Initialisation
 
@@ -67,17 +65,21 @@ class LOAD_DATA:
         Convert snpyfiles to snana lcs
 
         """
-        #Set Pathname
-        self.rootpath     = rootpath
+        #Set Configname
         self.configname   = configname
-        self.datapath     = self.rootpath+'data/'
-        self.productpath  = self.rootpath+'products/'
-        self.analysispath = self.rootpath+'analysis/'
-        self.SNSpath      = self.productpath+'snpy_SNS/'
 
         #Load up config.yaml choices
         with open(self.configname) as f:
             self.choices = yaml.load(f, Loader=yaml.FullLoader)
+
+        #Set Pathname
+        self.rootpath     = self.choices['rootpath']
+        self.analysispath = self.rootpath+'analysis/'
+        self.datapath     = self.rootpath+'data/'
+        self.productpath  = self.rootpath+'products/'
+        self.SNSpath      = self.productpath+'snpy_SNS/'
+        self.snanapath    = self.SNSpath+'snana_copies/'
+        for path in [self.analysispath,self.datapath,self.productpath,self.SNSpath,self.snanapath]: ensure_folders_to_file_exist(path)
 
         #Load up metadata
         self.load_meta_data()
@@ -95,12 +97,9 @@ class LOAD_DATA:
         Method to load up snpy lc files from various surveys, and save dictionaries of:
         SNSsnpy = {SN:{'lc':snpyfile,'survey':surveyname}} in self.SNSpath
         """
-
-        self.get_SNSsnpy('cspdr3/snpytxtfiles/','snpy_SNS_CSP.pkl','CSP')
-        self.get_SNSsnpy('CfA/snpytxtfiles/','snpy_SNS_CfA.pkl','CfA')
-        self.get_SNSsnpy('RATIR/snpytxtfiles/','snpy_SNS_RATIR.pkl','RATIR')
-        self.get_SNSsnpy('BayeSNLCs/snpytxtfiles/','snpy_SNS_Avelino.pkl','AvelinoM20')
-        self.get_SNSsnpy('Misc/snpytxtfiles/','snpy_SNS_Misc.pkl','Misc')
+        for x in self.choices['load_data_parameters']['load_path_file_survey']:
+            path,file,survey = x[:]
+            self.get_SNSsnpy(path,file,survey)
 
     def convert_all_snpy_to_snana(self):
         """
@@ -109,12 +108,9 @@ class LOAD_DATA:
         Method to load up SNSsnpy = {SN:{'lc':snpyfile,'survey':surveyname}} in self.SNSpath
         then convert each snpyfile to an snana file
         """
-
-        self.convert_snpyfiles_to_snana('snpy_SNS_CSP.pkl')
-        self.convert_snpyfiles_to_snana('snpy_SNS_CfA.pkl')
-        self.convert_snpyfiles_to_snana('snpy_SNS_RATIR.pkl')
-        self.convert_snpyfiles_to_snana('snpy_SNS_Avelino.pkl')
-        self.convert_snpyfiles_to_snana('snpy_SNS_Misc.pkl')
+        for x in self.choices['load_data_parameters']['load_path_file_survey']:
+            path,file,survey = x[:]
+            self.convert_snpyfiles_to_snana(file)
 
     def get_SNSsnpy(self,datafolder,SNSfile,surveyname):
         """
