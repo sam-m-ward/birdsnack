@@ -19,6 +19,7 @@ Functions use simple operations
 Written by Sam M. Ward: smw92@cam.ac.uk
 """
 import os
+import numpy as np
 
 def ensure_folders_to_file_exist(savename):
     """
