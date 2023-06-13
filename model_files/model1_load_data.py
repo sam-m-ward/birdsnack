@@ -1,7 +1,7 @@
 """
-LOAD_DATA class and methods
+LOAD_DATA class
 
-Module to load SN metadata, and SNooPy .txt files, then convert them to snana files, save files, and store/return as LCs
+Module to load SN metadata as pandas df, and load up SNooPy .txt files with SNooPy, then save pre-loaded snsnpy files
 
 Contains
 --------------------
@@ -11,13 +11,8 @@ LOAD_DATA class
     Methods are:
         load_all_SNSsnpy()
         get_SNSsnpy(datafolder,SNSfile,surveyname)
-        convert_all_snpy_to_snana()
-        convert_snpyfiles_to_snana(SNSfile)
-        convert_snpyfile_to_snana(sn,snsnpy)
         load_meta_data()
-
 --------------------
-Functions use simple operations
 
 Written by Sam M. Ward: smw92@cam.ac.uk
 
@@ -34,7 +29,7 @@ class LOAD_DATA:
 	LOAD_DATA Class Object
 
     Class object that takes snpytxtfiles and meta data from the datapath
-    Then, stores snpyfiles and .snana files, ready for pre-processing cuts
+    Then, stores snpyfiles, ready for pre-processing cuts
 
 
 	Parameters
@@ -64,6 +59,11 @@ class LOAD_DATA:
         Load up snpytxtfiles and save as dictionary
         Convert snpyfiles to snana lcs
 
+        Parameters
+        ----------
+        configname : str
+            .yaml file that sets analysis choices
+
         """
         #Set Configname
         self.configname   = configname
@@ -87,30 +87,20 @@ class LOAD_DATA:
         #Load up snpytxtfiles
         self.load_all_SNSsnpy()
 
-        #Convert snpytxtfiles to snana files
-        #self.convert_all_snpy_to_snana()
-
     def load_all_SNSsnpy(self):
         """
         Load All SNS snpy files
 
         Method to load up snpy lc files from various surveys, and save dictionaries of:
         SNSsnpy = {SN:{'lc':snpyfile,'survey':surveyname}} in self.SNSpath
+
+        End Product(s)
+        ----------
+        for each survey saves SNSsnpy dictionary
         """
         for x in self.choices['load_data_parameters']['load_path_file_survey']:
             path,file,survey = x[:]
             self.get_SNSsnpy(path,file,survey)
-
-    def convert_all_snpy_to_snana(self):
-        """
-        Load All SNSsnpy dictionaries and covert to snana files
-
-        Method to load up SNSsnpy = {SN:{'lc':snpyfile,'survey':surveyname}} in self.SNSpath
-        then convert each snpyfile to an snana file
-        """
-        for x in self.choices['load_data_parameters']['load_path_file_survey']:
-            path,file,survey = x[:]
-            self.convert_snpyfiles_to_snana(file)
 
     def get_SNSsnpy(self,datafolder,SNSfile,surveyname):
         """
@@ -178,72 +168,6 @@ class LOAD_DATA:
             print (f'faillist (Len: {len(faillist)}):',faillist)
             with open(SNS_path,'wb') as f:
                 pickle.dump(SNS,f)
-
-    def convert_snpyfiles_to_snana(self,SNSfile):
-        """
-        Get Light Curves from SNooPy
-
-        Simple function to iterate over the collection of snoopy objects and collect the snana lcs
-
-        Parameters
-        ----------
-        SNSsnpy: dict
-            {snname:snpy.get_sn(snfile)} for each sn in lcspath
-
-        outputdir: str
-            path/to/dir/where_snana_lcs_are_saved
-
-        Returns
-        ----------
-        lcs : dict
-            {sn:lc} where sn is str of snname, and lc is :py:class:`astropy.table.Table` light curve object
-        """
-        SNS_path = self.SNSpath + SNSfile
-        with open(SNS_path,'rb') as f:
-            SNSsnpy = pickle.load(f)
-
-        lcs = {}
-        for sn in SNSsnpy:
-            snsnpy  = SNSsnpy[sn]['lc']
-            lcs[sn] = {'lc':self.convert_snpyfile_to_snana(sn,snsnpy),'survey':SNSsnpy[sn]['survey']}
-
-        return lcs
-
-    def convert_snpyfile_to_snana(self,sn,snsnpy):
-        """
-        Get Light Curve from snpy object
-
-        Function loads up an snana lc given a sn name, and creates this file from a snpy object if it doesn't already exist
-
-        Parameters
-        ----------
-        sn: str
-            name of the sn
-
-        snsnpy: snpy.sn.sn object
-            snpyfile object
-
-        Returns
-        ----------
-        lc: :py:class:`astropy.table.Table`
-            light curve object
-        """
-        import os
-        import snanaio as io
-
-        path = self.SNSpath+'snana_copies/'+sn+'.snana.dat'
-        if not os.path.exists(path):
-            mjd,flt,mag,magerr = [],[],[],[]
-            for filt in snsnpy.allbands():
-                mjd.extend(list(snsnpy.data[filt].MJD))
-                flt.extend([filt for _ in range(len(snsnpy.data[filt].MJD))])
-                mag.extend(list(snsnpy.data[filt].mag))
-                magerr.extend(list(snsnpy.data[filt].e_mag))
-            snname  = sn; tmax=0; z_helio = snsnpy.z; z_cmb=snsnpy.get_zcmb(); z_cmb_err=0; ebv_mw = snsnpy.EBVgal
-            io.write_snana_lcfile(self.SNSpath+'snana_copies/', snname, mjd, flt, mag, magerr, tmax, z_helio, z_cmb, z_cmb_err, ebv_mw,ra=snsnpy.ra,dec=snsnpy.decl)
-        sn , lc = io.read_snana_lcfile(path)
-        os.remove(path)#Delete the newly created file straight away
-        return lc
 
     def load_meta_data(self):
         """
@@ -336,3 +260,88 @@ class LOAD_DATA:
         df_combined = df_host_masses.merge(df_spectral_types, on='SN')
 
         self.dfmeta = df_combined
+
+
+##########################################
+##########################################
+##########################################
+'''
+    def convert_all_snpy_to_snana(self):
+        """
+        Load All SNSsnpy dictionaries and covert to snana files
+
+        Method to load up SNSsnpy = {SN:{'lc':snpyfile,'survey':surveyname}} in self.SNSpath
+        then convert each snpyfile to an snana file
+        """
+        for x in self.choices['load_data_parameters']['load_path_file_survey']:
+            path,file,survey = x[:]
+            self.convert_snpyfiles_to_snana(file)
+
+
+
+    def convert_snpyfiles_to_snana(self,SNSfile):
+        """
+        Get Light Curves from SNooPy
+
+        Simple function to iterate over the collection of snoopy objects and collect the snana lcs
+
+        Parameters
+        ----------
+        SNSsnpy: dict
+            {snname:snpy.get_sn(snfile)} for each sn in lcspath
+
+        outputdir: str
+            path/to/dir/where_snana_lcs_are_saved
+
+        Returns
+        ----------
+        lcs : dict
+            {sn:lc} where sn is str of snname, and lc is :py:class:`astropy.table.Table` light curve object
+        """
+        SNS_path = self.SNSpath + SNSfile
+        with open(SNS_path,'rb') as f:
+            SNSsnpy = pickle.load(f)
+
+        lcs = {}
+        for sn in SNSsnpy:
+            snsnpy  = SNSsnpy[sn]['lc']
+            lcs[sn] = {'lc':self.convert_snpyfile_to_snana(sn,snsnpy),'survey':SNSsnpy[sn]['survey']}
+
+        return lcs
+
+    def convert_snpyfile_to_snana(self,sn,snsnpy):
+        """
+        Get Light Curve from snpy object
+
+        Function loads up an snana lc given a sn name, and creates this file from a snpy object if it doesn't already exist
+
+        Parameters
+        ----------
+        sn: str
+            name of the sn
+
+        snsnpy: snpy.sn.sn object
+            snpyfile object
+
+        Returns
+        ----------
+        lc: :py:class:`astropy.table.Table`
+            light curve object
+        """
+        import os
+        import snanaio as io
+
+        path = self.SNSpath+'snana_copies/'+sn+'.snana.dat'
+        if not os.path.exists(path):
+            mjd,flt,mag,magerr = [],[],[],[]
+            for filt in snsnpy.allbands():
+                mjd.extend(list(snsnpy.data[filt].MJD))
+                flt.extend([filt for _ in range(len(snsnpy.data[filt].MJD))])
+                mag.extend(list(snsnpy.data[filt].mag))
+                magerr.extend(list(snsnpy.data[filt].e_mag))
+            snname  = sn; tmax=0; z_helio = snsnpy.z; z_cmb=snsnpy.get_zcmb(); z_cmb_err=0; ebv_mw = snsnpy.EBVgal
+            io.write_snana_lcfile(self.SNSpath+'snana_copies/', snname, mjd, flt, mag, magerr, tmax, z_helio, z_cmb, z_cmb_err, ebv_mw,ra=snsnpy.ra,dec=snsnpy.decl)
+        sn , lc = io.read_snana_lcfile(path)
+        os.remove(path)#Delete the newly created file straight away
+        return lc
+#'''
