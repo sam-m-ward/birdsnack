@@ -1,26 +1,30 @@
 """
-SNooPy Corrections Module
+SNANA Functions Module
 
-Module containing SNOOPY_CORRECTIONS class and additional functions
-Used to transform snpy object with corrections, saves Tmax_Kcorrdict, snpy_product, and snana lc files
+Module containing functions to preprocess snana lcs
 
 
 Contains:
 --------------------
-get_Tmax_Kcorrdict_foldername:
-	get folder name for Tmax and Kcorrections dictionary, pre-computed for all analysis variants in one go to save on time complexity
-
-get_snana_foldername:
+get_snana_foldername(snpy_params):
 	get foldername for specific analysis variant where snana lc is saved
 
-SNOOPY_CORRECTIONS class:
-	inputs: choices, outputdir
+correct_lc_data_SNR_boostdict(lc,snrcut,error_boost_dict):
+	correct snana lc by 1) applying SNR cut 2) Boosting errors where defined
 
-	Methods are:
-		get_fitted_snpy_Tmax_Kcorrdict(fitbands,obs_to_rest)
-		correct_data_with_snpy_MWayExtinction_and_K_corrections()
-		correct_sn(sn, SNsnpy)
-		convert_snsnpy_to_snana()
+get_mag(lc):
+	create magnitudes column from flux column
+
+trim_filters(lc, interpflts):
+	trim filters in lc to interpolation filters
+
+set_lcmeta_ordered_flts(lc):
+	set lc.meta['flts'] and lc.meta['lams'] in order of wavelengths
+
+update_lcmetadata(lc,dfsn,snpy_product)
+	update lc.meta with mass, spectroscopic subtype, Tmax measurements etc.
+
+
 --------------------
 
 Written by Sam M. Ward: smw92@cam.ac.uk
@@ -113,6 +117,23 @@ def get_mag(lc):
 	return lc
 
 def trim_filters(lc, interpflts):
+	"""
+	Trim Filters
+
+	Retain only filters in interpolation filters
+
+	Parameters
+	----------
+	lc: :py:class:`astropy.table.Table`
+		light curve object
+
+	interpflts : str
+		string of interpolation filters, either 'all' or e.g. 'uBgVriYJH'
+
+	Returns
+	----------
+	lc with only interpflts subset
+	"""
 	if interpflts!='all':
 		for flt in set(lc["flt"]):
 			if flt not in interpflts:
@@ -120,6 +141,20 @@ def trim_filters(lc, interpflts):
 	return lc
 
 def set_lcmeta_ordered_flts(lc):
+	"""
+	Set LCmeta Ordered Filters
+
+	Sets lc.meta['flts'] and lc.meta['lams'] so that they are ordered by wavelength from blue to red
+
+	Parameters
+	----------
+	lc: :py:class:`astropy.table.Table`
+		light curve object
+
+	Returns
+	----------
+	lc with updated .meta
+	"""
 	from snpy import fset
 	lamC = {fset[flt].ave_wave:flt for flt in list(set(lc['flt']))}
 	lams = list(lamC.keys())
@@ -129,7 +164,27 @@ def set_lcmeta_ordered_flts(lc):
 	lc.meta['lams'] = list(ordered_lamC.keys())
 	return lc
 
-def update_lcmetadata(lc,dfsn):
+def update_lcmetadata(lc,dfsn,snpy_product):
+	"""
+	Update LC metadata
+
+	Updates lc.meta to include e.g. mass, spectroscopic sub-classification, Tmax estimates etc.
+
+	Parameters
+	----------
+	lc: :py:class:`astropy.table.Table`
+		light curve object
+
+	dfsn: pandas df
+		row(s) where dfmeta['SN']==sn
+
+	snpy_product: dict
+		dictionary with various SNooPy correction items, including Tmax estimates
+
+	Returns
+	----------
+	lc with updated .meta
+	"""
 	try:
 		lc.meta['Mbest'] = dfsn['Mbest'].mean()
 	except:
@@ -145,23 +200,14 @@ def update_lcmetadata(lc,dfsn):
 		lc.meta['Spectral_Type']=spectypes[0]
 	else:
 		lc.meta['Spectral_Type']='_'.join(spectypes)
-	'''
+
+	#Set GP restframe Tmax estimate to None, not yet estimated
 	lc.meta['Tmax_GP_restframe']     = None
-			lc.meta['Tmax_GP_restframe_std'] = None
-			try:
-				lc.meta['Tmax_snpy_obsframe']   = snpy_products[sn]['Tmax_snpy_obsframe']
-			except:
-				lc.meta['Tmax_snpy_obsframe']   = None
-			try:
-				lc.meta['Tmax_GP_obsframe']   = snpy_products[sn]['Tmax_GP_obsframe']
-			except:
-				lc.meta['Tmax_GP_obsframe']   = None
-			try:
-				lc.meta['Tmax_snpy_restframe']  = snpy_products[sn]['Tmax_snpy_restframe']
-			except:
-				lc.meta['Tmax_snpy_restframe']  = None
-			try:
-				lc.meta['Tmax_snpy_fitted']  = snpy_products[sn]['Tmax_snpy_fitted']
-			except:
-				lc.meta['Tmax_snpy_fitted']  = None
-	'''
+	lc.meta['Tmax_GP_restframe_std'] = None
+	#Load up the SNooPy fitted Tmax estimate
+	try:
+		lc.meta['Tmax_snpy_fitted']  = snpy_product['Tmax_snpy_fitted']
+	except:
+		lc.meta['Tmax_snpy_fitted']  = None
+
+	return lc
