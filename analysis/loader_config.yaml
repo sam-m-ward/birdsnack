@@ -18,13 +18,13 @@ load_data_parameters :
 
 
   #Way in which we load up data for analysis
-  load_mode : 'snpytxtfiles'  #Load up dict of snpy files
-  load_mode : 'snanalcs'      #Load up dict of snana files
+  load_mode : 'preproc'  #Load up dict of snpy files OR snanalcs
+  #load_mode : 'snanalcs'      #Load up dict of snana files
   #load_mode : 'magslist'     #Load up df of peak magnitudes
 
   #Choice of whether to apply SNooPy Milky-Way Extinction Corrections and/or K-corrections
-  #apply_snpy_corrections : False
   #apply_snpy_corrections : True
+  #apply_snpy_corrections : False
 
   #If True, manually overwrite pre-existing snana files
   #rewrite_snana : True
@@ -65,7 +65,6 @@ snpy_parameters:
   #insert_pre_defined_Tmax : True
   insert_pre_defined_Tmax : False
 
-
   #Kcorrections
   #Whether to apply it or not
   #apply_K_corrections     : False
@@ -85,7 +84,93 @@ preproc_parameters:
   #error_boost_dict : {}
   error_boost_dict : {1.5:['13azs','16abc'],2:['13dkx'],5:['16auf'],7:['14gnl']}
 
-  #inflate_fac : 'mult_3'
-  #inflate_fac : 'add_1'
-  #inflate_fac : 'set_1'
+  #Arbitrary choice of string for denoting errors in mags pandas df
+  errstr     : err
+  #Choice of phases to interpolate to
+  tclist     : [0]
+  #The python index in tclist taken as reference band
+  tref_index : 0
+
+  #The reference passband
+  ref_band        : B
+  #The phase window either side of Tmax
+  tmax_window     : 5
+  #Resolution in time grid for estimating Tmax
+  tmax_resolution : 0.01
+  #No. of GP draws for estimating Tmax
+  Ngpdraws        : 1000
+
+  #Choice of whether to use SNooPy Tmax
+  #use_SNooPy_fitted_Tmax : True
+  use_SNooPy_fitted_Tmax : False
+
+  #Choice of whether to use 1DGP or 2DGP Tmax
+  #Tmax_method : 'method'
+  #Tmax_method : '2DGP'
+  Tmax_method : '1DGP'
+
+  #Ways of trimming data on phases; dp is time grid for GP
+  phasemin : -10
+  phasemax : 40
+  dp       : 1
+
+  #Trim sample params
+  #Require points at refband at max
+  trim_on_refband_max : True
+  #Require points in other bands in fclist
+  trim_on_fclist      : True
+  #Require points at other phases/times
+  trim_on_extras      : False
+
+  #Maximum allowed uncertainty in Tmax estimate
+  Tmax_stdmax         : 2 #0.25
+
+  #Defines required number of points around ref_band and tc==0
+  #Nbeforemax  : [0]
+  #Nbeforegap  : [10]
+  #Naftermax   : [1,2]
+  #Naftergap   : [5,40]
+  Nbeforemax  : [0,2]
+  Nbeforegap  : [5,10]
+  Naftermax   : [0,2]
+  Naftergap   : [10,40]
+
+  #Defines required number of points around all bands in fclist/tclist
+  #Nbefore_local     : [0]
+  #Nbeforegap_local  : [10]
+  #Nafter_local      : [1,2]
+  #Naftergap_local   : [5,40]
+  Nbefore_local     : [0,1]
+  Nbeforegap_local  : [5,10]
+  Nafter_local      : [0,1]
+  Naftergap_local   : [10,40]
+
+  #Defines extra features beyond those in fclist,tclist to extract
+  Extra_Features          : {}
+  Extra_Features          : {15:['B']}
+  Nbefore_local_extra     : [1]
+  Nbeforegap_local_extra  : [15]
+  Nafter_local_extra      : [1]
+  Naftergap_local_extra   : [15]
+
+  #Interpolate in either flux or mag space
+  #bright_mode : flux
+  bright_mode : mag
+
+  #Cuts on Sample for Stan Fitting
+  #logMcut   : 10.42
+  logMcut   : 10
+
+  #mass_mode : 'low_masses'
+  #mass_mode : 'high_masses'
+  mass_mode : 'all_masses'
+
+  #BVcut     : True
+  BVcut     : False
+
+  #magerrcut   : False
+  magerrcut   : 0.3
+
+  #spectype  : 'all'
+  spectype  : 'normal'
 ########################################################
