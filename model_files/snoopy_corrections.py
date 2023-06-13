@@ -7,7 +7,7 @@ Used to transform snpy object with corrections, saves Tmax_Kcorrdict, snpy_produ
 
 Contains:
 --------------------
-get_Tmax_Kcorrdict_foldername:
+get_Tmax_Kcorrdict_foldername(snpy_params):
 	get folder name for Tmax and Kcorrections dictionary, pre-computed for all analysis variants in one go to save on time complexity
 
 SNOOPY_CORRECTIONS class:
@@ -16,6 +16,8 @@ SNOOPY_CORRECTIONS class:
 	Methods are:
 		get_fitted_snpy_Tmax_Kcorrdict(fitbands,obs_to_rest)
 		correct_data_with_snpy_MWayExtinction_and_K_corrections()
+		get_sn_paths()
+		load_snpy_product(sn,survey)
 		correct_sn(sn, SNsnpy)
 		convert_snsnpy_to_snana()
 --------------------
@@ -172,7 +174,7 @@ class SNOOPY_CORRECTIONS:
 			snpy object of particular sn (corrected for MW-Extinction and Kcorrections)
 
 		snpy_product: dict
-			keys are ['kcorrections', 'snpy_cut', 'obsbands', 'bandmap', 'Tmax_GP_obsframe', 'Tmax_snpy_obsframe', 'Tmax_snpy_restframe', 'Tmax_snpy_fitted']
+			keys are ['kcorrections', 'snpy_cut', 'obsbands', 'bandmap', 'Tmax_snpy_fitted']
 			kcorrections are dict={flt:np.array of kcorrections}
 			snpy_cut is bool, if True, SNooPy procedure failed
 			obsbands and bandmap are SNooPy filters, (key,value) pair are obs and rest bands
@@ -280,6 +282,47 @@ class SNOOPY_CORRECTIONS:
 		self.Tmax_Kcorrdict_folder = self.outputdir+get_Tmax_Kcorrdict_foldername(self.snpychoices)
 		self.snana_folder          = self.outputdir+get_snana_foldername(self.snpychoices)
 
+	def get_sn_paths(self):
+		"""
+		Get SN paths
+
+		Simple Method to set paths up for individual SN
+
+		End Products(s)
+		----------
+		Paths to snana lc and snpy_product set up as attributes
+		"""
+		self.path_snana_product  = f"{self.snana_folder}{self.sn}_{self.survey}.snana.dat"
+		self.path_snpy_product   = f"{self.snana_folder}{self.sn}_{self.survey}_snpy_product.pkl"
+
+	def load_snpy_product(self, sn=None, survey=None):
+		"""
+		Load snpy_product
+
+		Simple Method to load snpy_product
+
+		Parameters
+		----------
+		sn : str (optional; default is None)
+			name of sn
+
+		survey : str (optional; default is None)
+			name of survey
+
+		Return
+		----------
+		snpy_product: dict
+			Kcorrections, bandmapping, Tmax etc.
+		"""
+		if sn is not None:
+			self.sn     = sn
+		if survey is not None:
+			self.survey = survey
+		self.get_sn_paths()
+		with open(self.path_snpy_product,'rb') as f:
+			snpy_product = pickle.load(f)
+		return snpy_product
+
 	def correct_sn(self, sn, SNsnpy):
 		"""
 		Correct SN Method
@@ -299,7 +342,7 @@ class SNOOPY_CORRECTIONS:
 		End Product(s)
 		----------
 		snpy_product: dict
-			keys are ['kcorrections', 'snpy_cut', 'obsbands', 'bandmap', 'Tmax_GP_obsframe', 'Tmax_snpy_obsframe', 'Tmax_snpy_restframe', 'Tmax_snpy_fitted']
+			keys are ['kcorrections', 'snpy_cut', 'obsbands', 'bandmap', 'Tmax_snpy_fitted']
 
 		lc: :py:class:`astropy.table.Table`
 			light curve object
@@ -308,8 +351,7 @@ class SNOOPY_CORRECTIONS:
 		self.snsnpy   = SNsnpy['lc']
 		self.survey   = SNsnpy['survey']
 
-		self.path_snana_product  = f"{self.snana_folder}{self.sn}_{self.survey}.snana.dat"
-		self.path_snpy_product   = f"{self.snana_folder}{self.sn}_{self.survey}_snpy_product.pkl"
+		self.get_sn_paths()
 
 		#if self.choices['load_data_parameters']['rewrite_snana'] or not os.path.exists(self.path_snana_product) or not os.path.exists(self.path_snpy_product):
 		if self.snpychoices['apply_SNR_cut']: self.snsnpy.mask_SNR(self.snpychoices['snrcut'])
@@ -342,7 +384,7 @@ class SNOOPY_CORRECTIONS:
 				mag.extend(list(self.snsnpy.data[filt].mag))
 				magerr.extend(list(self.snsnpy.data[filt].e_mag))
 			try:
-				tmax = snpy_product['Tmax_snpy_restframe']
+				tmax = snpy_product['Tmax_snpy_fitted']
 			except:
 				tmax = None
 			if mjd==[]:#i.e. if no data falls inside interpflts
