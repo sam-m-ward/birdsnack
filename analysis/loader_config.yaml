@@ -19,12 +19,12 @@ load_data_parameters :
 
   #Way in which we load up data for analysis
   load_mode : 'snpytxtfiles'  #Load up dict of snpy files
-  #load_mode : 'snanalcs'     #Load up dict of snana files
+  load_mode : 'snanalcs'      #Load up dict of snana files
   #load_mode : 'magslist'     #Load up df of peak magnitudes
 
   #Choice of whether to apply SNooPy Milky-Way Extinction Corrections and/or K-corrections
   #apply_snpy_corrections : False
-  apply_snpy_corrections : True
+  #apply_snpy_corrections : True
 
   #If True, manually overwrite pre-existing snana files
   #rewrite_snana : True
@@ -80,4 +80,12 @@ snpy_parameters:
   #interpflts    : 'BVriJH'
   interpflts    : 'uBgVriYJH'
 
+preproc_parameters:
+  #Factor to boost flux errors by for improved GP fitting stability
+  #error_boost_dict : {}
+  error_boost_dict : {1.5:['13azs','16abc'],2:['13dkx'],5:['16auf'],7:['14gnl']}
+
+  #inflate_fac : 'mult_3'
+  #inflate_fac : 'add_1'
+  #inflate_fac : 'set_1'
 ########################################################
