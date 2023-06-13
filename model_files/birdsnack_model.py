@@ -9,8 +9,7 @@ BIRDSNACK class
     inputs: configname='analysis_config.yaml',loader={},edit_dict = {},dfmeta=None,update_vars=False
 
     Methods are:
-        X()
-		Y()
+        load_and_preprocess_snana_lcs()
 
 --------------------
 """
@@ -105,7 +104,7 @@ class BIRDSNACK:
 		"""
 		from snana_functions import get_snana_foldername, correct_lc_data_SNR_boostdict, get_mag, trim_filters, set_lcmeta_ordered_flts, update_lcmetadata
 		import snanaio as io
-		self.lcs = {}
+		self.lcs = {} ; self.snpy_products = {}
 		self.snana_folder = self.snanapath+get_snana_foldername(self.choices['snpy_parameters'])
 		for sn in self.SNSsnpy:
 			path_snana_product  = f"{self.snana_folder}{sn}_{self.SNSsnpy[sn]['survey']}.snana.dat"
@@ -122,7 +121,8 @@ class BIRDSNACK:
 			#Trim to filters in interpflts
 			lc       = set_lcmeta_ordered_flts(trim_filters(lc, self.choices['snpy_parameters']['interpflts']))
 			#Update lcmeta with mass and spectral type
-			lc       = update_lcmetadata(lc,self.dfmeta[self.dfmeta['SN']==sn])
-
-			#Append lc to dictionary
-			self.lcs[sn] = lc
+			snpy_product = SNOOPY_CORRECTIONS(self.choices, self.snanapath).load_snpy_product(sn=sn,survey=self.SNSsnpy[sn]['survey'])
+			lc           = update_lcmetadata(lc,self.dfmeta[self.dfmeta['SN']==sn],snpy_product)
+			#Append lcs to dictionary
+			self.lcs[sn]       = lc
+			self.snpy_products = snpy_product
