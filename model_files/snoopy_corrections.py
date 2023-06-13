@@ -1,45 +1,24 @@
 """
-Module containing functions to take in snpy object and return SNR-trimmed rest-frame MWay-Extinction-corrected snana lc object
+SNooPy Corrections Module
+
+Module containing SNOOPY_CORRECTIONS class and additional functions
+Used to transform snpy object with corrections, saves Tmax_Kcorrdict, snpy_product, and snana lc files
+
 
 Contains:
 --------------------
-correct_lc_data_SNR:
-	take in snana lc and cut on SNR
+get_Tmax_Kcorrdict_foldername:
+	get folder name for Tmax and Kcorrections dictionary, pre-computed for all analysis variants in one go to save on time complexity
 
-correct_snsnpy_data_SNR:
-	take in snpy object and mask on SNR
+SNOOPY_CORRECTIONS class:
+	inputs: choices, outputdir
 
-get_fitted_snpy_Tmax_Kcorrdict:
-	computes and/or returns Tmax_Kcorrdict, uniquely defined by snr,EBVMW and SNooPy observer-frame passbands that fall inside interpflts
-
-correct_data_with_snpy_MWayExtinction_and_K_corrections:
-	uses SNooPy to correct for MWay extinction and apply K corrections
-
-get_lc_from_snsnpy:
-	take in snpy object and create snana lc file
-
-correct_data:
-	combines all the above functions, takes in snpy object,
-	apply all of SNRcut, MWaydust subtraction, Kcorr (in that order)
-	return snana lc object
-
+	Methods are:
+		get_fitted_snpy_Tmax_Kcorrdict(fitbands,obs_to_rest)
+		correct_data_with_snpy_MWayExtinction_and_K_corrections()
+		correct_sn(sn, SNsnpy)
+		convert_snsnpy_to_snana()
 --------------------
-Functions take in various arguments
-
-correct_lc_data_SNR(lc,snrcut,error_boost_dict)
-
-correct_snsnpy_data_SNR(snsnpy,snrcut)
-
-get_fitted_snpy_Tmax_Kcorrdict(snsnpy,snpy_params,fitbands,outputdir)
-
-correct_data_with_snpy_MWayExtinction_and_K_corrections(snsnpy, snpy_params, path_snpy_product, method='spline')
-
-get_lc_from_snsnpy(snsnpy,snrcut,snpy_product,outputdir,rewrite_snana,path,error_boost_dict)
-
-correct_data(sn,snsnpy,snpy_params,outputdir,rewrite_snana,error_boost_dict,filts_pecking_order=None)
-
---------------------
-Functions use simple operations
 
 Written by Sam M. Ward: smw92@cam.ac.uk
 """
@@ -50,8 +29,26 @@ import extinction
 import os
 import pickle
 from miscellaneous import ensure_folders_to_file_exist
+from snana_functions import get_snana_foldername
+import snanaio as io
 
 def get_Tmax_Kcorrdict_foldername(snpy_params):
+	"""
+	Get Tmax Kcorrdict Folder Name
+
+	Function to get folder name for Tmax and Kcorrections dictionary
+
+	Parameters
+	----------
+	snpy_params: dict
+	Choices for SNooPy analysis
+	  keys are [snrcut,snpy_model,snpy_shape,apply_EBVMW_corrections,RVMW,dustlaw,insert_pre_defined_Tmax,apply_K_corrections,mangle,interpflts]
+
+	 Returns
+	 ----------
+	 str:
+	 	foldername, used for multiple analysis variants, different sets of Kcorrections
+	"""
 	appender  = 'Tmax_Kcorrdicts_'
 
 	#SNR Choices
@@ -73,57 +70,7 @@ def get_Tmax_Kcorrdict_foldername(snpy_params):
 
 	return appender[:-1]+'/'
 
-def get_snana_foldername(snpy_params):
-	appender = ''
-
-	for key in snpy_params:
-		#If apply_SNR_cut is False, don't appned snrcut
-		if key=='snrcut' and not snpy_params['apply_SNR_cut']:
-			pass
-
-		#If apply_EBVMW_corrections is not Presubtract, don't append RVMW or dustlaw
-		elif key in ['RVMW','dustlaw'] and snpy_params['apply_EBVMW_corrections']!='Presubtract':
-			pass
-
-		#If apply_K_corrections is False, don't append mangling choice
-		elif key=='mangle' and not snpy_params['apply_K_corrections']:
-			pass
-
-		#Otherwise, append the snpy correction choices
-		else:
-			appender += f"{key}{str(snpy_params[key])}_"
-
-
-	return appender[:-1]+'/'
-
 class SNOOPY_CORRECTIONS:
-
-	def correct_lc_data_SNR(lc,snrcut,error_boost_dict):
-		"""
-		Cut on SNR
-
-		Returns lc object by applying a cut on Signal-to-Noise-Ratio
-
-		Parameters
-		----------
-		lc: :py:class:`astropy.table.Table`
-			light curve objects
-
-		snrcut: float or int
-			SNR>snrcut is kept
-
-		error_boost_dict: dict
-			keys are factors to multiply flux errors by, values are list of SNe which correction should be applied to
-
-		Returns
-		----------
-		lc object with SNR>snrcut
-		"""
-		lc = lc[lc["fluxcal"]/lc["fluxcalerr"] > snrcut]
-		for fac in error_boost_dict:
-			if lc.meta['SNID'] in error_boost_dict[fac]:
-				lc['fluxcalerr'] *= fac
-		return lc
 
 	def get_fitted_snpy_Tmax_Kcorrdict(self,fitbands,obs_to_rest):
 		"""
@@ -166,7 +113,6 @@ class SNOOPY_CORRECTIONS:
 				if snpy_params['insert_pre_defined_Tmax']:
 					fitted_snsnpy.fit(fitbands,Tmax=fitted_snsnpy.Tmax)
 				else:
-					#Can't really change RV_host, uses calibration number 6 from Folatelli2010, which is RVhost=1.01+/-0.31
 					fitted_snsnpy.fit(fitbands)
 				#Get kcorrected Tmax; Use SNooPy fit
 				Tmax_Kcorrdict['Tmax_snpy_fitted'] = copy.deepcopy(fitted_snsnpy.Tmax)
@@ -220,7 +166,7 @@ class SNOOPY_CORRECTIONS:
 
 		Returns corrected snpy object, and dictionary of important snpy values e.g. kcorrections, rest-frame filters, Tmaxs
 
-		Returns
+		End product(s)
 		----------
 		snsnpy: snpy.sn.sn object
 			snpy object of particular sn (corrected for MW-Extinction and Kcorrections)
@@ -304,7 +250,7 @@ class SNOOPY_CORRECTIONS:
 				self.snsnpy.data[flt].mag  += self.Tmax_Kcorrdict['MWCorrections'][flt]
 
 			if self.Tmax_Kcorrdict['snpy_cut_bools']['MWay']:
-				print (f'MWay SNooPy Corrections Failed for {self.snsnpy.name}')
+				print (f"MWay SNooPy Corrections Failed for {self.snsnpy.name}")#; {self.Tmax_Kcorrdict['MWCorrections']}")
 				snpy_product['snpy_cut'] = bool(snpy_product['snpy_cut']+self.Tmax_Kcorrdict['snpy_cut_bools']['MWay'])
 
 		if snpy_params['apply_K_corrections']:
@@ -335,107 +281,71 @@ class SNOOPY_CORRECTIONS:
 		self.snana_folder          = self.outputdir+get_snana_foldername(self.snpychoices)
 
 	def correct_sn(self, sn, SNsnpy):
+		"""
+		Correct SN Method
 
+		Sets up pathnames
+		Then applies corrections to snsnpy object
+		Either computes for the first time, or loads up appropriate MW/Kcorrections
+		Final product is snana lc file
+
+		Parameters
+		----------
+		sn : str
+			name of SN
+		SNSsnpy: dict
+			keys are lc and survey, values are respectively the snsnpy object and the surveyname
+
+		End Product(s)
+		----------
+		snpy_product: dict
+			keys are ['kcorrections', 'snpy_cut', 'obsbands', 'bandmap', 'Tmax_GP_obsframe', 'Tmax_snpy_obsframe', 'Tmax_snpy_restframe', 'Tmax_snpy_fitted']
+
+		lc: :py:class:`astropy.table.Table`
+			light curve object
+		"""
 		self.sn       = sn
 		self.snsnpy   = SNsnpy['lc']
 		self.survey   = SNsnpy['survey']
 
-		try:
-			self.apply_corrections()
-		except Exception as e:
-			print (e)
-			pass
-
-		self.lc       = {sn:{'lc':None,'survey':self.survey}}
-
-	def apply_corrections(self):
-		"""
-		Correct snpy object data
-
-		Returns light curve object by correcting snpy object for: SNRcut, Milky Way Dust, and K-corrections (in that order)
-
-		"""
-
-		##############################################################
-		self.path_snana_product  = f"{self.snana_folder}{self.sn}_{self.survey}_.snana.dat"
+		self.path_snana_product  = f"{self.snana_folder}{self.sn}_{self.survey}.snana.dat"
 		self.path_snpy_product   = f"{self.snana_folder}{self.sn}_{self.survey}_snpy_product.pkl"
 
-		if self.choices['load_data_parameters']['rewrite_snana'] or not os.path.exists(self.path_snana_product) or not os.path.exists(self.path_snpy_product):
-			if self.snpychoices['apply_SNR_cut']: self.snsnpy.mask_SNR(self.snpychoices['snrcut'])
-			self.correct_data_with_snpy_MWayExtinction_and_K_corrections()
+		#if self.choices['load_data_parameters']['rewrite_snana'] or not os.path.exists(self.path_snana_product) or not os.path.exists(self.path_snpy_product):
+		if self.snpychoices['apply_SNR_cut']: self.snsnpy.mask_SNR(self.snpychoices['snrcut'])
+		self.correct_data_with_snpy_MWayExtinction_and_K_corrections()
 
-		snpy_product = self.snpy_product
+		self.convert_snsnpy_to_snana()
 
-		err=1/0
-		self.get_lc_from_snsnpy(error_boost_dict)
-		return lc, snpy_product
 
-	def get_lc_from_snsnpy(snsnpy,snrcut,interpflts,snpy_product,outputdir,rewrite_snana,path,error_boost_dict):
+
+	def convert_snsnpy_to_snana(self):
 		"""
-		Get Light Curve from snpy object
+		Convert snsnpy to snana lc
 
-		Function loads up an snana lc given a sn name, and creates this file from a snpy object if it doesn't already exist
+		Method saves/loads snana lc from snsnpy object
 
-		Parameters
-		----------
-		snsnpy: snpy.sn.sn object
-			snpy object of particular sn
-
-		snrcut: float or int
-			SNR>snrcut is kept
-
-		interpflts: str
-			string of filters we allow SNooPy to use when fitting, e.g. 'BVrRiIYJH'
-			in this function, trim on interpflts so only these bands appear in snana lc object
-			e.g. if interpflts=='uBgVriYJH' then exclude Bs,Vs,J_K etc. (which are each rest-frame bands already naturally mapped to by SNooPy)
-
-		snpy_product: dict
-			keys are ['kcorrections', 'snpy_cut', 'obsbands', 'bandmap', 'Tmax_GP_obsframe', 'Tmax_snpy_obsframe', 'Tmax_snpy_restframe']
-			kcorrections are dict={flt:np.array of kcorrections}
-			snpy_cut is bool, if True, SNooPy procedure failed
-			obsbands and bandmap are SNooPy filters, (key,value) pair are obs and rest bands
-			Finally, Tmax float values from SNooPy fits
-
-		outputdir: str
-			path/to/dir/where_snana_lcs_are_saved
-
-		rewrite_snana: bool
-			if True, create new snan lc object
-
-		path: str
-			path/to/snanalc.dat
-
-		error_boost_dict: dict
-			keys are factors to multiply flux errors by, values are list of SNe which correction should be applied to
-
-		Returns
+		End Product(s)
 		----------
 		lc: :py:class:`astropy.table.Table`
 			light curve object
 		"""
-		#path = outputdir+snsnpy.name+'.snana.dat'
-		if not os.path.exists(path) or rewrite_snana:
-			#################################
+		if not os.path.exists(self.path_snana_product) or self.choices['load_data_parameters']['rewrite_snana']:
 			#Write lc from snsnpy; we see the filter is always stored as the rest frame filter...and there is question of whether we have include Kcorrections or not in snsnpy.data
 			mjd,flt,mag,magerr = [],[],[],[]
-			for filt in snsnpy.allbands():
-				rest_filt = snsnpy.restbands[filt]
+			for filt in self.snsnpy.allbands():
+				rest_filt = self.snsnpy.restbands[filt]
 				#if rest_filt in interpflts and interpflts!='all':#Big Choice here, only allow bands where SNooPy has mapped to rest frame filters in interpflts
-				mjd.extend(list(snsnpy.data[filt].MJD))
+				mjd.extend(list(self.snsnpy.data[filt].MJD))
 				#Notice here how we designate filter as rest frame, because the data itself has had Kcorrections added on
-				flt.extend([rest_filt for _ in range(len(snsnpy.data[filt].MJD))])
-				mag.extend(list(snsnpy.data[filt].mag))
-				magerr.extend(list(snsnpy.data[filt].e_mag))
+				flt.extend([rest_filt for _ in range(len(self.snsnpy.data[filt].MJD))])
+				mag.extend(list(self.snsnpy.data[filt].mag))
+				magerr.extend(list(self.snsnpy.data[filt].e_mag))
 			try:
 				tmax = snpy_product['Tmax_snpy_restframe']
 			except:
 				tmax = None
 			if mjd==[]:#i.e. if no data falls inside interpflts
 				mjd,flt,mag,magerr = [0],['None'],[0],[0]
-			snname  = snsnpy.name; tmax=tmax; z_helio = snsnpy.z; z_cmb=snsnpy.get_zcmb(); z_cmb_err=0; ebv_mw = snsnpy.EBVgal
-			io.write_snana_lcfile(outputdir, snname, mjd, flt, mag, magerr, tmax, z_helio, z_cmb, z_cmb_err, ebv_mw,ra=snsnpy.ra,dec=snsnpy.decl)
-			#################################
-		sn , lc = io.read_snana_lcfile(path)
-		lc      = correct_lc_data_SNR(lc,snrcut,error_boost_dict)
-		lc      = get_mag(lc)
-		return lc
+			snname  = self.snsnpy.name; tmax=tmax; z_helio = self.snsnpy.z; z_cmb=self.snsnpy.get_zcmb(); z_cmb_err=0; ebv_mw = self.snsnpy.EBVgal
+			io.write_snana_lcfile(self.snana_folder, snname, mjd, flt, mag, magerr, tmax, z_helio, z_cmb, z_cmb_err, ebv_mw,ra=self.snsnpy.ra,dec=self.snsnpy.decl, survey=self.survey)
