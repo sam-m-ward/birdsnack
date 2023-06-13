@@ -357,8 +357,8 @@ class SNOOPY_CORRECTIONS:
 		"""
 
 		##############################################################
-		self.path_snana_product  = self.snana_folder+self.sn+'.snana.dat';
-		self.path_snpy_product   = self.snana_folder+self.sn+'_snpy_product.pkl'
+		self.path_snana_product  = f"{self.snana_folder}{self.sn}_{self.survey}_.snana.dat"
+		self.path_snpy_product   = f"{self.snana_folder}{self.sn}_{self.survey}_snpy_product.pkl"
 
 		if self.choices['load_data_parameters']['rewrite_snana'] or not os.path.exists(self.path_snana_product) or not os.path.exists(self.path_snpy_product):
 			if self.snpychoices['apply_SNR_cut']: self.snsnpy.mask_SNR(self.snpychoices['snrcut'])

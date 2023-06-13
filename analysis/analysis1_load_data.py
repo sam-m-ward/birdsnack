@@ -9,5 +9,5 @@ from birdsnack_model import BIRDSNACK
 
 for path_file_survey in dataloader.choices['load_data_parameters']['load_path_file_survey']:
     print ('###'*3)
-    if path_file_survey[2]=='Misc':
-        bs = BIRDSNACK(loader={'path_file_survey':path_file_survey}, configname='loader_config.yaml', dfmeta=dataloader.dfmeta)
+    #if path_file_survey[2]=='Misc':
+    bs = BIRDSNACK(loader={'path_file_survey':path_file_survey}, configname='loader_config.yaml', dfmeta=dataloader.dfmeta)
