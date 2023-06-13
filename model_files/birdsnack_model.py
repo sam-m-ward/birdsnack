@@ -74,20 +74,15 @@ class BIRDSNACK:
 		#Load up metadata
 		self.dfmeta = dfmeta
 
-		#If loading up snpytxtfiles or snanalcs, load up the SNSsnpy dictionary
-		if self.choices['load_data_parameters']['load_mode'] in ['snpytxtfiles','snanalcs']:
+		#If in preprocessing mode, load up the SNSsnpy dictionary, and load/create the snana lcs
+		if self.choices['load_data_parameters']['load_mode']=='preproc':
 			path,file,survey = loader['path_file_survey']
 			with open(self.SNSpath+file,'rb') as f:
 				self.SNSsnpy = pickle.load(f)
 
-			#Apply snpy corrections to SNSsnpy snpy files if load_mode=='snpytxtfiles' to create corrected snana lcs dictionary
-			if self.choices['load_data_parameters']['load_mode'] == 'snpytxtfiles':
-				snpycorr = SNOOPY_CORRECTIONS(self.choices, self.snanapath)
-				for sn in self.SNSsnpy:
-					snpycorr.correct_sn(sn, self.SNSsnpy[sn])
-
 			#Load up snana lcs and apply SNR cut, error_boost_dict, and trim to interpflts
 			self.load_and_preprocess_snana_lcs()
+
 
 	def load_and_preprocess_snana_lcs(self):
 		"""
@@ -102,27 +97,34 @@ class BIRDSNACK:
 		lcs : dict
 			{sn:lc} where lc is snana lc objects
 		"""
+		#Initialise SNooPy Corrections
+		snpycorr = SNOOPY_CORRECTIONS(self.choices, self.snanapath)
+
+		#Import snana_functions
 		from snana_functions import get_snana_foldername, correct_lc_data_SNR_boostdict, get_mag, trim_filters, set_lcmeta_ordered_flts, update_lcmetadata
 		import snanaio as io
+
+		#Initialise products
 		self.lcs = {} ; self.snpy_products = {}
+
+		#Folder where snana lcs are loaded from and/or saved into
 		self.snana_folder = self.snanapath+get_snana_foldername(self.choices['snpy_parameters'])
+
 		for sn in self.SNSsnpy:
 			path_snana_product  = f"{self.snana_folder}{sn}_{self.SNSsnpy[sn]['survey']}.snana.dat"
-			if not os.path.exists(path_snana_product):
+			if not os.path.exists(path_snana_product) or self.choices['load_data_parameters']['rewrite_snana']:
 				print ('###'*3)
-				print (f'snana lc not created yet for SN{sn}, thus load in snsnpy, apply corrections, and create snana lc')
-				snpycorr = SNOOPY_CORRECTIONS(self.choices, self.snanapath)
 				snpycorr.correct_sn(sn, self.SNSsnpy[sn])
 
 			#Load File
-			sn , lc  = io.read_snana_lcfile(path_snana_product)
+			sn , lc      = io.read_snana_lcfile(path_snana_product)
 			#Apply SNR cut, boost flux errors, get magnitudes column
-			lc       = get_mag(correct_lc_data_SNR_boostdict(lc, self.choices['snpy_parameters']['snrcut'], self.choices['preproc_parameters']['error_boost_dict']))
+			lc           = get_mag(correct_lc_data_SNR_boostdict(lc, self.choices['snpy_parameters']['snrcut'], self.choices['preproc_parameters']['error_boost_dict']))
 			#Trim to filters in interpflts
-			lc       = set_lcmeta_ordered_flts(trim_filters(lc, self.choices['snpy_parameters']['interpflts']))
-			#Update lcmeta with mass and spectral type
-			snpy_product = SNOOPY_CORRECTIONS(self.choices, self.snanapath).load_snpy_product(sn=sn,survey=self.SNSsnpy[sn]['survey'])
+			lc           = set_lcmeta_ordered_flts(trim_filters(lc, self.choices['snpy_parameters']['interpflts']))
+			#Update lcmeta with mass, spectral type, and SNooPy Tmax estimate
+			snpy_product = snpycorr.load_snpy_product(sn=sn,survey=self.SNSsnpy[sn]['survey'])
 			lc           = update_lcmetadata(lc,self.dfmeta[self.dfmeta['SN']==sn],snpy_product)
-			#Append lcs to dictionary
-			self.lcs[sn]       = lc
-			self.snpy_products = snpy_product
+			#Append lcs and snpy_products to dictionary
+			self.lcs[sn]           = lc
+			self.snpy_products[sn] = snpy_product
