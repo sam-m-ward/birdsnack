@@ -91,6 +91,18 @@ class BIRDSNACK:
 			self.load_and_preprocess_snana_lcs()
 
 	def load_and_preprocess_snana_lcs(self):
+		"""
+		Load and Pre-process snana lcs
+
+		Method takes in list of sns from SNSsnpy, then outputs dictionary of snana lcs={sn:lc}
+		Each lc is preprocessed to apply SNRcut, error boosting, create magnitudes column, trim to interpflts, and update metadata with mass and spectype
+		If snana lc object with SNooPy corrections applied doesn't exist to start with, it will create this
+
+		End Product(s)
+		----------
+		lcs : dict
+			{sn:lc} where lc is snana lc objects
+		"""
 		from snana_functions import get_snana_foldername, correct_lc_data_SNR_boostdict, get_mag, trim_filters, set_lcmeta_ordered_flts, update_lcmetadata
 		import snanaio as io
 		self.lcs = {}
