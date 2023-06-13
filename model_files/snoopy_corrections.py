@@ -162,7 +162,7 @@ class SNOOPY_CORRECTIONS:
 
 		self.Tmax_Kcorrdict = Tmax_Kcorrdict
 
-	def correct_data_with_snpy_MWayExtinction_and_K_corrections(self):#, path_snpy_product, outputdir, filts_pecking_order):
+	def correct_data_with_snpy_MWayExtinction_and_K_corrections(self):
 		"""
 		Correct Data using SNooPy for Milky Way Extinction and Redshifting
 
@@ -181,13 +181,31 @@ class SNOOPY_CORRECTIONS:
 			Finally, Tmax float values from SNooPy fits
 		"""
 		snpy_params = self.snpychoices
+
+		#Apply SNR Masking
+		if snpy_params['apply_SNR_cut']:
+			self.snsnpy.mask_SNR(snpy_params['snrcut'])
+
+		#Change snpy model if required
 		if snpy_params['snpy_model'] and snpy_params['snpy_shape']:#Default is simply False and False
 			print ('Applying .choose_model')
 			self.snsnpy.choose_model(snpy_model, stype=snpy_shape)
 
-		snpy_product  = {'kcorrections':{}}
 		def return_correct_restbands(snsnpy):
-			#Implements x2 Rules to boost sample size
+			"""
+			Return Correct RestBands
+
+			Function to map observer-frame bands to rest-frame bands
+			Implements x2 Rules to boost sample size
+
+			Parameters
+			----------
+			snsnpy: snpy object
+
+			Returns
+			----------
+			snsnpy with updated restbands mapping dictionary
+			"""
 			MAPPER0 = dict(zip(['U','B','G','V','R','I','Y','J','H','K'],['u','B','g','V','r','i','Y','J','H','K']))
 
 			#INCLUDED RULE 1
@@ -209,10 +227,6 @@ class SNOOPY_CORRECTIONS:
 
 		#Map all bands to rest-frame uBgVriYJH;
 		self.snsnpy = return_correct_restbands(self.snsnpy)
-
-		snpy_product['snpy_cut'] = False
-		snpy_product['obsbands'] = copy.deepcopy(self.snsnpy.allbands())
-		snpy_product['bandmap']  = copy.deepcopy(self.snsnpy.restbands)
 
 		#If we are pre-subtracting out the MWay Extinction (and thus adopting the SED approximation)
 		if snpy_params['apply_EBVMW_corrections']=='Presubtract':
@@ -237,16 +251,26 @@ class SNOOPY_CORRECTIONS:
 		elif not snpy_params['apply_EBVMW_corrections']:
 			self.snsnpy.EBVgal = 0
 
+		#Initialise SNooPy Product
+		snpy_product  = {'kcorrections':{}}
+		snpy_product['snpy_cut'] = False
+		snpy_product['obsbands'] = copy.deepcopy(self.snsnpy.allbands())
+		snpy_product['bandmap']  = copy.deepcopy(self.snsnpy.restbands)
+
 		#Choose observer bands to fit when fitting SNooPy (to get e.g. fitted Tmax, Kcorr from SNooPy fit)
-		if snpy_params['interpflts']=='all':
-			fitbands = [obsband for obsband in snpy_product['bandmap']]
-		else:
-			fitbands = [obsband for obsband in snpy_product['bandmap'] if snpy_product['bandmap'][obsband] in snpy_params['interpflts']]
+		if snpy_params['interpflts']=='all':	fitbands = [obsband for obsband in snpy_product['bandmap']]
+		else:									fitbands = [obsband for obsband in snpy_product['bandmap'] if snpy_product['bandmap'][obsband] in snpy_params['interpflts']]
+
+		#Mapper for obs->rest where rest is in interpflts
 		obs_to_rest    = {obsband:self.snsnpy.restbands[obsband] for obsband in fitbands}
+
+		#Get pre-computed dictionary of Kcorrections, MWay extinction corrections, and snpy Tmax estimate
 		self.get_fitted_snpy_Tmax_Kcorrdict(fitbands,obs_to_rest)
 
+		#Update snpy_product Tmax_snpy_fitted
 		snpy_product['Tmax_snpy_fitted'] = self.Tmax_Kcorrdict['Tmax_snpy_fitted']
 
+		#Apply Milky Way Extinction Corrections
 		if snpy_params['apply_EBVMW_corrections']=='Model':#If we are not pre-subtracting MWay Extinction using SED approximation, then use fitted snpy to correct data to EBV_MW=0 by integrating SED over the passband
 			for flt in self.Tmax_Kcorrdict['MWCorrections']:
 				self.snsnpy.data[flt].mag  += self.Tmax_Kcorrdict['MWCorrections'][flt]
@@ -255,6 +279,7 @@ class SNOOPY_CORRECTIONS:
 				print (f"MWay SNooPy Corrections Failed for {self.snsnpy.name}")#; {self.Tmax_Kcorrdict['MWCorrections']}")
 				snpy_product['snpy_cut'] = bool(snpy_product['snpy_cut']+self.Tmax_Kcorrdict['snpy_cut_bools']['MWay'])
 
+		#Apply K-corrections
 		if snpy_params['apply_K_corrections']:
 			####################################
 			#Apply Kcorr to observer-frame magnitude data (that has been corrected for MWay Extinction)
@@ -351,15 +376,14 @@ class SNOOPY_CORRECTIONS:
 		self.snsnpy   = SNsnpy['lc']
 		self.survey   = SNsnpy['survey']
 
+		#Get paths to snana lc file and snpy_product file
 		self.get_sn_paths()
 
-		#if self.choices['load_data_parameters']['rewrite_snana'] or not os.path.exists(self.path_snana_product) or not os.path.exists(self.path_snpy_product):
-		if self.snpychoices['apply_SNR_cut']: self.snsnpy.mask_SNR(self.snpychoices['snrcut'])
+		#Update raw snsnpy to apply Milky Way Extinction and K corrections
 		self.correct_data_with_snpy_MWayExtinction_and_K_corrections()
 
+		#Save snsnspy as an snana lc
 		self.convert_snsnpy_to_snana()
-
-
 
 	def convert_snsnpy_to_snana(self):
 		"""
