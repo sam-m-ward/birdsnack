@@ -17,6 +17,8 @@ BIRDSNACK class
 import os,pickle,yaml
 from snoopy_corrections import SNOOPY_CORRECTIONS
 from miscellaneous import ensure_folders_to_file_exist
+from LC_object import *
+from snana_functions import get_lcf, trim_lcf
 
 class BIRDSNACK:
 	"""
@@ -79,6 +81,7 @@ class BIRDSNACK:
 			path,file,survey = loader['path_file_survey']
 			with open(self.SNSpath+file,'rb') as f:
 				self.SNSsnpy = pickle.load(f)
+			self.survey = survey
 
 			#Load up snana lcs and apply SNR cut, error_boost_dict, and trim to interpflts
 			self.load_and_preprocess_snana_lcs()
@@ -106,12 +109,13 @@ class BIRDSNACK:
 
 		#Initialise products
 		self.lcs = {} ; self.snpy_products = {}
+		self.sns = list(self.SNSsnpy.keys())
 
 		#Folder where snana lcs are loaded from and/or saved into
 		self.snana_folder = self.snanapath+get_snana_foldername(self.choices['snpy_parameters'])
 
 		for sn in self.SNSsnpy:
-			path_snana_product  = f"{self.snana_folder}{sn}_{self.SNSsnpy[sn]['survey']}.snana.dat"
+			path_snana_product  = f"{self.snana_folder}{sn}_{self.survey}.snana.dat"
 			if not os.path.exists(path_snana_product) or self.choices['load_data_parameters']['rewrite_snana']:
 				print ('###'*3)
 				snpycorr.correct_sn(sn, self.SNSsnpy[sn])
@@ -123,8 +127,169 @@ class BIRDSNACK:
 			#Trim to filters in interpflts
 			lc           = set_lcmeta_ordered_flts(trim_filters(lc, self.choices['snpy_parameters']['interpflts']))
 			#Update lcmeta with mass, spectral type, and SNooPy Tmax estimate
-			snpy_product = snpycorr.load_snpy_product(sn=sn,survey=self.SNSsnpy[sn]['survey'])
+			snpy_product = snpycorr.load_snpy_product(sn=sn,survey=self.survey)
 			lc           = update_lcmetadata(lc,self.dfmeta[self.dfmeta['SN']==sn],snpy_product)
 			#Append lcs and snpy_products to dictionary
 			self.lcs[sn]           = lc
 			self.snpy_products[sn] = snpy_product
+
+	def trim_sample(self, apply_trims=True, return_trimmed=False):
+		"""
+		Trim Sample
+
+		Work through self.lcs dictionary and trim based on: SNooPy cut, GPTmax error, availability of data.
+
+		Parameters
+		----------
+		apply_trims : bool (optional; default=True)
+			if True, trim self.lcs
+
+		return_trimmed : bool (optional; default=False)
+			if True, return trimmed_lcs and the reasons dictionary
+
+		Returns
+		----------
+		if return_trimmed, returns:
+			trimmed_lcs : dict
+				{sn:lc} of lcs trimmed
+			REASONS : dict
+				{reason:[list of sne]} reasons for being cut from sample
+
+		End Product(s)
+		----------
+		if apply_trims:
+			update self.lcs and self.sns; excludes trimmed SNe
+		"""
+
+		def trims_on_SNooPy_fit_and_Tmax(reasons):
+			"""
+			Trims on SNooPy Fit and Tmax
+
+			Uses lc.meta data to trim on whether SNooPy fit succeeded/failed, and whether Tmax estimate succeeded/failed
+
+			Parameters
+			----------
+			reasons : dict
+				reasons[reason] = [list of SNe]
+
+			Returns
+			----------
+			trim : bool
+				if True, SN was trimmed
+
+			updated reasons dict
+			"""
+			#Initialise trim bool and get snpy_products
+			trim = False ; snpy_product = self.snpy_products[sn]
+			#If SNooPy corrections failed, record SN trim
+			if snpy_product['snpy_cut']:
+				reasons['snpy_cut'].append(sn) ; trim = True
+			#If SNooPy Tmax estimate failed and using SNooPy Tmax, record SN trim
+			if use_SNooPy_fitted_Tmax:
+				if lc.meta['Tmax_snpy_fitted'] is None:
+					reasons['None_Tmax_snpy_fitted'].append(sn) ; trim = True
+			#If no GP Tmax estimate, or its error is too large, record SN trim
+			elif not use_SNooPy_fitted_Tmax:
+				if lc.meta['Tmax_GP_restframe'] is None:
+					reasons['None_Tmax_GP_restframe'].append(sn) ; trim = True
+
+				if lc.meta['Tmax_GP_restframe'] is not None:
+					if lc.meta['Tmax_GP_restframe_std']>Tmax_stdmax:
+						reasons['Large_Tmax_GP_restframe_std'].append(sn) ; trim = True
+
+			return trim, reasons
+
+		trim_choices = self.choices['preproc_parameters']
+		pblist = trim_choices['pblist'] ; tilist = trim_choices['tilist'] ; Extra_Features = trim_choices['Extra_Features'] ;
+		use_SNooPy_fitted_Tmax = trim_choices['use_SNooPy_fitted_Tmax'] ; Tmax_stdmax = trim_choices['Tmax_stdmax']
+
+		self.Tmaxchoicestr = 'Tmax_GP_restframe' if not use_SNooPy_fitted_Tmax else 'Tmax_snpy_fitted'
+
+		#Initialise reasons dictionary for trimming each SN
+		#SNooPy fit failed, bad Tmax estimate, or not enough points around reference band
+		reasons  = {'snpy_cut':[],'None_Tmax_GP_restframe':[],'None_Tmax_snpy_fitted':[],'Large_Tmax_GP_restframe_std':[],'Points_Before_After_RefBand_Max':[]}
+		#Not enough points around non-reference passbands
+		reasons2 = {f'{pb}_{ti}':[] for pb in pblist for ti in tilist}
+		#Not enough points around special bands/phases, e.g. B-band 15days
+		reasons3 = {f'Extra_{pb}_{ti}':[] for ti,pbmini in Extra_Features.items() for pb in pbmini}
+
+
+		new_lcs = {} ; trimmed_lcs = {}
+
+		if trim_choices['trim_on_refband_max']:
+			Nbeforemax,Nbeforegap,Naftermax,Naftergap = [trim_choices[x] for x in ['Nbeforemax','Nbeforegap','Naftermax','Naftergap']][:]
+			print ('############################')
+			print (f"Trimming lcs so in {trim_choices['ref_band']} there {'are' if Nbeforemax!=1 else 'is'}: \n{Nbeforemax} point{'s' if Nbeforemax!=1 else ''} within {Nbeforegap} days before max, and \n{Naftermax} point{'s' if Naftermax!=1 else ''} within {Naftergap} days after max \n...")
+			for sn,lc in self.lcs.items():
+				lcobj = LCObj(lc,trim_choices)
+				lcobj.get_Tmax()
+				#With GP Tmax estimated, can perform generic trims
+				trim_bool, reasons = trims_on_SNooPy_fit_and_Tmax(reasons)
+				#Check to see Points_Before_After_RefBand_Max
+				if lc.meta[self.Tmaxchoicestr] is not None:#If Tmax is not estimated, can't compute phase, therefore can't assess availability of points
+					trim = trim_lcf(get_lcf(create_phase_column(lc,lc.meta[self.Tmaxchoicestr]),trim_choices['ref_band']),
+									Nbeforemax,Nbeforegap,Naftermax,Naftergap,tref = trim_choices['tilist'][trim_choices['tref_index']])
+					if trim: reasons['Points_Before_After_RefBand_Max'].append(sn)
+					trim_bool += trim
+				if trim_bool: trimmed_lcs[sn] = lc
+
+		if trim_choices['trim_on_pblist']:
+			Nbefore_local,Nbeforegap_local,Nafter_local,Naftergap_local = [trim_choices[x] for x in ['Nbefore_local','Nbeforegap_local','Nafter_local','Naftergap_local']][:]
+			print ('############################')
+			print (f"Trimming lcs so in each of {pblist} there {'are' if Nbefore_local!=1 else 'is'}:\n{Nbefore_local} point{'s' if Nbefore_local!=1 else ''} within {Nbeforegap_local} days before {tilist}, and\n{Nafter_local} point{'s' if Nafter_local!=1 else ''} within {Naftergap_local} days after {tilist} \n...")
+
+			for sn,lc in self.lcs.items():
+				lcobj = LCObj(lc,trim_choices)
+				lcobj.get_Tmax()
+				#With GP Tmax estimated, can perform generic trims
+				trim_bool, reasons = trims_on_SNooPy_fit_and_Tmax(reasons)
+				#Check to see pbtilist points
+				if lc.meta[self.Tmaxchoicestr] is not None:#If Tmax is not estimated, can't compute phase, therefore can't assess availability of points
+					for pb in pblist:
+						for ti in tilist:
+							trim = trim_lcf(get_lcf(create_phase_column(lc,lc.meta[self.Tmaxchoicestr]),pb),
+											Nbefore_local,Nbeforegap_local,Nafter_local,Naftergap_local,tref=ti)
+							if trim: reasons2[f'{pb}_{ti}'].append(sn)
+							trim_bool += trim
+				if trim_bool: trimmed_lcs[sn] = lc
+
+		if trim_choices['trim_on_extras']:
+			Nbefore_local_extra,Nbeforegap_local_extra,Nafter_local_extra,Naftergap_local_extra = [trim_choices[x] for x in ['Nbefore_local_extra','Nbeforegap_local_extra','Nafter_local_extra','Naftergap_local_extra']][:]
+			print ('############################')
+			print (f"Trimming lcs using {Extra_Features} there {'are' if Nbefore_local_extra!=1 else 'is'}: \n{Nbefore_local_extra} point{'s' if Nbefore_local_extra!=1 else ''} within {Nbeforegap_local_extra} days before phases, and \n{Nafter_local_extra} point{'s' if Nafter_local_extra!=1 else ''} within {Naftergap_local_extra} days after phases \n...")
+			for sn,lc in self.lcs.items():
+				lcobj = LCObj(lc,trim_choices)
+				lcobj.get_Tmax()
+				#With GP Tmax estimated, can perform generic trims
+				trim_bool, reasons = trims_on_SNooPy_fit_and_Tmax(reasons)
+				#Check to see Extras points
+				if lc.meta[self.Tmaxchoicestr] is not None:
+					for ti,pbmini in Extra_Features.items():
+						for pb in pbmini:
+							trim = trim_lcf(get_lcf(create_phase_column(lc,lc.meta[self.Tmaxchoicestr]),pb),
+											Nbefore_local_extra,Nbeforegap_local_extra,Nafter_local_extra,Naftergap_local_extra,tref=ti,local=True)
+							if trim: reasons3[f'Extra_{pb}_{ti}'].append(sn)
+							trim_bool += trim
+				if trim_bool: trimmed_lcs[sn] = lc
+
+		#Bring all reasons together
+		REASONS  = {**reasons, **reasons2, **reasons3}
+
+		#Create trimmed_lcs and complement==new_lcs
+		trimmed_lcs = {sn:trimmed_lcs[sn] for sn in self.sns if sn     in list(trimmed_lcs.keys())} #Correct the order
+		new_lcs     = {sn:self.lcs[sn]    for sn in self.sns if sn not in list(trimmed_lcs.keys())}
+
+
+		print (f'(Original LCs : {len(self.lcs)})')
+		print (f' Retained LCs : {len(new_lcs)}')
+		print (f'  Trimmed LCs : {len(trimmed_lcs)}')
+		for sn in trimmed_lcs:
+			sreasons = [reason for reason in REASONS if sn in REASONS[reason]]
+			print (f'{sn} trimmed for: {sreasons}')
+		print ('############################')
+		self.reasons = REASONS
+		if apply_trims:
+			self.lcs = new_lcs
+			self.sns = [sn for sn in list(self.lcs.keys())]
+		if return_trimmed:
+			return trimmed_lcs, REASONS
