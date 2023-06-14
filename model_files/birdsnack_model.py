@@ -10,11 +10,12 @@ BIRDSNACK class
 
     Methods are:
         load_and_preprocess_snana_lcs()
+		trim_sample(apply_trims=True, return_trimmed=False)
 
 --------------------
 """
 
-import os,pickle,yaml
+import copy,os,pickle,yaml
 from snoopy_corrections import SNOOPY_CORRECTIONS
 from miscellaneous import ensure_folders_to_file_exist
 from LC_object import *
@@ -284,8 +285,10 @@ class BIRDSNACK:
 			sreasons = [reason for reason in REASONS if sn in REASONS[reason]]
 			print (f'{sn} trimmed for: {sreasons}')
 		print ('############################')
-		self.reasons = REASONS
+		self.reasons     = REASONS
+		self.trimmed_lcs = trimmed_lcs
 		if apply_trims:
+			self.total_sns = copy.deepcopy(list(self.lcs.keys()))
 			self.lcs = new_lcs
 			self.sns = [sn for sn in list(self.lcs.keys())]
 		if return_trimmed:
