@@ -5,16 +5,10 @@ Module contains simple functions that are called upon by various scripts
 
 Contains
 --------------------
-enusre_folders_to_file_exist:
+ensure_folders_to_file_exist(savename):
     simple function to create directories to where file will be saved if dirs do not already exist
 
 --------------------
-Functions take in various arguments
-
-enusre_folders_to_file_exist(savename)
-
---------------------
-Functions use simple operations
 
 Written by Sam M. Ward: smw92@cam.ac.uk
 """
