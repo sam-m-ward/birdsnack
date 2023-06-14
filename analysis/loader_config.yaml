@@ -8,7 +8,7 @@ load_data_parameters :
   exclude_paths : ['RATIR/snpytxtfiles/14yw_snpy.txt','CfA/snpytxtfiles/SN2009dc_snpy.txt']
 
   #i.e. when all lcs available, pick CSP over CfA over RATIR over Avelino over Misc
-  Pecking_Order : ['CSP','CfA','RATIR','Avelino','Misc']
+  Pecking_Order : ['CSP','CfA','RATIR','AvelinoM20','Misc']
 
   load_path_file_survey : [['cspdr3/snpytxtfiles/','snpy_SNS_CSP.pkl','CSP'],
                 ['CfA/snpytxtfiles/','snpy_SNS_CfA.pkl','CfA'],
@@ -21,10 +21,6 @@ load_data_parameters :
   load_mode : 'preproc'  #Load up dict of snpy files OR snanalcs
   #load_mode : 'snanalcs'      #Load up dict of snana files
   #load_mode : 'magslist'     #Load up df of peak magnitudes
-
-  #Choice of whether to apply SNooPy Milky-Way Extinction Corrections and/or K-corrections
-  #apply_snpy_corrections : True
-  #apply_snpy_corrections : False
 
   #If True, manually overwrite pre-existing snana files
   #rewrite_snana : True
@@ -80,14 +76,17 @@ snpy_parameters:
   interpflts    : 'uBgVriYJH'
 
 preproc_parameters:
+  #passband list, used for extracting magnitude measurements
+  pblist : ['B','V','r','i','J','H']
+
   #Factor to boost flux errors by for improved GP fitting stability
   #error_boost_dict : {}
   error_boost_dict : {1.5:['13azs','16abc'],2:['13dkx'],5:['16auf'],7:['14gnl']}
 
   #Arbitrary choice of string for denoting errors in mags pandas df
   errstr     : err
-  #Choice of phases to interpolate to
-  tclist     : [0]
+  #List of phases to interpolate to
+  tilist     : [0]
   #The python index in tclist taken as reference band
   tref_index : 0
 
@@ -100,9 +99,9 @@ preproc_parameters:
   #No. of GP draws for estimating Tmax
   Ngpdraws        : 1000
 
-  #Choice of whether to use SNooPy Tmax
-  #use_SNooPy_fitted_Tmax : True
-  use_SNooPy_fitted_Tmax : False
+  #Choice of Tmax
+  Tmaxchoicestr : 'Tmax_snpy_fitted'
+  Tmaxchoicestr : 'Tmax_GP_restframe'
 
   #Choice of whether to use 1DGP or 2DGP Tmax
   #Tmax_method : 'method'
@@ -117,8 +116,8 @@ preproc_parameters:
   #Trim sample params
   #Require points at refband at max
   trim_on_refband_max : True
-  #Require points in other bands in fclist
-  trim_on_fclist      : True
+  #Require points in other bands in pblist
+  trim_on_pblist      : True
   #Require points at other phases/times
   trim_on_extras      : False
 
@@ -130,22 +129,30 @@ preproc_parameters:
   #Nbeforegap  : [10]
   #Naftermax   : [1,2]
   #Naftergap   : [5,40]
-  Nbeforemax  : [0,2]
-  Nbeforegap  : [5,10]
-  Naftermax   : [0,2]
-  Naftergap   : [10,40]
+  #Nbeforemax  : [0,2]
+  #Nbeforegap  : [5,10]
+  #Naftermax   : [0,2]
+  #Naftergap   : [10,40]
+  Nbeforemax  : [2]
+  Nbeforegap  : [10]
+  Naftermax   : [2]
+  Naftergap   : [40]
 
-  #Defines required number of points around all bands in fclist/tclist
+  #Defines required number of points around all bands in pblist/tilist
   #Nbefore_local     : [0]
   #Nbeforegap_local  : [10]
   #Nafter_local      : [1,2]
   #Naftergap_local   : [5,40]
-  Nbefore_local     : [0,1]
-  Nbeforegap_local  : [5,10]
-  Nafter_local      : [0,1]
-  Naftergap_local   : [10,40]
+  #Nbefore_local     : [0,1]
+  #Nbeforegap_local  : [5,10]
+  #Nafter_local      : [0,1]
+  #Naftergap_local   : [10,40]
+  Nbefore_local     : [1]
+  Nbeforegap_local  : [10]
+  Nafter_local      : [1]
+  Naftergap_local   : [40]
 
-  #Defines extra features beyond those in fclist,tclist to extract
+  #Defines extra features beyond those in pblist,tilist to extract
   Extra_Features          : {}
   Extra_Features          : {15:['B']}
   Nbefore_local_extra     : [1]
