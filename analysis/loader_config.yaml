@@ -25,7 +25,7 @@ load_data_parameters :
   #If True, manually overwrite pre-existing snana files
   #rewrite_snana : True
   rewrite_snana : False
-
+########################################################
 snpy_parameters:
   #SNooPy Parameters Here
   #Apply SNRCut or not
@@ -74,7 +74,7 @@ snpy_parameters:
   #interpflts    : 'all'
   #interpflts    : 'BVriJH'
   interpflts    : 'uBgVriYJH'
-
+########################################################
 preproc_parameters:
   #passband list, used for extracting magnitude measurements
   pblist : ['B','V','r','i','J','H']
@@ -164,6 +164,10 @@ preproc_parameters:
   #bright_mode : flux
   bright_mode : mag
 
+  #Method for interpolating light curves to extract magnitudes
+  mags_method : '1DGP'
+  mags_method : '2DGP'
+
   #Cuts on Sample for Stan Fitting
   #logMcut   : 10.42
   logMcut   : 10
@@ -181,3 +185,13 @@ preproc_parameters:
   #spectype  : 'all'
   spectype  : 'normal'
 ########################################################
+plotting_parameters :
+  #Fontsize
+  FS   : 18
+
+  #Show plot
+  show : True
+  show : False
+
+  #Save plot
+  save : True
