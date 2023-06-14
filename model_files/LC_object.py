@@ -157,11 +157,12 @@ class LCObj:
 				Tmax, Tmax_std = None, None
 				tmax_grid,f_samps,tmaxs = None, None, None
 
-			print (Tmax, Tmax_std)
+			#print (Tmax, Tmax_std)
 			self.lc.meta[Tmaxchoicestr] = Tmax
 			self.lc.meta[f'{Tmaxchoicestr}_std'] = Tmax_std
 		else:
-			print ('Tmax already estimated')
+			#print ('Tmax already estimated')
+			pass
 
 		if return_samps: return tmax_grid,f_samps,tmaxs
 
