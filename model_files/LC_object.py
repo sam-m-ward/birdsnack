@@ -7,15 +7,14 @@ Used to take snana lc, and perform various transformations including getting Tma
 
 Contains:
 --------------------
-function1(inputs):
-	description
-
 LCObj class:
-	inputs: snana lc, choices
+	inputs: lc, choices
 
 	Methods are:
-		get_Tmax(self,Tmaxchoicestr='Tmax_GP_restframe',return_samps=False)
-		method2
+		get_Tmax(return_samps=False)
+		test_data_availability(ref_band='B', tref=0, Nlist=[2,10,2,40], tcol='phase', local=False)
+		get_phase(returner=False)
+		get_GP_interpolation()
 --------------------
 
 Written by Sam M. Ward: smw92@cam.ac.uk
@@ -23,6 +22,8 @@ Written by Sam M. Ward: smw92@cam.ac.uk
 
 from snana_functions import *
 from GP_functions import *
+from plotting_functions import *
+import matplotlib.pyplot as pl
 
 
 class LCObj:
@@ -68,7 +69,7 @@ class LCObj:
 				for GP interpolations
 
 			zhelio : flt
-			 	heliocentric redshift for computing phase
+				heliocentric redshift for computing phase
 
 			phasemin,phasemax : floats
 				minimum and maximum phase
@@ -120,7 +121,7 @@ class LCObj:
 				lam_to_flt  = dict(zip(lc.meta['lams'],lc.meta['flts']))
 				flt_to_lam  = dict(zip(lc.meta['flts'],lc.meta['lams']))
 				wavelengths = np.array([flt_to_lam[flt] for flt in lc['flt']])
-				lambdaC     = np.asarray(lam_to_flt.keys())
+				lambdaC     = np.asarray(list(lam_to_flt.keys()))
 				#Get 2DGP Interpolation
 				gFIT   = GP_2D_Matern(mjd,bright,brighterr,lambdaC,wavelengths)#,x_pred = x_pred)
 				#Extract the reference band component for Tmax estimation
@@ -143,8 +144,8 @@ class LCObj:
 					f_samps     = GPfit.gp.sample_conditional(bright, tmax_grid, size=Ngpdraws)
 				elif self.choices['Tmax_method']=='2DGP':
 					print (f"{lc.meta['SNID']}; 2DGP samples to get Tmax take longer, therefore: tmax_resolution *= 10; Ndraws /= 10")
-					new_xpred   = np.vstack([np.hstack((tmax_grid for _ in range(len(lambdaC)))),np.array([lam for lam in lambdaC for _ in range(len(tmax_grid))])]).T
-					f_samps_all = GPfit.gp.sample_conditional(bright, new_xpred, size=int(Ngpdraws/10))
+					new_tpred   = np.vstack([np.hstack((tmax_grid for _ in range(len(lambdaC)))),np.array([lam for lam in lambdaC for _ in range(len(tmax_grid))])]).T
+					f_samps_all = GPfit.gp.sample_conditional(bright, new_tpred, size=int(Ngpdraws/10))
 					il          = list(lambdaC).index(lamref) ; Ngridt = copy.deepcopy(len(tmax_grid))
 					f_samps     = f_samps_all[:,il*Ngridt:(il+1)*Ngridt]
 				#Samples of tmax
@@ -201,39 +202,211 @@ class LCObj:
 
 		#Trim lc to phase range, get reference band, check data availability
 		trim = get_data_availability_bool(
-					get_lcf(
-						get_phase(self.lc,self.lc.meta[self.choices['Tmaxchoicestr']], self.choices['phasemin'],self.choices['phasemax']),
-							ref_band
-							),
+					get_lcf(self.get_phase(returner=True),ref_band),
 						Nbeforemax,Nbeforegap,Naftermax,Naftergap,tref=tref,tcol=tcol,local=local
 						)
 		return trim
 
 
-def get_phase(lc,Tmax,phasemin=None,phasemax=None):
-	"""
-	Get Phase Function
+	def get_phase(self, returner=False):
+		"""
+		Get Phase Method
 
-	Computes phase column using Tmax, cuts lc on phaselims, then updates metadata flts
+		Computes phase column using Tmax, cuts lc on phaselims, then updates metadata flts
 
-	Parameters
-	----------
-	lc: :py:class:`astropy.table.Table`
-		light curve object
+		Parameters
+		----------
+		returner : bool (optional; default=False)
+			if True, return lc
 
-	Tmax : float
-		Time of maximum
+		End Products(s)
+		----------
+		lc: :py:class:`astropy.table.Table`
+			light curve object with phase column cut on phaselims (and returned if returner=True)
+		"""
+		#Create phase column and cut data on phasemin and phasemax
+		self.lc            = create_phase_column(self.lc,self.lc.meta[self.choices['Tmaxchoicestr']],phasemin=self.choices['phasemin'],phasemax=self.choices['phasemax'])
+		#Given data has been cut, there is potential that some bands are removed completely
+		self.lc            = set_lcmeta_ordered_flts(self.lc)
+		return self.lc
 
-	phasemin, phasemax: flts
-		minimum and maximum phase
+	def get_GP_interpolation(self):
+		"""
+		Get GP Interpolation
 
-	Returns
-	----------
-	lc: :py:class:`astropy.table.Table`
-		light curve object with phase column cut on phaselims
-	"""
-	#Create phase column and cut data on phasemin and phasemax
-	lc            = create_phase_column(lc,Tmax,phasemin=phasemin,phasemax=phasemax)
-	#Given data has been cut, there is potential that some bands are removed completely
-	lc            = set_lcmeta_ordered_flts(lc)
-	return lc
+		Function to fit GP to light curve data
+
+		End Product(s)
+		----------
+		FIT: dict
+			FIT[flt] = GPfit object; FIT['lc']=lc; FIT['flts']=flts, contains both data and GP interpolation
+		"""
+		#Interpolate in phase by default, but if Tmax is not estimated, interpolate mjd
+		mjd_or_phase = 'phase' if self.lc.meta[self.choices['Tmaxchoicestr']] is not None else 'mjd'
+
+		def get_tpred_gp(mjd_or_phase,phase):
+			"""
+			Get Predicted Times for GP
+
+			Simple function to get grid of times at which GP interpolation will be estimated
+
+			Parameters
+			----------
+			mjd_or_phase : str
+			 	either 'phase' or 'mjd'; choose time column
+
+			phase : array
+				array of times
+
+			Returns
+			----------
+			tpred : array
+				gridded array of times for GP interpolation
+			"""
+			if mjd_or_phase=='phase':
+				tpred = np.arange(self.choices['phasemin'],self.choices['phasemax']+self.choices['dp'],self.choices['dp'])
+			elif mjd_or_phase=='mjd':
+				tpred = np.arange(np.amin(phase),np.amax(phase)+self.choices['dp'],self.choices['dp'])
+			return tpred
+
+		FIT = {'lc':self.lc} ; flts = self.lc.meta['flts']
+		print (f"{self.lc.meta['SNID']}: Beginning GP Interpolation; flts are:{flts}")
+		if self.choices['mags_method']=='1DGP':#For 1DGP Interpolation
+			for iif,flt in enumerate(flts):#For each filter
+				phase,bright,brighterr = get_time_lc_arrays(get_lcf(self.lc,flt),mjd_or_phase=mjd_or_phase,flux_or_mag=self.choices['bright_mode'])#Get data
+				tpred = get_tpred_gp(mjd_or_phase,phase)#Get GP time grid
+				if len(bright)>1:
+					try:#Interpolation
+						GPfit     = GP_1D_squaredexp(phase,bright,brighterr,x_pred=tpred,tau_guess=10)
+						if bright_mode=='mag' and GPfit is None:#If fit fails try with larger errors
+							try:
+								print (f"Try Inflating errors by 10% for SN{lc.meta['SNID']} {flt}-band")
+								GPfit     = GP_1D_squaredexp(phase,bright,brighterr*1.1,x_pred = tpred,tau_guess=10)
+								if GPfit is None:	print (f"Inflating errors by 10% did not work for SN{lc.meta['SNID']} {flt}-band")
+								else:				print (f"Inflating errors success for SN{lc.meta['SNID']} {flt}-band")
+							except Exception as e:
+								print (e)
+								FIT[flt]  = None
+						#If we interpolate in flux space, we want to transform to mags by transforming each gp flux draw,
+						#NOT finding mean flux then transforming to mags (Jensens Inequality)
+						if self.choices['bright_mode']=='flux':#If interpolating flux
+							f_samps      = GPfit.gp.sample_conditional(bright, GPfit.x, size=self.choices['Ngpdraws'])
+							m_samps      = -2.5*np.log10(f_samps)+27.5
+							m_mean_curve = np.average(m_samps,axis=0) ; m_std_curve  = np.std(m_samps,axis=0)
+
+							GPfit.y    = m_mean_curve
+							GPfit.yerr = m_std_curve
+							GPfit.df   = pd.DataFrame({'x':GPfit.x,'y':GPfit.y,'yerr':GPfit.yerr,'f':np.average(f_samps,axis=0),'ferr':np.std(f_samps,axis=0)})
+
+						FIT[flt]  = copy.deepcopy(GPfit)
+					except ValueError:
+						print (f"{self.lc.meta['SNID']} GP Interpolation Failed for Band: {flt}")
+						FIT[flt]  = None
+				else:
+					print (f"{self.lc.meta['SNID']} GP Interpolation not attempted because {len(bright)} points in Band: {flt}")
+					FIT[flt] = None
+
+		elif self.choices['mags_method']=='2DGP':
+			lc  = self.lc
+			phase,bright,brighterr = get_time_lc_arrays(lc,mjd_or_phase=mjd_or_phase,flux_or_mag=self.choices['bright_mode'])#Get data
+			tpred = get_tpred_gp(mjd_or_phase,phase)#Get GP time grid
+			#Get lam to flt mapping
+			lam_to_flt  = dict(zip(lc.meta['lams'],lc.meta['flts']))
+			flt_to_lam  = dict(zip(lc.meta['flts'],lc.meta['lams']))
+			wavelengths = np.array([flt_to_lam[flt] for flt in lc['flt']])
+			lambdaC     = np.asarray(list(lam_to_flt.keys()))
+			#Get 2DGP Interpolation
+			gFIT   = GP_2D_Matern(phase,bright,brighterr,lambdaC,wavelengths,x_pred=tpred)
+
+			#If we interpolate in flux space, we want to transform to mags by transforming each gp flux draw,
+			#NOT finding mean flux then transforming to mags (Jensens Inequality)
+			if self.choices['bright_mode']=='flux':
+				Ngridt      = copy.deepcopy(len(tpred))
+				new_tpred   = np.vstack([np.hstack((tpred for _ in range(len(lambdaC)))),np.array([ll for ll in lambdaC for _ in range(len(tpred))])]).T
+				f_samps_all = gFIT[wavelengths[0]].gp.sample_conditional(bright, new_tpred, size=self.choices['Ngpdraws'])
+				for ll in gFIT:
+					GPfit        = copy.deepcopy(gFIT[ll])
+					il           = list(lambdaC).index(ll)
+					f_samps      = f_samps_all[:,il*Ngridt:(il+1)*Ngridt]
+					m_samps      = -2.5*np.log10(f_samps)+27.5
+					m_mean_curve = np.average(m_samps,axis=0) ; m_std_curve  = np.std(m_samps,axis=0)
+
+					GPfit.y      = m_mean_curve
+					GPfit.yerr   = m_std_curve
+					GPfit.df     = pd.DataFrame({'x':GPfit.x,'y':GPfit.y,'yerr':GPfit.yerr,'f':np.average(f_samps,axis=0),'ferr':np.std(f_samps,axis=0)})
+
+					gFIT[ll]     = copy.deepcopy(GPfit)
+
+			for ll in gFIT:
+				FIT[lam_to_flt[ll]] = gFIT[ll]
+		#Set attribute
+		self.FIT = FIT
+
+	def plot_lc(self, kw, mjd_or_phase='phase', bright_mode=None):
+		"""
+		Plot GP Interpolation
+
+		Function to plot phase light curves (flux or mag) including both data and GP interpolation
+
+		Parameters
+		----------
+		kw : class object
+		 	kwargs for plotting
+
+		mjd_or_phase : str (optional; default='phase')
+			choice of time data to plot
+
+		bright_mode : str or None (optional; default=None)
+			choice of LC data to plot, if None, uses self.choices['bright_mode']
+
+		End product(s)
+		----------
+		Saves and/or shows plot
+		"""
+		#Data/Model to plot
+		FIT  = self.FIT
+		lc   = FIT['lc']
+		flts = lc.meta['flts']
+
+		#Get bright_mode
+		if bright_mode is None: bright_mode = self.choices['bright_mode']
+		legend = {'flux':True,'mag':False}[bright_mode]
+
+		#Add this functionality later
+		reasons = None
+
+		#Initialise plot
+		pl.figure(figsize=(8,6))
+		pl.title(f"{self.choices['mags_method']} Interpolation: SN {lc.meta['SNID']}"+(reasons is not None)*f"\n{reasons}",fontsize=kw.FS)
+
+		#Plot each band
+		for iif,flt in enumerate(flts):
+			color = f'C{iif}'; const = 1.5*(len(flts)-1-iif)
+			#Get Data
+			phase,bright,brighterr = get_time_lc_arrays(get_lcf(lc,flt),mjd_or_phase=mjd_or_phase,flux_or_mag=bright_mode)
+			#Plot Data
+			pl.errorbar(phase, bright+const*(bright_mode=='mag'), yerr=brighterr, marker=".", markersize=10, linestyle="", color=color, label=legend*flt)
+			#Plot GP interpolation
+			if len(bright)>1 and self.choices['mags_method']=='1DGP' or self.choices['mags_method']=='2DGP':
+				GPfit = copy.deepcopy(FIT[flt])
+				if bright_mode=='flux':	GPfit.y = GPfit.df['f'].values ; GPfit.yerr = GPfit.df['ferr'].values
+				if GPfit is not None:
+					if not legend: 	#Plot passband at final phase
+						pl.annotate(flt,xy=(GPfit.x[-1]+0.5,GPfit.y[-1]+const*(bright_mode=='mag')),weight='bold',fontsize=15)
+					if bright_mode=='mag':#Offset each LC for mag plot
+						GPfit.y += const
+					pl.fill_between(GPfit.x, GPfit.y - GPfit.yerr, GPfit.y + GPfit.yerr,color="k", alpha=0.2)
+					pl.plot(GPfit.x, GPfit.y, "k", lw=1.5, alpha=0.5)
+				else:
+					print (f'No successful GP fit to plot in Band: {flt}')
+			elif len(bright)==1 and self.choices['mags_method']=='1DGP':
+				if not legend:
+					pl.annotate(flt,xy=(phase+0.5, bright+const*(bright_mode=='mag')),weight='bold',fontsize=15)
+			else:
+				print (f'Only 1 data point for Band: {flt}; therefore, no GP plotted')
+
+		#Finishing touches
+		xlabel   = {'phase':'rest-frame phase (days)', 'mjd':'MJD'}[mjd_or_phase]
+		ylabel   = bright_mode+' + const.'*(bright_mode=='mag')
+		savename = f"{kw.plotpath}GPinterp_plots/SN{lc.meta['SNID']}_{self.choices['mags_method']}.pdf"
+		kw.finish_plot(xlabel,ylabel,savename=savename,invert=bright_mode=='mag',legend=legend)
