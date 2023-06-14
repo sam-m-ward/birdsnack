@@ -342,7 +342,7 @@ class LCObj:
 		#Set attribute
 		self.FIT = FIT
 
-	def plot_lc(self, kw, mjd_or_phase='phase', bright_mode=None):
+	def plot_lc(self, plotter, mjd_or_phase='phase', bright_mode=None):
 		"""
 		Plot GP Interpolation
 
@@ -350,8 +350,8 @@ class LCObj:
 
 		Parameters
 		----------
-		kw : class object
-		 	kwargs for plotting
+		plotter : class object
+			for plotting, contains e.g. fontsize, choice to show/save etc.
 
 		mjd_or_phase : str (optional; default='phase')
 			choice of time data to plot
@@ -377,7 +377,7 @@ class LCObj:
 
 		#Initialise plot
 		pl.figure(figsize=(8,6))
-		pl.title(f"{self.choices['mags_method']} Interpolation: SN {lc.meta['SNID']}"+(reasons is not None)*f"\n{reasons}",fontsize=kw.FS)
+		pl.title(f"{self.choices['mags_method']} Interpolation: SN {lc.meta['SNID']}"+(reasons is not None)*f"\n{reasons}",fontsize=plotter.FS)
 
 		#Plot each band
 		for iif,flt in enumerate(flts):
@@ -408,5 +408,5 @@ class LCObj:
 		#Finishing touches
 		xlabel   = {'phase':'rest-frame phase (days)', 'mjd':'MJD'}[mjd_or_phase]
 		ylabel   = bright_mode+' + const.'*(bright_mode=='mag')
-		savename = f"{kw.plotpath}GPinterp_plots/SN{lc.meta['SNID']}_{self.choices['mags_method']}.pdf"
-		kw.finish_plot(xlabel,ylabel,savename=savename,invert=bright_mode=='mag',legend=legend)
+		savename = f"{plotter.plotpath}GPinterp_plots/SN{lc.meta['SNID']}_{self.choices['mags_method']}.pdf"
+		plotter.finish_plot(xlabel,ylabel,savename=savename,invert=bright_mode=='mag',legend=legend)
