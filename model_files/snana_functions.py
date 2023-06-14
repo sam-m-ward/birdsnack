@@ -1,8 +1,7 @@
 """
 SNANA Functions Module
 
-Module containing functions to preprocess snana lcs
-
+Module containing functions to preprocess/manipulate snana lcs
 
 Contains:
 --------------------
@@ -21,10 +20,20 @@ trim_filters(lc, interpflts):
 set_lcmeta_ordered_flts(lc):
 	set lc.meta['flts'] and lc.meta['lams'] in order of wavelengths
 
-update_lcmetadata(lc,dfsn,snpy_product)
+update_lcmetadata(lc,dfsn,snpy_product):
 	update lc.meta with mass, spectroscopic subtype, Tmax measurements etc.
 
+get_lcf(lc,flt):
+	trims lc to a single filter, flt
 
+create_phase_column(lc,Tmax,phasemin=None,phasemax=None):
+	creates phase column using Tmax and phase boundaries
+
+trim_lcf(lcf,Nbeforemax,Nbeforegap,Naftermax,Naftergap,tref=0,tcol='phase',local=False):
+	check data availability around time of reference
+
+get_time_lc_arrays(lcf,mjd_or_phase='mjd',flux_or_mag='flux'):
+	get time, bright, brighterr arrays
 --------------------
 
 Written by Sam M. Ward: smw92@cam.ac.uk
