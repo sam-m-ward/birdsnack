@@ -18,7 +18,6 @@ import os,pickle,yaml
 from snoopy_corrections import SNOOPY_CORRECTIONS
 from miscellaneous import ensure_folders_to_file_exist
 from LC_object import *
-from snana_functions import get_lcf, trim_lcf
 
 class BIRDSNACK:
 	"""
@@ -181,6 +180,7 @@ class BIRDSNACK:
 			"""
 			#Initialise trim bool and get snpy_products
 			trim = False ; snpy_product = self.snpy_products[sn]
+			use_SNooPy_fitted_Tmax = trim_choices['Tmaxchoicestr']=='Tmax_snpy_fitted'
 			#If SNooPy corrections failed, record SN trim
 			if snpy_product['snpy_cut']:
 				reasons['snpy_cut'].append(sn) ; trim = True
@@ -200,10 +200,7 @@ class BIRDSNACK:
 			return trim, reasons
 
 		trim_choices = self.choices['preproc_parameters']
-		pblist = trim_choices['pblist'] ; tilist = trim_choices['tilist'] ; Extra_Features = trim_choices['Extra_Features'] ;
-		use_SNooPy_fitted_Tmax = trim_choices['use_SNooPy_fitted_Tmax'] ; Tmax_stdmax = trim_choices['Tmax_stdmax']
-
-		self.Tmaxchoicestr = 'Tmax_GP_restframe' if not use_SNooPy_fitted_Tmax else 'Tmax_snpy_fitted'
+		pblist = trim_choices['pblist'] ; tilist = trim_choices['tilist'] ; Extra_Features = trim_choices['Extra_Features'] ; Tmax_stdmax = trim_choices['Tmax_stdmax']
 
 		#Initialise reasons dictionary for trimming each SN
 		#SNooPy fit failed, bad Tmax estimate, or not enough points around reference band
@@ -217,7 +214,8 @@ class BIRDSNACK:
 		new_lcs = {} ; trimmed_lcs = {}
 
 		if trim_choices['trim_on_refband_max']:
-			Nbeforemax,Nbeforegap,Naftermax,Naftergap = [trim_choices[x] for x in ['Nbeforemax','Nbeforegap','Naftermax','Naftergap']][:]
+			Nlist = [trim_choices[x] for x in ['Nbeforemax','Nbeforegap','Naftermax','Naftergap']]
+			Nbeforemax,Nbeforegap,Naftermax,Naftergap = Nlist[:]
 			print ('############################')
 			print (f"Trimming lcs so in {trim_choices['ref_band']} there {'are' if Nbeforemax!=1 else 'is'}: \n{Nbeforemax} point{'s' if Nbeforemax!=1 else ''} within {Nbeforegap} days before max, and \n{Naftermax} point{'s' if Naftermax!=1 else ''} within {Naftergap} days after max \n...")
 			for sn,lc in self.lcs.items():
@@ -226,15 +224,15 @@ class BIRDSNACK:
 				#With GP Tmax estimated, can perform generic trims
 				trim_bool, reasons = trims_on_SNooPy_fit_and_Tmax(reasons)
 				#Check to see Points_Before_After_RefBand_Max
-				if lc.meta[self.Tmaxchoicestr] is not None:#If Tmax is not estimated, can't compute phase, therefore can't assess availability of points
-					trim = trim_lcf(get_lcf(create_phase_column(lc,lc.meta[self.Tmaxchoicestr]),trim_choices['ref_band']),
-									Nbeforemax,Nbeforegap,Naftermax,Naftergap,tref = trim_choices['tilist'][trim_choices['tref_index']])
+				if lc.meta[trim_choices['Tmaxchoicestr']] is not None:#If Tmax is not estimated, can't compute phase, therefore can't assess availability of points
+					trim = lcobj.test_data_availability(ref_band = trim_choices['ref_band'], tref = trim_choices['tilist'][trim_choices['tref_index']], Nlist = Nlist)
 					if trim: reasons['Points_Before_After_RefBand_Max'].append(sn)
 					trim_bool += trim
 				if trim_bool: trimmed_lcs[sn] = lc
 
 		if trim_choices['trim_on_pblist']:
-			Nbefore_local,Nbeforegap_local,Nafter_local,Naftergap_local = [trim_choices[x] for x in ['Nbefore_local','Nbeforegap_local','Nafter_local','Naftergap_local']][:]
+			Nlist = [trim_choices[x] for x in ['Nbefore_local','Nbeforegap_local','Nafter_local','Naftergap_local']]
+			Nbefore_local,Nbeforegap_local,Nafter_local,Naftergap_local = Nlist[:]
 			print ('############################')
 			print (f"Trimming lcs so in each of {pblist} there {'are' if Nbefore_local!=1 else 'is'}:\n{Nbefore_local} point{'s' if Nbefore_local!=1 else ''} within {Nbeforegap_local} days before {tilist}, and\n{Nafter_local} point{'s' if Nafter_local!=1 else ''} within {Naftergap_local} days after {tilist} \n...")
 
@@ -244,17 +242,17 @@ class BIRDSNACK:
 				#With GP Tmax estimated, can perform generic trims
 				trim_bool, reasons = trims_on_SNooPy_fit_and_Tmax(reasons)
 				#Check to see pbtilist points
-				if lc.meta[self.Tmaxchoicestr] is not None:#If Tmax is not estimated, can't compute phase, therefore can't assess availability of points
+				if lc.meta[trim_choices['Tmaxchoicestr']] is not None:#If Tmax is not estimated, can't compute phase, therefore can't assess availability of points
 					for pb in pblist:
 						for ti in tilist:
-							trim = trim_lcf(get_lcf(create_phase_column(lc,lc.meta[self.Tmaxchoicestr]),pb),
-											Nbefore_local,Nbeforegap_local,Nafter_local,Naftergap_local,tref=ti)
+							trim = lcobj.test_data_availability(ref_band = pb, tref = ti, Nlist = Nlist)
 							if trim: reasons2[f'{pb}_{ti}'].append(sn)
 							trim_bool += trim
 				if trim_bool: trimmed_lcs[sn] = lc
 
 		if trim_choices['trim_on_extras']:
-			Nbefore_local_extra,Nbeforegap_local_extra,Nafter_local_extra,Naftergap_local_extra = [trim_choices[x] for x in ['Nbefore_local_extra','Nbeforegap_local_extra','Nafter_local_extra','Naftergap_local_extra']][:]
+			Nlist = [trim_choices[x] for x in ['Nbefore_local_extra','Nbeforegap_local_extra','Nafter_local_extra','Naftergap_local_extra']]
+			Nbefore_local_extra,Nbeforegap_local_extra,Nafter_local_extra,Naftergap_local_extra = Nlist[:]
 			print ('############################')
 			print (f"Trimming lcs using {Extra_Features} there {'are' if Nbefore_local_extra!=1 else 'is'}: \n{Nbefore_local_extra} point{'s' if Nbefore_local_extra!=1 else ''} within {Nbeforegap_local_extra} days before phases, and \n{Nafter_local_extra} point{'s' if Nafter_local_extra!=1 else ''} within {Naftergap_local_extra} days after phases \n...")
 			for sn,lc in self.lcs.items():
@@ -263,11 +261,10 @@ class BIRDSNACK:
 				#With GP Tmax estimated, can perform generic trims
 				trim_bool, reasons = trims_on_SNooPy_fit_and_Tmax(reasons)
 				#Check to see Extras points
-				if lc.meta[self.Tmaxchoicestr] is not None:
+				if lc.meta[trim_choices['Tmaxchoicestr']] is not None:
 					for ti,pbmini in Extra_Features.items():
 						for pb in pbmini:
-							trim = trim_lcf(get_lcf(create_phase_column(lc,lc.meta[self.Tmaxchoicestr]),pb),
-											Nbefore_local_extra,Nbeforegap_local_extra,Nafter_local_extra,Naftergap_local_extra,tref=ti,local=True)
+							trim = lcobj.test_data_availability(ref_band = pb, tref = ti, Nlist = Nlist, local=True)
 							if trim: reasons3[f'Extra_{pb}_{ti}'].append(sn)
 							trim_bool += trim
 				if trim_bool: trimmed_lcs[sn] = lc
