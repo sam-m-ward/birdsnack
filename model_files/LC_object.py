@@ -11,10 +11,10 @@ function1(inputs):
 	description
 
 LCObj class:
-	inputs: snana lc
+	inputs: snana lc, choices
 
 	Methods are:
-		method1
+		get_Tmax(self,Tmaxchoicestr='Tmax_GP_restframe',return_samps=False)
 		method2
 --------------------
 
@@ -31,7 +31,7 @@ class LCObj:
 		self.lc      = lc
 		self.choices = choices
 
-	def get_Tmax(self,Tmaxchoicestr='Tmax_GP_restframe',return_samps=False):
+	def get_Tmax(self,return_samps=False):
 		"""
 		Get Tmax Method
 
@@ -41,9 +41,6 @@ class LCObj:
 
 		Parameters
 		----------
-		Tmaxchoicestr : str (optional; default='Tmax_GP_restframe')
-			string used to identify GP Tmax estimate in lc.meta
-
 		return_samps : bool (optional; default=False)
 			if True, return the Tmax samples
 
@@ -56,7 +53,7 @@ class LCObj:
 		if return_samps: tmax_grid,f_samps,tmaxs
 			respectively, the GP Tgrid, the flux interpolations, and the tmax estimates over Ngpdraws
 		"""
-		def trim_lc_on_phase(bright_mode,GPfit,zhelio,phasemin,phasemax,data):
+		def trim_lcarrays_on_phase(bright_mode,GPfit,zhelio,phasemin,phasemax,data):
 			"""
 			Trim LC on Phase
 
@@ -92,6 +89,7 @@ class LCObj:
 			mjd = np.delete(mjd,drop_indices) ; bright = np.delete(bright,drop_indices) ; brighterr = np.delete(brighterr,drop_indices)
 			return mjd, bright, brighterr
 
+		Tmaxchoicestr = self.choices['Tmaxchoicestr']
 		if self.lc.meta[Tmaxchoicestr] is None or self.lc.meta[f'{Tmaxchoicestr}_std'] is None:
 			#Get bright_mode==either interpolate flux or magnitude data
 			bright_mode = self.choices['bright_mode']
@@ -108,7 +106,7 @@ class LCObj:
 						#Fit Ref-band Light Curve with 1D Squared Exponential GP
 						GPfit     = GP_1D_squaredexp(mjd,bright,brighterr,tau_guess=10)
 						if GPfit is not None:
-							mjd, bright, brighterr = trim_lc_on_phase(bright_mode,GPfit,self.lc.meta['REDSHIFT_HELIO'],self.choices['phasemin'],self.choices['phasemax'],[mjd,bright,brighterr])
+							mjd, bright, brighterr = trim_lcarrays_on_phase(bright_mode,GPfit,self.lc.meta['REDSHIFT_HELIO'],self.choices['phasemin'],self.choices['phasemax'],[mjd,bright,brighterr])
 							GPfit     = GP_1D_squaredexp(mjd,bright,brighterr,tau_guess=10)
 					else:
 						print (f"{self.lc.meta['SNID']} length of {bright_mode} vector in band {flt} is {len(bright)}")
@@ -129,7 +127,7 @@ class LCObj:
 				lamref = flt_to_lam[self.choices['ref_band']]
 				GPfit  = gFIT[lamref]
 				if GPfit is not None:#Re-fit data within phase range
-					mjd, bright, brighterr = trim_lc_on_phase(bright_mode,GPfit,lc.meta['REDSHIFT_HELIO'],self.choices['phasemin'],self.choices['phasemax'],[mjd,bright,brighterr])
+					mjd, bright, brighterr = trim_lcarrays_on_phase(bright_mode,GPfit,lc.meta['REDSHIFT_HELIO'],self.choices['phasemin'],self.choices['phasemax'],[mjd,bright,brighterr])
 					gFIT  = GP_2D_Matern(mjd,bright,brighterr,lambdaC,wavelengths)
 					GPfit = gFIT[lamref]
 
@@ -157,51 +155,85 @@ class LCObj:
 				Tmax, Tmax_std = None, None
 				tmax_grid,f_samps,tmaxs = None, None, None
 
-			#print (Tmax, Tmax_std)
+			print (Tmax, Tmax_std)
 			self.lc.meta[Tmaxchoicestr] = Tmax
 			self.lc.meta[f'{Tmaxchoicestr}_std'] = Tmax_std
 		else:
-			#print ('Tmax already estimated')
+			print ('Tmax already estimated')
 			pass
 
 		if return_samps: return tmax_grid,f_samps,tmaxs
 
 
+	def test_data_availability(self, ref_band = 'B', tref = 0, Nlist = [2,10,2,40], tcol='phase', local=False):
+		"""
+		Test data availability method
+
+		Given some reference band and phase, check if data is available either side
+
+		Parameters
+		----------
+		ref_band : str (optional; default='B')
+			reference band to check data availability in
+
+		tref : float (optional; default=0)
+			reference time
+
+		Nlist : list of floats, len=4 (optional; default=[2,10,2,40])
+			Dictates required number of data points before and after reference time, and phase gaps either side from reference time
+
+		tcol : str (optional; default='phase')
+			time column to check data availability in
+
+		local : bool (optional; default=False)
+			if True, phaselim is with respect to reference phase, otherwise, use absolute phase w.r.t t=0
+
+		Returns
+		----------
+		trim : bool
+			if True, data is not available as required, so trim SN
+		"""
+		if ref_band is None or tref is None or Nlist is None:
+			raise Exception('Must specify all of ref_band, tref, Nlist to run .test_data_availability() method')
+
+		#Unpack Nlist
+		Nbeforemax,Nbeforegap,Naftermax,Naftergap = Nlist[:]
+
+		#Trim lc to phase range, get reference band, check data availability
+		trim = get_data_availability_bool(
+					get_lcf(
+						get_phase(self.lc,self.lc.meta[self.choices['Tmaxchoicestr']], self.choices['phasemin'],self.choices['phasemax']),
+							ref_band
+							),
+						Nbeforemax,Nbeforegap,Naftermax,Naftergap,tref=tref,tcol=tcol,local=local
+						)
+		return trim
 
 
-
-def get_phase_method(lc,phaselims,Tmaxchoicestr,interpflts,fupperbool):
+def get_phase(lc,Tmax,phasemin=None,phasemax=None):
 	"""
-	Get Phase Method
+	Get Phase Function
 
-	Called upon by RVGP class to ensure phase column is computed, and lc is cut on phaselims
+	Computes phase column using Tmax, cuts lc on phaselims, then updates metadata flts
 
 	Parameters
 	----------
 	lc: :py:class:`astropy.table.Table`
 		light curve object
 
-	phaselims: list
-		phasemin,phasemax,dp = phaselims[:]
+	Tmax : float
+		Time of maximum
 
-	Tmaxchoicestr: str
-			lc.meta entry name for Tmax, e.g. 'Tmax_GP_restframe' or 'Tmax_snpy_fitted'
-
-	interpflts: str
-		string of filters we allow e.g. 2DGP or SNooPy to use when interpolating or fitting, e.g. 'BVrRiIYJH'
-		either 'all' or string of filts e.g. 'BVriYJH'
-
-	fupperbool: bool
-		if True, then lower and upper case belong to same family
+	phasemin, phasemax: flts
+		minimum and maximum phase
 
 	Returns
 	----------
 	lc: :py:class:`astropy.table.Table`
 		light curve object with phase column cut on phaselims
 	"""
-	phasemin,phasemax,dp = phaselims[:]
 	#Create phase column and cut data on phasemin and phasemax
-	lc            = create_phase_column(lc,lc.meta[Tmaxchoicestr],phasemin=phasemin,phasemax=phasemax)
-	#Given data has been cut, there is potential that some bands are removed completely, e.g. Y_WIRC
-	lc            = update_lcmetaflts(lc,interpflts,fupperbool)
+	lc            = create_phase_column(lc,Tmax,phasemin=phasemin,phasemax=phasemax)
+	#Given data has been cut, there is potential that some bands are removed completely
+	lc            = set_lcmeta_ordered_flts(lc)
 	return lc
