@@ -1,32 +1,25 @@
 """
-Module contains functions to get GP interpolation using (x,y,yerr) data
+GP Functions Module
+
+Module contains functions GPFitObj Class, and useful functions
+Takes in x,y,yerr data and outputs GP interpolations
 
 Contains:
 --------------------
-GPFitObj:
+GPFitObj Class:
+    inputs: x,y,yerr,hyperparameters,gp
     class that stores important GP fit information
 
-get_x_pred:
+get_x_pred(xmin=None,xmax=None,x=None,Ngrid=10000):
     function to return grid of x-values where predictions are made based off some xmin and xmax
 
-GP_1D_squaredexp:
+GP_1D_squaredexp(x,y,yerr,x_pred=None,xmin=None,xmax=None,tau_guess=10, return_cov=False):
     function to interpolate x,y,yerr data with GP 1D squared exponential kernel, outputs GPFitObj class
 
-GP_2D_Matern:
+GP_2D_Matern(x,y,yerr,lambdaC,wavelengths,x_pred=None,xmin=None,xmax=None,tau_guess=10, return_cov=False):
     function to interpolate x,y,yerr and wavelengths with GP 2D Matern kernel, outputs GPFitObj class
 
---------------------
-Classes/Functions take in various arguments
-
-GPFitObj: def __init__(self,x,y,yerr,hyperparameters,gp)
-
-get_x_pred(xmin=None,xmax=None,x=None,Ngrid=10000)
-
-GP_1D_squaredexp(x,y,yerr,x_pred=None,xmin=None,xmax=None,tau_guess=10, return_cov=False)
-
-GP_2D_Matern(x,y,yerr,lambdaC,wavelengths,x_pred=None,xmin=None,xmax=None,tau_guess=10, return_cov=False)
-
---------------------
+-------------------
 Functions use simple operations + george gp. object
 
 Written by Sam M. Ward: smw92@cam.ac.uk
@@ -56,23 +49,18 @@ class GPFitObj:
 
     gp: the george gp object
 
-    x2: (optional; default=None)
-        Nothing yet implemented, may include wavelengths
-
     Returns
     ---------
     self.df: pandas dataframe
         columns are x,y,yerr
     """
-    def __init__(self,x,y,yerr,hyperparameters,gp,x2=None):
+    def __init__(self,x,y,yerr,hyperparameters,gp):
         self.x    = x
         self.y    = y
         self.yerr = yerr
         self.df   = pd.DataFrame({'x':x,'y':y,'yerr':yerr})
         self.hyperparameters = hyperparameters
         self.gp   = gp
-        if x2 is not None:
-            self.x2   = x2
 
 
 def get_x_pred(xmin=None,xmax=None,x=None,Ngrid=10000):
