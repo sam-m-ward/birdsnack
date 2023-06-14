@@ -6,11 +6,13 @@ Module contains BIRDSNACK class for default analysis: apply corrections, interpo
 Contains
 --------------------
 BIRDSNACK class
-    inputs: configname='analysis_config.yaml',loader={},edit_dict = {},dfmeta=None,update_vars=False
+	inputs: configname='analysis_config.yaml',loader={},edit_dict = {},dfmeta=None,update_vars=False
 
-    Methods are:
-        load_and_preprocess_snana_lcs()
+	Methods are:
+		load_and_preprocess_snana_lcs()
 		trim_sample(apply_trims=True, return_trimmed=False)
+		load_empty_DF_M()
+		get_peak_mags(savekey='Default', overwrite=False)
 
 --------------------
 """
@@ -68,20 +70,25 @@ class BIRDSNACK:
 		self.rootpath     = self.choices['rootpath']
 		self.analysispath = self.rootpath+'analysis/'
 		self.datapath     = self.rootpath+'data/'
+		self.plotpath     = self.rootpath+'plots/'
 		self.productpath  = self.rootpath+'products/'
+		self.DFpath	      = self.productpath+'DFs/'
 		self.SNSpath      = self.productpath+'snpy_SNS/'
 		self.snanapath    = self.SNSpath+'snana_copies/'
-		for path in [self.analysispath,self.datapath,self.productpath,self.SNSpath,self.snanapath]: ensure_folders_to_file_exist(path)
+		for path in [self.analysispath,self.datapath,self.plotpath,self.productpath,self.DFpath,self.SNSpath,self.snanapath]: ensure_folders_to_file_exist(path)
 
 		#Load up metadata
 		self.dfmeta = dfmeta
 
 		#If in preprocessing mode, load up the SNSsnpy dictionary, and load/create the snana lcs
 		if self.choices['load_data_parameters']['load_mode']=='preproc':
-			path,file,survey = loader['path_file_survey']
-			with open(self.SNSpath+file,'rb') as f:
-				self.SNSsnpy = pickle.load(f)
-			self.survey = survey
+			if 'path_file_survey' in loader:
+				path,file,survey = loader['path_file_survey']
+				with open(self.SNSpath+file,'rb') as f:
+					self.SNSsnpy = pickle.load(f)
+				self.survey  = survey
+			elif 'SNSsnpy' in loader:
+				self.SNSsnpy = loader['SNSsnpy']
 
 			#Load up snana lcs and apply SNR cut, error_boost_dict, and trim to interpflts
 			self.load_and_preprocess_snana_lcs()
@@ -115,7 +122,8 @@ class BIRDSNACK:
 		self.snana_folder = self.snanapath+get_snana_foldername(self.choices['snpy_parameters'])
 
 		for sn in self.SNSsnpy:
-			path_snana_product  = f"{self.snana_folder}{sn}_{self.survey}.snana.dat"
+			survey = self.SNSsnpy[sn]['survey']
+			path_snana_product  = f"{self.snana_folder}{sn}_{survey}.snana.dat"
 			if not os.path.exists(path_snana_product) or self.choices['load_data_parameters']['rewrite_snana']:
 				print ('###'*3)
 				snpycorr.correct_sn(sn, self.SNSsnpy[sn])
@@ -127,7 +135,7 @@ class BIRDSNACK:
 			#Trim to filters in interpflts
 			lc           = set_lcmeta_ordered_flts(trim_filters(lc, self.choices['snpy_parameters']['interpflts']))
 			#Update lcmeta with mass, spectral type, and SNooPy Tmax estimate
-			snpy_product = snpycorr.load_snpy_product(sn=sn,survey=self.survey)
+			snpy_product = snpycorr.load_snpy_product(sn=sn,survey=survey)
 			lc           = update_lcmetadata(lc,self.dfmeta[self.dfmeta['SN']==sn],snpy_product)
 			#Append lcs and snpy_products to dictionary
 			self.lcs[sn]           = lc
@@ -293,3 +301,81 @@ class BIRDSNACK:
 			self.sns = [sn for sn in list(self.lcs.keys())]
 		if return_trimmed:
 			return trimmed_lcs, REASONS
+
+	def load_empty_DF_M(self):
+		"""
+		Load Empty DF
+
+		Method to create an empty DF that can then be filled up
+
+		End Product(s)
+		----------
+		DF: dict of pandas.df
+			DF = {ti:df for ti in tilist}; df is GP interpolation data at a given phase, e.g. apparent mag, colours etc.
+			Also includes {'extra':DF_extra} for e.g. dm15B
+
+		"""
+		pblist = self.choices['preproc_parameters']['pblist']
+		tilist = self.choices['preproc_parameters']['tilist']
+		errstr = self.choices['preproc_parameters']['errstr']
+
+		#df for specific phase across all bands in pblist
+		DF_m_t = pd.DataFrame(columns = pblist+[pb+errstr for pb in pblist])
+		#dictionary for all phases in tilist
+		DF_m   = {ti:copy.deepcopy(DF_m_t) for ti in tilist}
+
+		#Additional df for special bands/phases
+		DF_extra = {}
+		for ti,pbmini in self.choices['preproc_parameters']['Extra_Features'].items():
+			for pb in pbmini:
+				DF_extra[ti] = pd.DataFrame(columns = pbmini+[pb+errstr for pb in pbmini])
+
+		#Combine
+		DF_tot = {**DF_m,**{'extra':DF_extra}}
+		return DF_tot
+
+	def get_peak_mags(self, savekey='Default', overwrite=False):
+		"""
+		Get Peak Magnitudes
+
+		Interpolate rest-frame data to reference time(s) and extract pandas df measurements and errors
+
+		Parameters
+		----------
+		savekey : str (optional; default='Default')
+			name for DF_M file
+
+		overwrite : bool (optional; default=False)
+			if True, recompute DF_M, regardless of whether or not file exists
+
+		Returns
+		----------
+		DF_M: dict of pandas.df
+			DF = {ti:df_ti for ti in tilist}; df_ti is GP interpolation data at a given phase
+		"""
+		DF_M_name = f'{self.DFpath}DF_M_{savekey}.pkl'
+
+		if overwrite or not os.path.exists(DF_M_name):
+			print (f'Creating DF_M for lcs(N={len(self.lcs)})')
+			DF_M = self.load_empty_DF_M()
+			for sn,lc in self.lcs.items():
+				#try:
+				if 1==1:
+					lcobj = LCObj(lc,self.choices['preproc_parameters'])
+					lcobj.get_Tmax()
+					lcobj.get_phase()
+					lcobj.get_GP_interpolation()
+					lcobj.plot_lc(PLOTTER(self.choices['plotting_parameters'],self.plotpath))
+
+					#err=1/0
+					#df_m  = lcobj.return_mags_DF()
+					#for tc in tclist:
+					#	DF_M[tc].loc[sn] = df_m.loc[tc]
+
+				#except Exception as e:
+				#	print (e)
+				#	print (f"SN {sn} failed")
+				#	pass
+
+
+		#self.DF_M = DF_M
