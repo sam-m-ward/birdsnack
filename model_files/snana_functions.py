@@ -29,7 +29,7 @@ get_lcf(lc,flt):
 create_phase_column(lc,Tmax,phasemin=None,phasemax=None):
 	creates phase column using Tmax and phase boundaries
 
-trim_lcf(lcf,Nbeforemax,Nbeforegap,Naftermax,Naftergap,tref=0,tcol='phase',local=False):
+get_data_availability_bool(lcf,Nbeforemax,Nbeforegap,Naftermax,Naftergap,tref=0,tcol='phase',local=False):
 	check data availability around time of reference
 
 get_time_lc_arrays(lcf,mjd_or_phase='mjd',flux_or_mag='flux'):
@@ -278,7 +278,7 @@ def create_phase_column(lc,Tmax,phasemin=None,phasemax=None):
 	return lc
 
 
-def trim_lcf(lcf,Nbeforemax,Nbeforegap,Naftermax,Naftergap,tref=0,tcol='phase',local=False):
+def get_data_availability_bool(lcf,Nbeforemax,Nbeforegap,Naftermax,Naftergap,tref=0,tcol='phase',local=False):
     """
     Trim Light Curve in Single Filter f
 
