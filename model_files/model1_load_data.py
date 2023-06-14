@@ -102,7 +102,7 @@ class LOAD_DATA:
             path,file,survey = x[:]
             self.get_SNSsnpy(path,file,survey)
 
-    def get_SNSsnpy(self,datafolder,SNSfile,surveyname):
+    def get_SNSsnpy(self,datafolder,SNSfile,surveyname,returner=False):
         """
         Get SNSsnpy
 
@@ -120,6 +120,9 @@ class LOAD_DATA:
 
         surveyname: str
             name of survey
+
+        returner: bool (optional; default=False)
+            if True, return SNSsnpy
 
         End Product(s)
         ----------
@@ -168,6 +171,8 @@ class LOAD_DATA:
             print (f'faillist (Len: {len(faillist)}):',faillist)
             with open(SNS_path,'wb') as f:
                 pickle.dump(SNS,f)
+        self.SNSsnpy = SNS
+        if returner: return self.SNSsnpy
 
     def load_meta_data(self):
         """
@@ -260,3 +265,63 @@ class LOAD_DATA:
         df_combined = df_host_masses.merge(df_spectral_types, on='SN')
 
         self.dfmeta = df_combined
+
+    def get_SNSsnpy_combined(self,SURVEYS,overwrite=False):
+        """
+        Get SNSsnpy_combined
+
+        Method for getting SNSsnpy by combining multiple surveys according to pecking order
+
+        Parameters
+        ----------
+        SURVEYS : dict
+            key,values are {'retained_lcs':lcs,'trimmed_lcs':bs.trimmed_lcs, 'reasons':reasons}
+
+        overwrite : bool (optional; default=False)
+            if True, rewrite SNSsnpy_combined file even if if already exists
+
+        End Product(s)
+        ----------
+        save files for:
+            SURVEYS : dict
+            retained_sns : dict with {sn:survey}
+            SNSsnpy_combined : dict with {sn:{lc:snpyfile,survey:survey}}
+        """
+        #Save SURVEYS dictionarys
+        if overwrite or not os.path.exists(f'{self.SNSpath}SURVEYS.pkl'):
+            with open(f'{self.SNSpath}SURVEYS.pkl','wb') as f:
+                pickle.dump(SURVEYS,f)
+
+        #Create/load/save retained_sns dict
+        if overwrite or not os.path.exists(f'{self.SNSpath}retained_sns.pkl'):
+            #Determine SNe that are retained, keep those highest in pecking order
+            retained_sns = {}
+            for survey in self.choices['load_data_parameters']['Pecking_Order']:
+                for sn in SURVEYS[survey]['retained_lcs']:
+                    if sn not in list(retained_sns.keys()):
+                        retained_sns[sn] = survey
+
+            #Save retained_sns dicionary as .pkl
+            with open(f'{self.SNSpath}retained_sns.pkl','wb') as f:
+                pickle.dump(retained_sns,f)
+        else:
+            with open(f'{self.SNSpath}retained_sns.pkl','rb') as f:
+                retained_sns = pickle.load(f)
+
+        #Create/load/save SNSsnpy_combined
+        if overwrite or not os.path.exists(f'{self.SNSpath}SNSsnpy_combined.pkl'):
+            SNSsnpy_combined = {}
+            for survey in self.choices['load_data_parameters']['Pecking_Order']:
+                for x in self.choices['load_data_parameters']['load_path_file_survey']:
+                    if x[-1]==survey:
+                        path,file,survey = x[:]
+                        SNSsnpy = self.get_SNSsnpy(path,file,survey,returner=True)
+
+                for sn in retained_sns:
+                    if sn in list(SNSsnpy.keys()) and retained_sns[sn]==SNSsnpy[sn]['survey']:
+                        SNSsnpy_combined[sn] = {'lc':SNSsnpy[sn]['lc'],'survey':SNSsnpy[sn]['survey']}
+            with open(f'{self.SNSpath}SNSsnpy_combined.pkl','wb') as f:
+                pickle.dump(SNSsnpy_combined,f)
+        else:
+            with open(f'{self.SNSpath}SNSsnpy_combined.pkl','rb') as f:
+                SNSsnpy_combined = pickle.load(f)
