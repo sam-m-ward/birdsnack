@@ -169,8 +169,8 @@ def set_lcmeta_ordered_flts(lc):
 	lams = list(lamC.keys())
 	lams.sort()
 	ordered_lamC = {lamC[key]:key for key in lams}
-	lc.meta['flts'] = list(ordered_lamC.values())
-	lc.meta['lams'] = list(ordered_lamC.keys())
+	lc.meta['flts'] = list(ordered_lamC.keys())
+	lc.meta['lams'] = list(ordered_lamC.values())
 	return lc
 
 def update_lcmetadata(lc,dfsn,snpy_product):
