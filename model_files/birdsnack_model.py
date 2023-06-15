@@ -391,7 +391,7 @@ class BIRDSNACK:
 		tilist = self.choices['preproc_parameters']['tilist']
 		pblist = self.choices['preproc_parameters']['pblist']
 		Extra_Features = self.choices['preproc_parameters']['Extra_Features']
-
+		print ('###'*5)
 		print (f"Original sample size:{DF_M[tref].shape[0]}")
 
 		#Remove NaNs
@@ -456,3 +456,4 @@ class BIRDSNACK:
 
 		#Reset attribute with cuts to sample
 		self.DF_M = DF_M
+		print ('###'*5)
