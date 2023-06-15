@@ -28,3 +28,4 @@ else:
 bs = BIRDSNACK(loader={'SNSsnpy':SNSsnpy_combined}, configname='loader_config.yaml', dfmeta=dataloader.dfmeta)
 bs.trim_sample()
 bs.get_peak_mags()
+bs.additional_cuts()
