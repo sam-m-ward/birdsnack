@@ -11,7 +11,9 @@ LOAD_DATA class
     Methods are:
         load_all_SNSsnpy()
         get_SNSsnpy(datafolder,SNSfile,surveyname)
+        load_SNSsnpy(filename)
         load_meta_data()
+        get_SNSsnpy_combined(SURVEYS,overwrite=False):
 --------------------
 
 Written by Sam M. Ward: smw92@cam.ac.uk
@@ -49,7 +51,7 @@ class LOAD_DATA:
     	loads up SN metadata, such as eg host masses, spectroscopic classification, using data compiled from literature
 	"""
 
-    def __init__(self,configname='loader_config.yaml'):
+    def __init__(self,configname='loader_config.yaml',load_all_SNSsnpy=False):
         """
         Initialisation
 
@@ -61,9 +63,11 @@ class LOAD_DATA:
 
         Parameters
         ----------
-        configname : str
+        configname : str (optional; default='loader_config.yaml')
             .yaml file that sets analysis choices
 
+        load_all_SNSsnpy : bool (optional; default=True)
+            if True, automatically loads up txt files into snpy when class is called (saves on time complexity as this only needs to be done once)
         """
         #Set Configname
         self.configname   = configname
@@ -84,8 +88,9 @@ class LOAD_DATA:
         #Load up metadata
         self.load_meta_data()
 
-        #Load up snpytxtfiles
-        self.load_all_SNSsnpy()
+        if load_all_SNSsnpy:
+            #Load up snpytxtfiles into snpy (time complex)
+            self.load_all_SNSsnpy()
 
     def load_all_SNSsnpy(self):
         """
@@ -173,6 +178,25 @@ class LOAD_DATA:
                 pickle.dump(SNS,f)
         self.SNSsnpy = SNS
         if returner: return self.SNSsnpy
+
+    def load_SNSsnpy(self,filename):
+        """
+        Load SNSsnpy using filename
+
+        Parameters
+        ----------
+        filename : str
+            e.g. 'SNSsnpy_fiducial.pkl'
+
+        Returns
+        ----------
+        SNSsnpy : dict
+            {sn:{'lc':lc,'survey':survey}}
+        """
+        with open(self.SNSpath+filename,'rb') as f:
+            SNSsnpy = pickle.load(f)
+        return SNSsnpy
+
 
     def load_meta_data(self):
         """
