@@ -14,6 +14,7 @@ Written by Sam M. Ward: smw92@cam.ac.uk
 """
 import os
 import numpy as np
+from contextlib import suppress
 
 def ensure_folders_to_file_exist(savename):
     """
@@ -35,3 +36,30 @@ def ensure_folders_to_file_exist(savename):
     for dir in successive_dirs:
         if not os.path.exists(dir):
             os.mkdir(dir)
+
+def trim_to_common_SNS(DF_M, verbose=True, drop_sns=None):
+    columns = [c for c in DF_M if c not in ['extra']]
+
+    if drop_sns is not None:
+        DF_M[columns[0]].drop(drop_sns, axis=0, inplace=True)
+
+    common_SNS = list(DF_M[columns[0]].index)
+    for ti in columns:
+        common_SNS = [sn for sn in common_SNS if sn in list(DF_M[ti].index)]
+    for ti in DF_M['extra']:
+        common_SNS = [sn for sn in common_SNS if sn in list(DF_M['extra'][ti].index)]
+
+    ordered_SNS = []
+    for sn in common_SNS:
+        if ordered_SNS.count(sn)==0: ordered_SNS.append(sn)
+
+    common_SNS  = [sn for sn in ordered_SNS if sn in list(set(common_SNS))]
+
+    for ti in columns:
+        DF_M[ti] = DF_M[ti].loc[common_SNS]
+    for ti in DF_M['extra']:
+        DF_M['extra'][ti] = DF_M['extra'][ti].loc[common_SNS]
+
+    if verbose: print (f'New sample size in DF_M is {len(common_SNS)}')
+
+    return DF_M
