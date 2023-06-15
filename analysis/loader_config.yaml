@@ -18,9 +18,8 @@ load_data_parameters :
 
 
   #Way in which we load up data for analysis
-  load_mode : 'preproc'  #Load up dict of snpy files OR snanalcs
-  #load_mode : 'snanalcs'      #Load up dict of snana files
-  #load_mode : 'magslist'     #Load up df of peak magnitudes
+  #load_mode : 'preproc'   #Load up dict of snpy files OR snanalcs, useful for determining fiducial sample, this mode doesn't save snana lcs in analysis folder
+  load_mode : 'analysis'   #
 
   #If True, manually overwrite pre-existing snana files
   #rewrite_snana : True
@@ -80,7 +79,7 @@ preproc_parameters:
   pblist : ['B','V','r','i','J','H']
   #List of phases to interpolate to
   tilist     : [0]
-  #The python index in tclist taken as reference band
+  #The python index in tclist taken as reference time
   tref_index : 0
 
   #Defines extra features beyond those in pblist,tilist to extract
@@ -96,7 +95,7 @@ preproc_parameters:
 
   #The reference passband
   ref_band        : B
-  #The phase window either side of Tmax
+  #The phase window either side of initial Tmax guess for estimating Tmax
   tmax_window     : 5
   #Resolution in time grid for estimating Tmax
   tmax_resolution : 0.01
@@ -189,14 +188,74 @@ additional_cut_parameters:
   spectype  : 'normal'
 
   extra_drop_SNe : {'2008gb':'Removing 2008gb because (only sometimes) 2DGP-mag returns large mag. measurement error. Also Tmax is not obvious on visual inspection.'}
+########################################################
+analysis_parameters:
+  #key for saving analysis files
+  savekey  : 'fiducial'
 
+  #Lower and upper bounds on muRV
+  muRVmin   : 1
+  muRVmax   : 5
+  #Lower and upper bounds on individual RVs parameters
+  RVsmin : 1
+  RVsmax : 'inf'
+  #Dispersion of Half-normal prior on sigmaRV
+  disp_sigmaRV : 2
+
+  #Data that is fed into model
+  DataTransformation : 'B-X'
+  DataTransformation : 'X-H'
+  DataTransformation : 'Adjacent'
+  DataTransformation : 'mags'
+
+  #Reference frame in which hyperpriors are placed to model intrinsic chromatic variations
+  IntrinsicModel : 'B-X'
+  IntrinsicModel : 'X-H'
+  IntrinsicModel : 'Adjacent'
+  IntrinsicModel : 'Deviations'
+
+  #Population distribution of AVs prior
+  AVprior : 'Gamma'
+  AVprior : 'exp'
+
+  #Choice of effective wavelengths
+  lam_choice : 'effective_thetaOFF'
+  lam_choice : 'effective_thetaOFFepsOFF'
+  lam_choice : 'central'
+  lam_choice : 'effective_taustar'
+  lam_choice : 'effective_thetaON'
+
+  #Choice of whether to include dm15B in model or not
+  include_LCshape : True
+  include_LCshape : False
+
+  #Choice of whether to include SN-to-SN intrinsic variations
+  include_residuals : False
+  include_residuals : True
+
+  #Choice of whether to include censored data in the model
+  CensoredData : True
+  CensoredData : False
+
+  #Upper bound on B-V where SNe within 0.3<B-V<CensoredCut will be included as CensoredData, those above CensoredCut are cut from sample entirely.
+  CensoredCut : 1.0
+  CensoredCut : 'inf'
+
+  #Option to make multiple copies of sample to fit
+  copymode : 1
+  copymode : False
+
+  #Option to fix intrinsic hyperparameters at some pre-defined values
+  fixint : True
+  fixint : False
+########################################################
 plotting_parameters :
   #Fontsize
   FS   : 18
 
   #Show plot
-  show : True
   show : False
+  show : True
 
   #Save plot
   save : True
