@@ -78,6 +78,14 @@ snpy_parameters:
 preproc_parameters:
   #passband list, used for extracting magnitude measurements
   pblist : ['B','V','r','i','J','H']
+  #List of phases to interpolate to
+  tilist     : [0]
+  #The python index in tclist taken as reference band
+  tref_index : 0
+
+  #Defines extra features beyond those in pblist,tilist to extract
+  #Extra_Features          : {}
+  Extra_Features          : {15:['B']}
 
   #Factor to boost flux errors by for improved GP fitting stability
   #error_boost_dict : {}
@@ -85,10 +93,6 @@ preproc_parameters:
 
   #Arbitrary choice of string for denoting errors in mags pandas df
   errstr     : err
-  #List of phases to interpolate to
-  tilist     : [0]
-  #The python index in tclist taken as reference band
-  tref_index : 0
 
   #The reference passband
   ref_band        : B
@@ -152,9 +156,7 @@ preproc_parameters:
   Nafter_local      : [1]
   Naftergap_local   : [40]
 
-  #Defines extra features beyond those in pblist,tilist to extract
-  Extra_Features          : {}
-  Extra_Features          : {15:['B']}
+  #Defines required number of points around extra features
   Nbefore_local_extra     : [1]
   Nbeforegap_local_extra  : [15]
   Nafter_local_extra      : [1]
