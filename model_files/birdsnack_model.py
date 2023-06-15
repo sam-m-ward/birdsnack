@@ -13,14 +13,17 @@ BIRDSNACK class
 		trim_sample(apply_trims=True, return_trimmed=False)
 		load_empty_DF_M()
 		get_peak_mags(savekey='Default', overwrite=False)
+		plot_lcs(**kwargs)
+		additional_cuts()
 
 --------------------
 """
 
 import copy,os,pickle,yaml
-from snoopy_corrections import SNOOPY_CORRECTIONS
-from miscellaneous import *
+from HBM_preprocessing import *
 from LC_object import *
+from miscellaneous import *
+from snoopy_corrections import *
 
 class BIRDSNACK:
 	"""
@@ -63,8 +66,9 @@ class BIRDSNACK:
 			self.choices = yaml.load(f, Loader=yaml.FullLoader)
 
 		#Make edits to config.yaml choices
-		for key,value in edit_dict.items():
-			self.choices[key] = value
+		for glob_key in edit_dict:
+			for key,value in edit_dict[glob_key].items():
+				self.choices[glob_key][key] = value
 
 		#Set Pathnames
 		self.rootpath     = self.choices['rootpath']
@@ -90,6 +94,12 @@ class BIRDSNACK:
 			elif 'SNSsnpy' in loader:
 				self.SNSsnpy = loader['SNSsnpy']
 
+			#Load up snana lcs and apply SNR cut, error_boost_dict, and trim to interpflts
+			self.load_and_preprocess_snana_lcs()
+		#Else, if in analysis mode, load up analysis LCs with Tmax already estimated
+		elif self.choices['load_data_parameters']['load_mode']=='analysis':
+			if 'SNSsnpy' in loader:
+				self.SNSsnpy = loader['SNSsnpy']
 			#Load up snana lcs and apply SNR cut, error_boost_dict, and trim to interpflts
 			self.load_and_preprocess_snana_lcs()
 
@@ -137,6 +147,7 @@ class BIRDSNACK:
 			#Update lcmeta with mass, spectral type, and SNooPy Tmax estimate
 			snpy_product = snpycorr.load_snpy_product(sn=sn,survey=survey)
 			lc           = update_lcmetadata(lc,self.dfmeta[self.dfmeta['SN']==sn],snpy_product)
+
 			#Append lcs and snpy_products to dictionary
 			self.lcs[sn]           = lc
 			self.snpy_products[sn] = snpy_product
@@ -285,7 +296,6 @@ class BIRDSNACK:
 		trimmed_lcs = {sn:trimmed_lcs[sn] for sn in self.sns if sn     in list(trimmed_lcs.keys())} #Correct the order
 		new_lcs     = {sn:self.lcs[sn]    for sn in self.sns if sn not in list(trimmed_lcs.keys())}
 
-
 		print (f'(Original LCs : {len(self.lcs)})')
 		print (f' Retained LCs : {len(new_lcs)}')
 		print (f'  Trimmed LCs : {len(trimmed_lcs)}')
@@ -333,7 +343,7 @@ class BIRDSNACK:
 		DF_M = {**DF_m,**{'extra':DF_extra}}
 		return DF_M
 
-	def get_peak_mags(self, savekey='Default', overwrite=False):
+	def get_peak_mags(self, savekey=None, overwrite=False):
 		"""
 		Get Peak Magnitudes
 
@@ -352,6 +362,7 @@ class BIRDSNACK:
 		DF_M: dict of pandas.df
 			DF = {ti:df_ti for ti in tilist,**{'extra':df_ti_extra}}; df_ti is GP interpolation data at a given phase for pblist, df_ti_extra is same for Extra_Features
 		"""
+		if savekey is None: savekey = self.choices['analysis_parameters']['savekey']
 		DF_M_name = f'{self.DFpath}DF_M_{savekey}.pkl'
 
 		if overwrite or not os.path.exists(DF_M_name):
@@ -371,9 +382,48 @@ class BIRDSNACK:
 				lcobj.extract_interpolations()
 				#Update sample-level DF with sn-specific interpolations
 				DF_M = lcobj.update_DF_M(DF_M, sn)
-				#Plot light curve interpolation
-				#lcobj.plot_lc(PLOTTER(self.choices['plotting_parameters'],self.plotpath))
+			#Save DF_M
+			with open(DF_M_name,'wb') as f:
+				pickle.dump(DF_M, f)
+		else:#Load DF_M
+			with open(DF_M_name,'rb') as f:
+				DF_M = pickle.load(f)
+
 		self.DF_M = DF_M
+
+	def plot_lcs(self,**kwargs):
+		"""
+		Plot Light Curves
+
+		Parameters
+		----------
+		**kwargs : any
+			optional to change e.g. plotting_parameters
+
+		End Product(s)
+		----------
+		Saved and/or Displayed plot of light curve
+		"""
+		#Update kwargs e.g. choice to show plot, save plot etc.
+		choices = copy.deepcopy(self.choices)
+		for kkey,value in kwargs.items():
+			for glob_key in choices:
+				for key in choices[glob_key]:
+					if key==kkey:
+						choices[glob_key][key] = value
+
+		for sn,lc in self.lcs.items():
+			#Initialise LCobj of lc
+			lcobj = LCObj(lc,choices['preproc_parameters'])
+			#Get Tmax
+			lcobj.get_Tmax()
+			#Trim on phase
+			lcobj.get_phase()
+			#Interpolate data
+			lcobj.get_GP_interpolation()
+			#Plot light curve interpolation
+			lcobj.plot_lc(PLOTTER(choices['plotting_parameters'],self.plotpath))
+
 
 	def additional_cuts(self):
 		"""
@@ -457,3 +507,442 @@ class BIRDSNACK:
 		#Reset attribute with cuts to sample
 		self.DF_M = DF_M
 		print ('###'*5)
+
+	def fit_stan_model(self):
+		"""
+		Fit Stan Model
+
+		Method to perform hierarchical Bayesian inference on magnitude measurements to infer pop. dists. in intrinsic and extrinsic components
+
+		Parameters
+		----------
+
+		Returns
+		----------
+		"""
+
+
+		DF_M   = self.DF_M
+		pblist = self.choices['preproc_parameters']['pblist']
+		tref   = self.choices['preproc_parameters']['tilist'][self.choices['preproc_parameters']['tref_index']]
+		Nm = len(pblist)
+		Nc = Nm-1
+		S  = DF_M[tref].shape[0]
+		SC = 0
+
+		modelloader = HBM_preprocessor(self.choices)
+
+		l_eff_rest  = modelloader.get_leff_rest()
+
+		X = get_dustlaw()
+
+		print ('N_SNe=',S)
+		print (fclist)
+		print (l_eff_rest)
+		stan_init = [{} for _ in range(n_chains)]
+		stan_data = dict(zip(   ['S','SC','Nc','a_sigma_cint','RVmin','RVmax','disp_sigmaRV'],
+								[ S , SC , Nc , 1            , RVmin , RVmax , disp_sigmaRV ]
+							)
+						)
+		########################CENSORED DATA
+		if CensoredData:
+			if self.choices['CensoredCut']=='inf': CensoredCut = np.inf
+			else: CensoredCut = float(self.choices['CensoredCut'])
+			CensoredSNe = list(DF_C[tref][(DF_C[tref]['BV'].abs()>=0.3) & (DF_C[tref]['BV'].abs()<CensoredCut)].index)
+			ExcludedSNe = list(DF_C[tref][DF_C[tref]['BV'].abs()>=CensoredCut].index)
+
+			stan_data['BVerrs_Cens'] = DF_C[tref].loc[CensoredSNe][f"BV{self.choices['errstr']}"].values
+
+			if include_LCshape:
+				dm15Bs = [] ; dm15B_errs = []
+				for sn in DF_C[tref][DF_C[tref]['BV'].abs()<0.3].index:
+					dm15Bs.append(self.DF_M_extra[sn].B.loc[15] - self.DF_M[self.tref].B.loc[sn])
+					dm15B_errs.append( (self.DF_M_extra[sn].Berr.loc[15]**2 + self.DF_M[self.tref].Berr.loc[sn]**2 ) **0.5)
+				for sn in CensoredSNe:
+					dm15Bs.append(self.DF_M_extra[sn].B.loc[15] - self.DF_M[self.tref].B.loc[sn])
+					dm15B_errs.append( (self.DF_M_extra[sn].Berr.loc[15]**2 + self.DF_M[self.tref].Berr.loc[sn]**2 ) **0.5)
+				stan_data['dm15Bs']       = dm15Bs
+				stan_data['dm15B_errs']   = dm15B_errs
+				stan_data['gamma_shape']  = 1
+			######################
+			##NOW APPLY BVCUT
+			try: DF_C[tref] = DF_C[tref][DF_C[tref]['BV'].abs()<0.3]
+			except KeyError: pass
+			for sn in list(DF_M[tref].index):
+				if sn not in list(DF_C[tref].index):
+					DF_M[tref].drop([sn], axis=0, inplace=True)
+					with suppress(KeyError): del DF_M_extra[sn]
+			######################
+			SC =  len(CensoredSNe)
+			S += -len(ExcludedSNe)
+			stan_data['S']  = S
+			stan_data['SC'] = SC
+
+			print (f"Incorporating censored data: Fitting {stan_data['S']-stan_data['SC']} SNe and {stan_data['SC']} Censored SNe")
+			print (f"Censored SNe are: {CensoredSNe}")
+			print (f"These have 0.3<=B-V<{CensoredCut}")
+			print (f"Completely Excluded SNe are: {ExcludedSNe}")
+		else: stan_data['BVerrs_Cens'] = np.array([])
+		########################CENSORED DATA
+		mags_errs  = DF_M[tref][[m+errstr for m in fclist]].stack().transpose().values
+		capps_cols, capps_errs_cols = get_capps_cols(ColourChoice,fclist,errstr)
+		CM, data_cov_matrix2        = get_mags_to_colours(Nc,ColourChoice,fclist)
+		capps_errs = []
+		for s in range(S-SC):
+			data_cov_matrix = CM @ np.diag( np.asarray( mags_errs[s*(Nc+1):(s+1)*(Nc+1)] )**2 ) @ CM.T
+			capps_errs.append(data_cov_matrix)
+
+		if dustlaw=='fitzpatrick99':
+			stan_data['xk']   = xk
+			stan_data['DelM'] = dM_fitz_block
+			if 'mags' in SEDmodel:
+				stan_data['Mmatrix'] = M_fitz_block
+		elif dustlaw in ['ccm89','ccm89_o94']:
+			stan_data['Del_a_vec'] = Del_a_vec
+			stan_data['Del_b_vec'] = Del_b_vec
+			if 'mags' in SEDmodel:
+				stan_data['A_vec'] = a_vec
+				stan_data['B_vec'] = b_vec
+		else:
+			raise Exception("Dustlaw needs to be ['fitzpatrick99','ccm89','ccm89_o94']")
+
+		if 'mags' in SEDmodel:
+			stan_data['Nm']   = Nc+1
+			stan_data['mags'] = DF_M[tref][[m for m in fclist]].stack().transpose().values
+			if SEDmodel=='mags_fit_mags':
+				stan_data['mags_errs'] = mags_errs
+
+			if SEDmodel=='mags_fit_colours_anchor':
+				CM  = np.vstack((CM,np.ones(Nc+1)/(Nc+1)))#Adding on final row of 1/N's to include filter-averaged mean average magnitude
+			if SEDmodel in ['mags_fit_colours_anchor','mags_fit_colours_no_anchor']:
+				capps = [] ; capps_errs = []
+				for s in range(S):
+					capps.extend(CM @ stan_data['mags'][s*(Nc+1):(s+1)*(Nc+1)])
+					data_cov_matrix = CM @ np.diag( np.asarray( mags_errs[s*(Nc+1):(s+1)*(Nc+1)] )**2 ) @ CM.T
+					capps_errs.append(data_cov_matrix)
+				stan_data['capps']      = capps
+				stan_data['capps_errs'] = capps_errs
+
+			stan_data['Nd'] = CM.shape[0]
+			stan_data['CM'] = CM
+			stan_data['a_sigma_mint'] = stan_data['a_sigma_cint']
+
+			mu_guesses = np.array([np.average(mi) for mi in np.array_split(stan_data['mags'],stan_data['S']-stan_data['SC'])])
+			stan_init  = [{'mus':np.random.normal(mu_guesses,0.5)} for _ in range(n_chains)]
+			#mu_guesses = mu_guesses[1:]-mu_guesses[0]
+			#print (mu_guesses)
+			#stan_init  = [{'MUS':np.random.normal(mu_guesses,0.5)} for _ in range(n_chains)]
+		else:
+			capps           = DF_C[tref][capps_cols].stack().transpose().values #capps_errs = DF_C[tref][capps_errs_cols].stack().transpose().values #No covariance here
+			#N  = len(capps)
+			#if N!=(S-SC)*Nc:raise Exception(f'There are S*Nc={S-SC}*{Nc}={(S-SC)*Nc} SNe*Colours but only {N} colour measurements...likely NaNs fromn GP interpolation; redo! (Probably add in GP as trim_lcs() cut)')
+			stan_data['capps']      = capps
+
+		stan_data['CM'] = CM
+		if SEDmodel!='mags_fit_mags':
+			print (CM)
+			print (data_cov_matrix2)
+
+		if include_LCshape and not CensoredData:
+			dm15Bs = [] ; dm15B_errs = []
+			for sn in self.DF_M_extra:
+				dm15Bs.append(self.DF_M_extra[sn].B.loc[15] - self.DF_M[self.tref].B.loc[sn])
+				dm15B_errs.append( (self.DF_M_extra[sn].Berr.loc[15]**2 + self.DF_M[self.tref].Berr.loc[sn]**2 ) **0.5)
+			stan_data['dm15Bs']       = dm15Bs
+			stan_data['dm15B_errs']   = dm15B_errs
+			stan_data['gamma_shape']  = 1
+		elif not include_LCshape:
+			stan_data['gamma_shape'] = 0
+			stan_data['dm15Bs']      = np.ones(stan_data['S'])
+			stan_data['dm15B_errs']  = np.ones(stan_data['S'])
+
+		stan_data['gamma_res'] = 1 if include_residuals else 0
+		stan_data['EBVmode']   = 1 if EBVmode           else 0
+		#########################
+		n_workers = n_chains
+		#stan_init = build_init_dict(N,Nc,S)
+		#stan_init = [{'tauB_tform':0} for _ in range(n_chains)]
+		###################
+		#stan_file = "model_files/stan_files/colour_model_indRVs_popdist_FullModel_F99_AVprior.stan"
+		if RVdist=='popdist':
+			if 'ccm89' in dustlaw:
+				stan_file = "model_files/stan_files/colour_model_indRVs_popdist_FullModel_CCM89O.stan"
+			else:
+				stan_file = "model_files/stan_files/colour_model_indRVs_popdist_FullModel_F99.stan"
+		if RVdist=='globRV':
+			if 'ccm89' in dustlaw:
+				stan_file = "model_files/stan_files/colour_model_globRV_FullModel_CCM89O.stan"
+			else:
+				stan_file = "model_files/stan_files/colour_model_globRV_FullModel_F99.stan"
+
+		if fixint:
+			stan_file = stan_file.replace('FullModel','fixint')
+			#with open('products/stan_fits/FIT.pkl','rb') as f:
+			#with open('products/stan_fits/FITS/FITM2M_True.pkl','rb') as f:
+			#with open('products/stan_fits/FITS/FITglobRVfittolowBV.pkl','rb') as f:
+			with open('products/stan_fits/FITS/FITglobRVfittofullsamp.pkl','rb') as f:
+				globRVFIT = pickle.load(f)
+			dfglobRV = globRVFIT['df']
+
+			L_mint = np.zeros((stan_data['Nm'],stan_data['Nm']))
+			for i in range(L_mint.shape[0]):
+				for j in range(L_mint.shape[1]):
+					L_mint[i,j] = dfglobRV[f'L_mint.{i+1}.{j+1}'].median()
+
+			stan_data['L_mint'] = L_mint
+			stan_data['FPC0m']  = dfglobRV[[col for col in dfglobRV.columns if 'FPC0m.' in col]].median(axis=0).values
+			try:
+				stan_data['FPC1m']  = dfglobRV[[col for col in dfglobRV.columns if 'FPC1m.' in col]].median(axis=0).values
+			except:
+				stan_data['FPC1m']  = np.zeros(len(stan_data['FPC0m']))
+			print (stan_data['L_mint'],stan_data['FPC0m'],stan_data['FPC1m'])
+			#err=1/0
+
+		if SEDmodel=='colours':
+			print ('Using Colours Model')
+		elif 'mags' in SEDmodel:
+			print ('Using Mags Model')
+			if SEDmodel=='mags_fit_mags':
+				stan_file = stan_file.replace('colour_model','mag_model_fit_mags')
+			elif 'mags_fit_colours' in SEDmodel:
+				stan_file = stan_file.replace('colour_model','mag_model_fit_colours')
+		if high_red_in_AV_dist_only:
+			print (f'Number of high reddening objects: {sum(self.highred_bool)}')
+			stan_data['highred_bool'] = self.highred_bool
+			stan_file = stan_file.replace('mags_indRVs','mags_highredAV_indRVs')
+			if high_red_mode=='free':
+				print ('Freeing RV^s for high-reddening objects (and excluding from population dist.)')
+				stan_data['free_highredRV'] = 1
+				stan_data['fixRV_highred']  = -1
+			else:
+				stan_data['free_highredRV'] = 0
+				stan_data['fixRV_highred']  = float(high_red_mode.replace('fix_',''))
+				print (f"Fixing RV^s={stan_data['fixRV_highred']} for high-reddening objects (and excluding from population dist.)")
+		if lnRVs:
+			stan_data['lnRVmin'] = 0
+			stan_data['lnRVmax'] = 1.5
+			stan_file = stan_file.replace('indRVs','lnRVs_indRVs')#'mag_model_fit_mags_lnRVs_indRVs_popdist_FullModel_F99.stan'
+		if lnmuRVmode:
+			stan_data['lnmuRVmode'] = 1
+			stan_data['RVmin'] = np.log(stan_data['RVmin'])
+			stan_data['RVmax'] = np.log(stan_data['RVmax'])
+		else:
+			stan_data['lnmuRVmode'] = 0
+
+		avknots = [0,0.1,0.5,1,2,3]
+		stan_data['NAVknots'] = len(avknots)
+		stan_data['AVknots']  = avknots
+		stan_data['alpha_skew_disp_prior'] = alpha_skew_disp_prior
+		stan_data['nustar'] = nustar
+		#stan_file = '../'+stan_file#For TM22
+		#stan_file = stan_file.replace('.stan','_mus0.stan')
+		#stan_file = stan_file.replace('.stan','_experiment.stan')
+		#stan_file = stan_file.replace('.stan','_experiment2.stan')
+		#stan_file = stan_file.replace('.stan','_experiment3.stan')
+		#stan_data['zero_index'] = 6
+		#stan_file = stan_file.replace('.stan','_experiment3.5.stan')
+		#stan_file = stan_file.replace('.stan','_experiment3fitcolours.stan')
+		#stan_file = 'model_files/stan_files/mag_model_fit_mags_indRVs_popdist_FullModel_F99_experiment3fitcolours.stan'
+		#print (stan_file)
+		#with open(stan_file,'r') as f:
+		#	stan_file = f.read()
+		#def convert(M):
+		#	if M is None or type(M)==float: return M
+		#	else: return np.average([Mi for Mi in M if Mi is not None])
+		#############
+		#For Colour Model CC transform to other colours
+		if SEDmodel=='colours':
+			#stan_file  = stan_file.replace('.stan','_experiment.stan')
+			CMadj,none = get_mags_to_colours(5,'Adjacent',[s for s in 'BVriJH']) ; CMBX,none  = get_mags_to_colours(5,'B-X',[s for s in 'BVriJH']) ; CMXH,none  = get_mags_to_colours(5,'X-H',[s for s in 'BVriJH'])
+			CMadj = np.vstack((CMadj,np.ones(6))) ; CMBX  = np.vstack((CMBX,np.ones(6))) ; CMXH  = np.vstack((CMXH,np.ones(6)))
+			CMs     = dict(zip(['Adjacent','B-X','X-H'],[CMadj,CMBX,CMXH]))
+			CM_data = CMs[ColourChoice] ; CM_model = CMs[ColourModel]
+			CC      = (CM_data@np.linalg.inv(CM_model))[:-1,:-1]
+			#From Adj Change to Adj, BX or XH
+			#CC = (CMadj@np.linalg.inv(CMadj))[:-1,:-1]
+			#CC = (CMBX@np.linalg.inv(CMadj))[:-1,:-1]
+			#CC = (CMXH@np.linalg.inv(CMadj))[:-1,:-1]
+			#From BX Change to BX, Adj or XH
+			#CC = (CMBX@np.linalg.inv(CMBX))[:-1,:-1]
+			#CC = (CMadj@np.linalg.inv(CMBX))[:-1,:-1]
+			#CC = (CMXH@np.linalg.inv(CMBX))[:-1,:-1]
+			#From XH Change to XH, Adj or BX
+			#CC = (CMXH@np.linalg.inv(CMXH))[:-1,:-1]
+			#CC = (CMadj@np.linalg.inv(CMXH))[:-1,:-1]
+			#CC = (CMBX@np.linalg.inv(CMXH))[:-1,:-1]
+			CCS = {'CC':CC,'CC_to_adj':(CMs['Adjacent']@np.linalg.inv(CMs[ColourModel]))[:-1,:-1]}
+			for ccc in CCS:
+				CCC = CCS[ccc]
+				for i in range(CCC.shape[0]):
+					for j in range(CCC.shape[1]):
+						if abs(CCC[i,j]-1)<1e-10: 	CCC[i,j] = int(1)
+						elif abs(CCC[i,j])<1e-10:	CCC[i,j] = int(0)
+						else: pass
+				CCS[ccc] = CCC
+
+			stan_data['N']  = (stan_data['S']-stan_data['SC'])*stan_data['Nc']
+			stan_data['CC']         = CCS['CC']
+			stan_data['CC_to_adj']  = CCS['CC_to_adj']
+			stan_data['capps_errs'] = capps_errs#[CM @ np.diag( np.asarray( mags_errs[s*(Nc+1):(s+1)*(Nc+1)] )**2 ) @ CM.T for s in range(S)]
+			print (CM)
+			print (CC)
+			print (stan_data['CC_to_adj'])
+			if skewed_intrinsic:
+				stan_file  = stan_file.replace('.stan','_skewint.stan')
+
+		#############
+		#MASSES = [convert(self.lcs[sn].meta['Mbest']) for sn in list(self.DF_C[tref].index) if self.lcs[sn].meta['Mbest'] is not None]
+		#print ('median mass:',np.median(MASSES))
+		if copymode is not False:
+			stan_data['S']  *= (1+copymode)
+			stan_data['SC'] *= (1+copymode)
+			stan_data['S'] = int(stan_data['S']) ; stan_data['SC'] = int(stan_data['SC'])
+			OG = dict(zip(['mags','mags_errs','dm15Bs','dm15B_errs','BVerrs_Cens'],
+							[	copy.deepcopy(stan_data['mags']),
+								copy.deepcopy(stan_data['mags_errs']),
+								copy.deepcopy(stan_data['dm15Bs']),
+								copy.deepcopy(stan_data['dm15B_errs']),
+								copy.deepcopy(stan_data['BVerrs_Cens'])
+								]))
+			for _ in range(copymode):
+				for key in OG:
+					stan_data[key] = np.concatenate((stan_data[key],OG[key]))
+			mu_guesses = np.array([np.average(mi) for mi in np.array_split(stan_data['mags'],stan_data['S'])])
+			stan_init  = [{'mus':np.random.normal(mu_guesses,0.5)} for _ in range(n_chains)]
+
+		#print (len(stan_data['dm15Bs']),stan_data['S'])
+		if SEDmodel!='colours':
+			assert(len(stan_data['mags'])==(stan_data['S']-stan_data['SC'])*stan_data['Nm'])
+			assert(len(stan_data['mags_errs'])==(stan_data['S']-stan_data['SC'])*stan_data['Nm'])
+		assert(len(stan_data['dm15Bs'])==stan_data['S'])
+		assert(len(stan_data['dm15B_errs'])==stan_data['S'])
+		assert(len(stan_data['BVerrs_Cens'])==stan_data['SC'])
+
+		print (stan_data)
+		print (stan_file)
+		print (f"Skewness is: {skewness}; prior disp is {stan_data['alpha_skew_disp_prior']}")
+		print (f"RVprior is: {RVprior}; RVsupperTrunc is {RVsupperTrunc}; skewed_intrinsic is {skewed_intrinsic}; nustar:{stan_data['nustar']}")
+		stan_file  = get_andor_modify_stan_file(pathappender+stan_file,AVprior,uAVmode,skewness,uLoHiBounds,muAVtform,sigAVtform,RVprior,RVsupperTrunc,nuRprior,skewed_intrinsic)#Changes Stan file for e.g. different choices of AV prior
+		#print (stan_file)
+		posterior  = stan.build(stan_file, data=stan_data, random_seed=random_seed)
+		#print (posterior.__dict__)
+		#err=1/0
+		fit        = posterior.sample(num_chains=n_chains, num_samples=n_sampling, num_warmup = n_warmup,init=stan_init)
+		if n_sampling<=1000:
+			fitsummary = az.summary(fit)
+			FIT        = {'df':fit.to_frame(),'fitsummary':fitsummary,'stan_data':stan_data,'choices':self.choices}
+		else:
+			print ('Thinning samples down to 1000 per chain to save on space complexity')
+			Nthinsize = int(1000*n_chains)
+			df = fit.to_frame()#pandas df
+			df = df.iloc[0:df.shape[0]:int(df.shape[0]/Nthinsize)]#thin to 1000 samples per chain
+			dfdict = df.to_dict(orient='list')#change to dictionary so key,value is parameter name and samples
+			dfdict = {key:np.array_split(value,n_chains) for key,value in dfdict.items()}#change samples so split into chains
+			fitsummary = az.summary(dfdict)#feed dictionary into arviz to get summary stats of thinned samples
+			FIT        = {'df':df,'fitsummary':fitsummary,'stan_data':stan_data,'choices':self.choices}#save this instead, space complexity much smaller
+
+		self.FIT = FIT
+		with open('products/stan_fits/FIT.pkl','wb') as f:
+			pickle.dump(FIT,f)
+		with open(f'products/stan_fits/FITS/FIT{savekey}.pkl','wb') as f:
+			pickle.dump(FIT,f)
+
+		df = fit.to_frame()
+		with suppress(KeyError):
+			print (f"TauA(Rhat={fitsummary.loc['tauA']['r_hat']}): {round(np.median(fit['tauA']),2)}+/-{round(np.std(fit['tauA']),2)}" )
+		with suppress(KeyError):
+			print (f"TauB(Rhat={fitsummary.loc['tauB']['r_hat']}): {round(np.median(fit['tauB']),2)}+/-{round(np.std(fit['tauB']),2)}" )
+		if RVdist=='globRV':
+			with suppress(KeyError):
+				print (f"  muRV(Rhat={fitsummary.loc['mu_RV']['r_hat']}): {round(np.median(fit['mu_RV']),2)}+/-{round(np.std(fit['mu_RV']),2)}" )
+			with suppress(KeyError):
+				print (f"  RV(Rhat={fitsummary.loc['RV']['r_hat']}): {round(np.median(fit['RV']),2)}+/-{round(np.std(fit['RV']),2)}" )
+		if RVdist=='popdist':
+			with suppress(KeyError):
+				print (f"  muRV(Rhat={fitsummary.loc['mu_RV']['r_hat']}): {round(np.median(fit['mu_RV']),2)}+/-{round(np.std(fit['mu_RV']),2)}" )
+				print (f"  sigRV(Rhat={fitsummary.loc['sig_RV']['r_hat']}): {round(np.median(fit['sig_RV']),2)}+/-{round(np.std(fit['sig_RV']),2)}" )
+			with suppress(KeyError):
+				print (f"  muRV(Rhat={fitsummary.loc['MURV']['r_hat']}): {round(np.median(fit['MURV']),2)}+/-{round(np.std(fit['MURV']),2)}" )
+		with suppress(KeyError):
+			print (f"  uLO(Rhat={fitsummary.loc['uLO']['r_hat']}): {round(np.median(fit['uLO']),2)}+/-{round(np.std(fit['uLO']),2)}" )
+			print (f"  uHI(Rhat={fitsummary.loc['uHI']['r_hat']}): {round(np.median(fit['uHI']),2)}+/-{round(np.std(fit['uHI']),2)}" )
+		with suppress(KeyError):
+			print (f"  p(Rhat={fitsummary.loc['p']['r_hat']}): {round(np.median(fit['p']),2)}+/-{round(np.std(fit['p']),2)}" )
+		with suppress(KeyError):
+			print (f"  nu(Rhat={fitsummary.loc['nu']['r_hat']}): {round(np.median(fit['nu']),2)}+/-{round(np.std(fit['nu']),2)}" )
+			print (f"  q(Rhat={fitsummary.loc['q']['r_hat']}): {round(np.median(fit['q']),2)}+/-{round(np.std(fit['q']),2)}" )
+		with suppress(KeyError):
+			print (f"  mu_AV(Rhat={fitsummary.loc['mu_AV']['r_hat']}): {round(np.median(fit['mu_AV']),2)}+/-{round(np.std(fit['mu_AV']),2)}" )
+		with suppress(KeyError):
+			print (f"  sig_AV(Rhat={fitsummary.loc['sig_AV']['r_hat']}): {round(np.median(fit['sig_AV']),2)}+/-{round(np.std(fit['sig_AV']),2)}" )
+		with suppress(KeyError):
+			print (f"  muR1(Rhat={fitsummary.loc['muR1']['r_hat']}): {round(np.median(fit['muR1']),2)}+/-{round(np.std(fit['muR1']),2)}" )
+			print (f"  sigmaR1(Rhat={fitsummary.loc['sigmaR1']['r_hat']}): {round(np.median(fit['sigmaR1']),2)}+/-{round(np.std(fit['sigmaR1']),2)}" )
+			print (f"  muR2(Rhat={fitsummary.loc['muR2']['r_hat']}): {round(np.median(fit['muR2']),2)}+/-{round(np.std(fit['muR2']),2)}" )
+			print (f"  sigmaR2(Rhat={fitsummary.loc['sigmaR2']['r_hat']}): {round(np.median(fit['sigmaR2']),2)}+/-{round(np.std(fit['sigmaR2']),2)}" )
+			print (f"  wR(Rhat={fitsummary.loc['wR']['r_hat']}): {round(np.median(fit['wR']),2)}+/-{round(np.std(fit['wR']),2)}" )
+		with suppress(KeyError):
+			print (f"  alphaA(Rhat={fitsummary.loc['alphaA']['r_hat']}): {round(np.median(fit['alphaA']),2)}+/-{round(np.std(fit['alphaA']),2)}" )
+			print (f"  beta(Rhat={fitsummary.loc['beta']['r_hat']}): {round(np.median(fit['beta']),2)}+/-{round(np.std(fit['beta']),2)}" )
+			print (f"  gamma(Rhat={fitsummary.loc['gamma']['r_hat']}): {round(np.median(fit['gamma']),2)}+/-{round(np.std(fit['gamma']),2)}" )
+		with suppress(KeyError):
+			print (f"  alpha_skew(Rhat={fitsummary.loc['alpha_skew']['r_hat']}): {round(np.median(fit['alpha_skew']),2)}+/-{round(np.std(fit['alpha_skew']),2)}" )
+
+		for x in ['FPC','mus','Mibar','dMibarvec','alpha_shape','beta_shape','AVs','sigma_mint_eta','w','b','q','alpha_skew','alphaA','beta','gamma','nu','q','uLO','uHI','mu_AV','sig_AV']:
+			for colname in df.columns.values:
+				if x in colname:
+					if x=='sigma_mint_eta':
+						print (colname,np.median(np.tan(df[colname].values)),np.std(np.tan(df[colname].values)))
+					elif x not in ['FPC','mus']:
+						print (colname,df[colname].mean(),df[colname].std(),df[colname].mean()/df[colname].std())
+					else:
+						print (colname,df[colname].mean(),df[colname].std())
+		with suppress(KeyError):
+			print ('Rhat alpha,beta:',fitsummary.loc['alpha_shape']['r_hat'],fitsummary.loc['beta_shape']['r_hat'])
+
+
+'''
+def load_analysis_lcs(self):
+	"""
+	Load Analysis LCs
+
+	Method to create/save and/or load analysis lcs; these lcs are trimmed on phase, only have filters in interpflts, and have Tmax already estimated.
+
+	End Product(s)
+	----------
+	lcs : dict
+		{sn:lc}, each lc is trimmed on phase, has interpflts only, Tmax is estimated
+	"""
+	import snanaio as io
+	#Folder where snana lcs for analysis are loaded from and/or saved into
+	self.analysis_folder = self.snanapath+get_snana_foldername(self.choices['snpy_parameters']) + 'analysis/'
+	ensure_folders_to_file_exist(self.analysis_folder)
+	#Check that all analysis lcs are created
+	missing_lcs = []
+	for sn in self.SNSsnpy:
+		path_snana_product  = f"{self.analysis_folder}{sn}_{self.SNSsnpy[sn]['survey']}.snana.dat"
+		if not os.path.exists(path_snana_product):
+			missing_lcs.append(sn)
+	#If there are analysis lcs missing, select those SNe and save analysis lcs
+	if missing_lcs!=[]:
+		self.load_and_preprocess_snana_lcs()
+		for sn in missing_lcs:
+			lcobj = LCObj(self.lcs[sn],self.choices['preproc_parameters'])
+			lcobj.get_Tmax()
+			lcobj.get_phase()
+			lc   = lcobj.lc
+			Tmax = lc.meta[lcobj.choices['Tmaxchoicestr']]
+			io.write_snana_lcfile(self.analysis_folder, sn, lc['mjd'], lc['flt'], lc['mag'], lc['magerr'], Tmax,
+			lc.meta['REDSHIFT_HELIO'], lc.meta['REDSHIFT_CMB'], lc.meta['REDSHIFT_CMB_ERR'], lc.meta['MWEBV'],ra=lc.meta['RA'],dec=lc.meta['DEC'], survey=lc.meta['SOURCE']
+
+			)
+	#Now that all analysis lcs are pre-computed, load them up
+	lcs = {}
+	for sn in self.SNSsnpy:
+		path_snana_product  = f"{self.analysis_folder}{sn}_{self.SNSsnpy[sn]['survey']}.snana.dat"
+		sn , lc  = io.read_snana_lcfile(path_snana_product)
+		lc.meta[self.choices['preproc_parameters'].choices['Tmaxchoicestr']] = lc.meta['PEAKMJD']
+		lcs[sn] = lc
+	#Set lcs attribute
+	self.lcs = lcs
+'''
