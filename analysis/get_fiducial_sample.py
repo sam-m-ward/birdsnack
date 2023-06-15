@@ -1,7 +1,7 @@
 #Append model_files to path directory
 import sys
 sys.path.append('../model_files/')
-from model1_load_data import *
+from load_raw_data import *
 #Load up and save raw data as snpyfile dictionaries, load up metadata
 dataloader = LOAD_DATA()
 
