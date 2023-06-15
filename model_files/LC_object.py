@@ -15,6 +15,9 @@ LCObj class:
 		test_data_availability(ref_band='B', tref=0, Nlist=[2,10,2,40], tcol='phase', local=False)
 		get_phase(returner=False)
 		get_GP_interpolation()
+		extract_interpolations()
+		update_DF_M(DF_M, sn)
+		plot_lc(plotter, mjd_or_phase='phase', bright_mode=None)
 --------------------
 
 Written by Sam M. Ward: smw92@cam.ac.uk
@@ -341,6 +344,82 @@ class LCObj:
 				FIT[lam_to_flt[ll]] = gFIT[ll]
 		#Set attribute
 		self.FIT = FIT
+
+	def extract_interpolations(self):
+		"""
+		Extract Interpolations
+
+		Method to extract FIT dictionary interpolations in passbands in pblist at times in tilist
+
+		End Product(s)
+		----------
+		df_m, df_m_extra : pandas dfs of interpolations
+			respectively, GP evaluated in pblist at tilist, and evaluated at Extra_Features e.g. {15:['B']}
+		"""
+		#Load interpolations, pblist and tilist
+		FIT  = self.FIT ; pblist = self.choices['pblist'] ; tilist = self.choices['tilist']
+		#Intialise empty matrix of interpolations and measurement errors
+		mags = np.empty((len(tilist),len(pblist),2))
+		for ipb,pb in enumerate(pblist):
+			for iti,ti in enumerate(tilist):
+				if FIT[pb] is not None:
+					gp_index        = np.where(FIT[pb].x==ti)[0][0]
+					y,yerr          = FIT[pb].y[gp_index],FIT[pb].yerr[gp_index]
+					mags[iti,ipb,0] = y
+					mags[iti,ipb,1] = yerr
+				else:
+					if iti==0: print (f"{FIT['lc'].meta['SNID']} GP fit is None in Band: {pb}")
+					mags[iti,ipb,0] = np.nan
+					mags[iti,ipb,1] = np.nan
+		#Transform to pandas df
+		df_m = pd.DataFrame(np.concatenate((mags[:,:,0],mags[:,:,1]),axis=1),index=tilist,columns=pblist+[pb+self.choices['errstr'] for pb in pblist])
+
+		#Do the same for df_extra
+		#Slightly different because each chosen phase may have different set of columns==passbands, therefore 1 df for each ti in Extra_Features
+		df_extra = {}
+		tilist_extra = list(self.choices['Extra_Features'].values())
+		for ti,pbmini in self.choices['Extra_Features'].items():
+			mags = np.empty((len(pbmini),2))
+			for ipb,pb in enumerate(pbmini):
+				if FIT[pb] is not None:
+					gp_index        = np.where(FIT[pb].x==ti)[0][0]
+					y,yerr          = FIT[pb].y[gp_index],FIT[pb].yerr[gp_index]
+					mags[ipb,0] = y
+					mags[ipb,1] = yerr
+				else:
+					if iti==0: print (f"{FIT['lc'].meta['SNID']} GP fit is None in Band: {pb}")
+					mags[ipb,0] = np.nan
+					mags[ipb,1] = np.nan
+
+				df_extra[ti] = pd.DataFrame(np.hstack((mags[:,0],mags[:,1])).reshape(1,len(pbmini*2)),index=[ti],columns=pbmini+[pb+self.choices['errstr'] for pb in pbmini])#index=[ti]
+
+		#Set attributes
+		self.df_m       = df_m
+		self.df_m_extra = df_extra
+
+	def update_DF_M(self, DF_M, sn):
+		"""
+		Update DF_M
+
+		Takes in sn-specific interpolations dataframes, df_m and df_m_extra, and appends to sample level DF_M
+
+		Parameters
+		----------
+		DF_M : dict of pandas df
+			sample level collection of GP interpolations
+
+		sn : str
+			name of sn being appended to sample object
+
+		Returns
+		----------
+		DF_M with sn interpolations appended
+		"""
+		for ti in self.choices['tilist']:
+			DF_M[ti].loc[sn] = self.df_m.loc[ti]
+		for ti,pbmini in self.choices['Extra_Features'].items():
+			DF_M['extra'][ti].loc[sn] = self.df_m_extra[ti].loc[ti]
+		return DF_M
 
 	def plot_lc(self, plotter, mjd_or_phase='phase', bright_mode=None):
 		"""
