@@ -273,7 +273,7 @@ class LCObj:
 			return tpred
 
 		FIT = {'lc':self.lc} ; flts = self.lc.meta['flts']
-		print (f"{self.lc.meta['SNID']}: Beginning GP Interpolation; flts are:{flts}")
+		print (f"{self.lc.meta['SNID']}: Performing GP Interpolation; flts are:{flts}")
 		if self.choices['mags_method']=='1DGP':#For 1DGP Interpolation
 			for iif,flt in enumerate(flts):#For each filter
 				phase,bright,brighterr = get_time_lc_arrays(get_lcf(self.lc,flt),mjd_or_phase=mjd_or_phase,flux_or_mag=self.choices['bright_mode'])#Get data
