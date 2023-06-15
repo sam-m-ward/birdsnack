@@ -169,7 +169,8 @@ preproc_parameters:
   #Method for interpolating light curves to extract magnitudes
   mags_method : '1DGP'
   mags_method : '2DGP'
-
+########################################################
+additional_cut_parameters:
   #Cuts on Sample for Stan Fitting
   #logMcut   : 10.42
   logMcut   : 10
@@ -186,7 +187,9 @@ preproc_parameters:
 
   #spectype  : 'all'
   spectype  : 'normal'
-########################################################
+
+  extra_drop_SNe : {'2008gb':'Removing 2008gb because (only sometimes) 2DGP-mag returns large mag. measurement error. Also Tmax is not obvious on visual inspection.'}
+
 plotting_parameters :
   #Fontsize
   FS   : 18
