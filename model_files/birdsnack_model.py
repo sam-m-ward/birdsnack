@@ -19,7 +19,7 @@ BIRDSNACK class
 
 import copy,os,pickle,yaml
 from snoopy_corrections import SNOOPY_CORRECTIONS
-from miscellaneous import ensure_folders_to_file_exist
+from miscellaneous import *
 from LC_object import *
 
 class BIRDSNACK:
@@ -356,16 +356,103 @@ class BIRDSNACK:
 
 		if overwrite or not os.path.exists(DF_M_name):
 			print (f'Creating DF_M for lcs(N={len(self.lcs)})')
+			#Initialise empty sample-level dataframe of interpolations
 			DF_M = self.load_empty_DF_M()
 			for sn,lc in self.lcs.items():
-				#try:
-				if 1==1:
-					lcobj = LCObj(lc,self.choices['preproc_parameters'])
-					lcobj.get_Tmax()
-					lcobj.get_phase()
-					lcobj.get_GP_interpolation()
-					lcobj.extract_interpolations()
-					DF_M = lcobj.update_DF_M(DF_M, sn)
-					#lcobj.plot_lc(PLOTTER(self.choices['plotting_parameters'],self.plotpath))
+				#Initialise LCobj of lc
+				lcobj = LCObj(lc,self.choices['preproc_parameters'])
+				#Get Tmax
+				lcobj.get_Tmax()
+				#Trim on phase
+				lcobj.get_phase()
+				#Interpolate data
+				lcobj.get_GP_interpolation()
+				#Extract Interpolations at times and passbands of interest
+				lcobj.extract_interpolations()
+				#Update sample-level DF with sn-specific interpolations
+				DF_M = lcobj.update_DF_M(DF_M, sn)
+				#Plot light curve interpolation
+				#lcobj.plot_lc(PLOTTER(self.choices['plotting_parameters'],self.plotpath))
+		self.DF_M = DF_M
 
+	def additional_cuts(self):
+		"""
+		Additional Cuts
+
+		Methods to apply additional cuts sample, based on metadata, e.g. B-V colour, Host galaxys stellar mass, Spectroscopic type etc., and also measurement errors
+
+		End Product(s)
+		----------
+		DF_M with appropriate cuts applied
+		"""
+		DF_M    = self.DF_M ; tref = self.choices['preproc_parameters']['tilist'][self.choices['preproc_parameters']['tref_index']]
+		choices = self.choices['additional_cut_parameters']
+
+		tilist = self.choices['preproc_parameters']['tilist']
+		pblist = self.choices['preproc_parameters']['pblist']
+		Extra_Features = self.choices['preproc_parameters']['Extra_Features']
+
+		print (f"Original sample size:{DF_M[tref].shape[0]}")
+
+		#Remove NaNs
+		print ("###"*5+"\nRemoving NaNs")
+		for ti in tilist:
+			DF_M[ti].dropna(inplace=True)
+		for ti in Extra_Features:
+			DF_M['extra'][ti].dropna(inplace=True)
+		DF_M = trim_to_common_SNS(DF_M)
+
+
+		#Remove spectrosopically peculiar SNe
+		if choices['spectype']=='normal':
+			print ("###"*5+f"\nCutting to spectype={choices['spectype']}")
+			drop_sns = []
+			for sn in list(DF_M[tref].index):
+				if self.lcs[sn].meta['Spectral_Type']!='normal':
+					if self.lcs[sn].meta['Spectral_Type'] is None:
+						print (f'Dropping SN{sn} because no spec data')
+					else:
+						print (f"Dropping SN{sn} because spec data is {self.lcs[sn].meta['Spectral_Type']}")
+					drop_sns.append(sn)
+			DF_M = trim_to_common_SNS(DF_M, drop_sns=drop_sns)
+
+		#Trim on magnitude measurement errors
+		if choices['magerrcut']:
+			print ("###"*5+f"\nCutting so magnitude measurement errors are <{choices['magerrcut']}")
+			for ti in tilist:
+				DF_M[ti] = DF_M[ti][DF_M[ti][[col for col in DF_M[ti].columns if self.choices['preproc_parameters']['errstr'] in col]]<choices['magerrcut']]
+			for ti in Extra_Features:
+				DF_M['extra'][ti] =  DF_M['extra'][ti][DF_M['extra'][ti][[col for col in DF_M['extra'][ti].columns if self.choices['preproc_parameters']['errstr'] in col]]<choices['magerrcut']]
+			DF_M = trim_to_common_SNS(DF_M)
+
+		#Trim pre-selected SNe and quote reason why
+		if choices['extra_drop_SNe']!={}:
+			print ("###"*5+"\nRemoving pre-selected SNe")
+			for sn,reason in choices['extra_drop_SNe'].items():
+				with suppress(KeyError):
+					DF_M[tref].drop([sn], axis=0, inplace=True)
+					print (reason)
+			DF_M = trim_to_common_SNS(DF_M)
+
+		#Apply B-V<0.3 mag cosmology cut
+		if choices['BVcut']:
+			print ("###"*5+"\nApplying B-V<0.3 mag cut")
+			DF_M[0] = DF_M[0][(DF_M[0]['B']-DF_M[0]['V']).abs()<0.3]
+			DF_M = trim_to_common_SNS(DF_M)
+
+		#Apply host galaxy stellar mass cut
+		if choices['mass_mode']!='all_masses':
+			print ("###"*5+f"\nCutting on host galaxy stellar mass to retain: {choices['mass_mode']}; defined at logMcut={choices['logMcut']}")
+			drop_sns = []
+			for sn in list(DF_M[tref].index):
+				Mbest = self.lcs[sn].meta['Mbest']
+				if Mbest is None:
+					drop_sns.append(sn)
+				elif Mbest>=logMcut and choices['mass_mode']=='low_masses':
+					drop_sns.append(sn)
+				elif Mbest<logMcut and choices['mass_mode']=='high_masses':
+					drop_sns.append(sn)
+			DF_M = trim_to_common_SNS(DF_M, drop_sns=drop_sns)
+
+		#Reset attribute with cuts to sample
 		self.DF_M = DF_M
