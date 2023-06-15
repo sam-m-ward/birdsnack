@@ -313,7 +313,6 @@ class BIRDSNACK:
 		DF: dict of pandas.df
 			DF = {ti:df for ti in tilist}; df is GP interpolation data at a given phase, e.g. apparent mag, colours etc.
 			Also includes {'extra':DF_extra} for e.g. dm15B
-
 		"""
 		pblist = self.choices['preproc_parameters']['pblist']
 		tilist = self.choices['preproc_parameters']['tilist']
@@ -331,8 +330,8 @@ class BIRDSNACK:
 				DF_extra[ti] = pd.DataFrame(columns = pbmini+[pb+errstr for pb in pbmini])
 
 		#Combine
-		DF_tot = {**DF_m,**{'extra':DF_extra}}
-		return DF_tot
+		DF_M = {**DF_m,**{'extra':DF_extra}}
+		return DF_M
 
 	def get_peak_mags(self, savekey='Default', overwrite=False):
 		"""
@@ -351,7 +350,7 @@ class BIRDSNACK:
 		Returns
 		----------
 		DF_M: dict of pandas.df
-			DF = {ti:df_ti for ti in tilist}; df_ti is GP interpolation data at a given phase
+			DF = {ti:df_ti for ti in tilist,**{'extra':df_ti_extra}}; df_ti is GP interpolation data at a given phase for pblist, df_ti_extra is same for Extra_Features
 		"""
 		DF_M_name = f'{self.DFpath}DF_M_{savekey}.pkl'
 
@@ -365,17 +364,8 @@ class BIRDSNACK:
 					lcobj.get_Tmax()
 					lcobj.get_phase()
 					lcobj.get_GP_interpolation()
-					lcobj.plot_lc(PLOTTER(self.choices['plotting_parameters'],self.plotpath))
+					lcobj.extract_interpolations()
+					DF_M = lcobj.update_DF_M(DF_M, sn)
+					#lcobj.plot_lc(PLOTTER(self.choices['plotting_parameters'],self.plotpath))
 
-					#err=1/0
-					#df_m  = lcobj.return_mags_DF()
-					#for tc in tclist:
-					#	DF_M[tc].loc[sn] = df_m.loc[tc]
-
-				#except Exception as e:
-				#	print (e)
-				#	print (f"SN {sn} failed")
-				#	pass
-
-
-		#self.DF_M = DF_M
+		self.DF_M = DF_M
