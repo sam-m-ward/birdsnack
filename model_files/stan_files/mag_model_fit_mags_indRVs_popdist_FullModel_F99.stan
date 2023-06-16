@@ -21,7 +21,6 @@ data {
   vector[S] dm15B_errs;          //Light curve shape measurement errors, if gamma_shape=0, then these are dummy values
   real gamma_shape;              //If 1, include LC shape term, if 0, exclude LC shape term
   real gamma_res;                //If 1, include intrinsic colour residuals, if 0, exclude residuals
-
 }
 
 transformed data {
@@ -34,8 +33,6 @@ transformed data {
 	vector[2] f99_d = square(xk[8:9]) ./ (square(square(xk[8:9]) - square(f99_x0)) + square(f99_gamma*xk[8:9]));
 
   int sp = S-SC;
-
-  real RVsTrunc = 10;
 }
 
 parameters {
@@ -82,7 +79,7 @@ transformed parameters {
   matrix[2,2] L_mint_Cens;           //Cholesky decomposition of BV intrinsic magnitudes
 
   real<upper=0> alpha;
-  real<lower=0> beta;
+  //real<lower=0> beta;
   //real<lower=0> nu;
 
   //Fitzpatrick99 parameters
@@ -96,13 +93,12 @@ transformed parameters {
   sig_RV  = eta_sig_RV*disp_sigmaRV;
 
 
-  //Tranform nuRVs->RVs via truncated Gaussian (RVmin=RVmin, RVmax=inf)
-  alpha  = (RVmin - muRV)/sig_RV;
-  RVs    = muRV - sig_RV * ( inv_Phi ( nuRVs * Phi (-alpha) ) );
-
+  //Tranform nuRVs->RVs via truncated Gaussian (RVsmin=RVsmin, RVsmax=inf)
+  alpha  = (RVsmin - mu_RV)/sig_RV;
+  RVs    = mu_RV - sig_RV * ( inv_Phi ( nuRVs * Phi (-alpha) ) );
   //Upper-Truncated-Normal
-  beta   = (RVsTrunc - muRV)/sig_RV;
-  //RVs  = muRV + sig_RV*(inv_Phi(nuRVs*(Phi(beta)-Phi(alpha)) + Phi(alpha)));
+  //beta   = (RVsTrunc - mu_RV)/sig_RV;
+  //RVs  = mu_RV + sig_RV*(inv_Phi(nuRVs*(Phi(beta)-Phi(alpha)) + Phi(alpha)));
 
 
   //Compute Fitzpatrick99 parameters
@@ -156,7 +152,7 @@ model {
   //AVs         ~ gamma(nu,1/tauA);
 
   //Priors on Hyperparameters
-  mu_RV          ~ uniform(RVmin,RVmax);
+  mu_RV          ~ uniform(muRVmin,muRVmax);
   eta_sig_RV     ~ std_normal();
   tauA_tform     ~ uniform(0,pi()/2);
   //nu_tform     ~ uniform(0,pi()/2);
