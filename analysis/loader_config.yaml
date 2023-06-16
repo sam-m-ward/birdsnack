@@ -201,6 +201,9 @@ analysis_parameters:
   RVsmax : 'inf'
   #Dispersion of Half-normal prior on sigmaRV
   disp_sigmaRV : 2
+  #Dispersion on HalfCauchy prior on intrinsic mags/colours
+  a_sigma_mint : 1
+  a_sigma_cint : 1
 
   #Data that is fed into model
   DataTransformation : 'B-X'
@@ -245,9 +248,11 @@ analysis_parameters:
   copymode : 1
   copymode : False
 
-  #Option to fix intrinsic hyperparameters at some pre-defined values
-  fixint : True
-  fixint : False
+  #Stan Samples Here
+  n_warmup   : 1000
+  n_sampling : 1000
+  n_chains   : 4
+  n_thin     : 1000
 ########################################################
 plotting_parameters :
   #Fontsize
