@@ -253,6 +253,7 @@ analysis_parameters:
   n_sampling : 1000
   n_chains   : 4
   n_thin     : 1000
+  random_seed : 10000
 ########################################################
 plotting_parameters :
   #Fontsize
