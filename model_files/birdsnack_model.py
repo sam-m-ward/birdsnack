@@ -24,6 +24,7 @@ from HBM_preprocessing import *
 from LC_object import *
 from miscellaneous import *
 from snoopy_corrections import *
+import stan
 
 class BIRDSNACK:
 	"""
@@ -455,7 +456,6 @@ class BIRDSNACK:
 			DF_M['extra'][ti].dropna(inplace=True)
 		DF_M = trim_to_common_SNS(DF_M)
 
-
 		#Remove spectrosopically peculiar SNe
 		if choices['spectype']=='normal':
 			print ("###"*5+f"\nCutting to spectype={choices['spectype']}")
@@ -473,9 +473,13 @@ class BIRDSNACK:
 		if choices['magerrcut']:
 			print ("###"*5+f"\nCutting so magnitude measurement errors are <{choices['magerrcut']}")
 			for ti in tilist:
-				DF_M[ti] = DF_M[ti][DF_M[ti][[col for col in DF_M[ti].columns if self.choices['preproc_parameters']['errstr'] in col]]<choices['magerrcut']]
+				errcols = [col for col in DF_M[ti].columns if self.choices['preproc_parameters']['errstr'] in col]
+				for col in errcols:
+					DF_M[ti] = DF_M[ti][DF_M[ti][col]<choices['magerrcut']]
 			for ti in Extra_Features:
-				DF_M['extra'][ti] =  DF_M['extra'][ti][DF_M['extra'][ti][[col for col in DF_M['extra'][ti].columns if self.choices['preproc_parameters']['errstr'] in col]]<choices['magerrcut']]
+				errcols = [col for col in DF_M['extra'][ti].columns if self.choices['preproc_parameters']['errstr'] in col]
+				for col in errcols:
+					DF_M['extra'][ti] = DF_M['extra'][ti][DF_M['extra'][ti][col]<choices['magerrcut']]
 			DF_M = trim_to_common_SNS(DF_M)
 
 		#Trim pre-selected SNe and quote reason why
@@ -529,9 +533,10 @@ class BIRDSNACK:
 		pblist  = self.choices['preproc_parameters']['pblist']
 		tref    = self.choices['preproc_parameters']['tilist'][self.choices['preproc_parameters']['tref_index']]
 		DataTransformation = self.choices['analysis_parameters']['DataTransformation']
-		n_warmup,n_sampling,n_chains,n_thin = self.choices['analysis_parameters']['n_warmup'],self.choices['analysis_parameters']['n_sampling'],self.choices['analysis_parameters']['n_chains'],self.choices['analysis_parameters']['n_thin']
+		n_warmup,n_sampling,n_chains,n_thin,random_seed = self.choices['analysis_parameters']['n_warmup'],self.choices['analysis_parameters']['n_sampling'],self.choices['analysis_parameters']['n_chains'],self.choices['analysis_parameters']['n_thin'],self.choices['analysis_parameters']['random_seed']
 
 		#Initialisation of stan_data
+		stan_data = {}
 		stan_data['Nm'] = len(pblist)
 		stan_data['Nc'] = stan_data['Nm']-1
 		stan_data['gamma_shape'] = 1 if self.choices['analysis_parameters']['include_LCshape']   else 0
@@ -545,8 +550,8 @@ class BIRDSNACK:
 		modelloader.get_censored_data()
 		stan_data['S']  = modelloader.S
 		stan_data['SC'] = modelloader.SC
+		stan_data['BVerrs_Cens'] = modelloader.BVerrs_Cens
 		if self.choices['analysis_parameters']['CensoredData']:
-			stan_data['BVerrs_Cens'] = modelloader.BVerrs_Cens
 			print (f"Incorporating censored data: Fitting {stan_data['S']-stan_data['SC']} SNe and {stan_data['SC']} Censored SNe")
 			print (f"Censored SNe are: {modelloader.CensoredSNe}")
 			print (f"These have 0.3<=B-V<{self.choices['analysis_parameters']['CensoredCut']}")
@@ -590,7 +595,7 @@ class BIRDSNACK:
 		#stan_init  = [{'mus':np.random.normal(mu_guesses,0.5)} for _ in range(n_chains)]
 
 		#Assert size of data vectors matches asserted integer lengths
-		modelloader.data_model_checks()
+		modelloader.data_model_checks(stan_data)
 		#Print Data
 		print (stan_data)
 
