@@ -1,10 +1,13 @@
-# -*- coding: UTF-8 -*-
 """
-This module has been copied directly from the BayeSN public release github on 25/08/22
-see https://github.com/bayesn/bayesn-public; All credits to BayeSN team
+Module for snana lc operations
 
-I/O methods. All the submodules of the BayeSNmodel package use this module for
-almost all I/O operations.
+Contains several functions, including:
+----------
+read_snana_lcfile(lcfile, sampname=None, metafile=None)
+write_snana_lcfile(output_dir, snname, mjd, flt, mag, magerr, tmax, z_helio, z_cmb, z_cmb_err, ebv_mw, ra=None, dec=None, author="anonymous", survey=None, paper=None, filename=None)
+----------
+
+Credits stevet40,CambridgeAstroStat: https://github.com/bayesn/bayesn-public/tree/public/BayeSNmodel
 """
 
 from __future__ import absolute_import

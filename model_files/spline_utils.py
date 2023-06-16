@@ -1,7 +1,14 @@
-# -*- coding: UTF-8 -*-
 """
-BayeSN Spline Utilities. Defines a set of functions which carry out the
-2D spline operations essential to BayeSN.
+Module for Cubic Splines
+
+Contains
+----------
+invKD_irr(x)
+cartesian_prod(x, y)
+spline_coeffs_irr(x_int, x, invkd, allow_extrap=True)
+----------
+
+Credits stevet40,CambridgeAstroStat: https://github.com/bayesn/bayesn-public/tree/public/BayeSNmodel
 """
 
 import numpy as np
@@ -19,7 +26,7 @@ def invKD_irr(x):
 	----------
 	x : :py:class:`numpy.array`
 		Numpy array containing the locations of the cubic spline knots.
-	
+
 	Returns
 	-------
 	KD : :py:class:`numpy.array`
@@ -40,7 +47,7 @@ def invKD_irr(x):
 	for j in np.arange(1,n-1):
 		row = j - 1
 		D[row, row:row+3] = [1./(x[j] - x[j-1]), -(1./(x[j+1] - x[j]) + 1./(x[j] - x[j-1])), 1./(x[j+1] - x[j])]
-	
+
 	M = np.zeros((n,n))
 	M[1:-1, :] = np.linalg.solve(K,D)
 	return M
@@ -55,7 +62,7 @@ def cartesian_prod(x, y):
 		First vector.
 	x : :py:class:`numpy.array`
 		Second vector.
-	
+
 	Returns
 	-------
 	z : :py:class:`numpy.array`
@@ -87,7 +94,7 @@ def spline_coeffs_irr(x_int, x, invkd, allow_extrap=True):
 		Flag permitting extrapolation. If True, the returned matrix will be
 		configured to extrapolate linearly beyond the outer knots. If False,
 		values which fall out of bounds will raise ValueError.
-	
+
 	Returns
 	-------
 	J : :py:class:`numpy.array`
@@ -99,9 +106,9 @@ def spline_coeffs_irr(x_int, x, invkd, allow_extrap=True):
 	X = np.zeros((n_x_int,n_x))
 
 	if not allow_extrap and ((max(x_int) > max(x)) or (min(x_int) < min(x))):
-		raise ValueError("Interpolation point out of bounds! " + 
+		raise ValueError("Interpolation point out of bounds! " +
 			"Ensure all points are within bounds, or set allow_extrap=True.")
-	
+
 	for i in range(n_x_int):
 		x_now = x_int[i]
 		if x_now > max(x):
