@@ -139,7 +139,8 @@ class HBM_preprocessor:
 				CensoredCut = float(CensoredCut)
 			errstr = self.choices['preproc_parameters']['errstr']
 
-			DF_M[0]['BV']    = DF_M[0]['B']-DF_M[0]['V']
+			DF_M[0]['BV']          =  DF_M[0]['B']-DF_M[0]['V']
+			DF_M[0][f'BV{errstr}'] = (DF_M[0][f'B{errstr}']**2+DF_M[0][f'V{errstr}']**2)**0.5
 
 			RetainedSNe = list(DF_M[0][DF_M[0]['BV'].abs()<0.3].index)
 			CensoredSNe = list(DF_M[0][(DF_M[0]['BV'].abs()>=0.3) & (DF_M[0]['BV'].abs()<CensoredCut)].index)
@@ -177,7 +178,7 @@ class HBM_preprocessor:
 
 		if include_LCshape:
 			dm15Bs = [] ; dm15B_errs = []
-			if self.choices['analysis_parameters']['CensoredData']:
+			if not self.choices['analysis_parameters']['CensoredData']:
 				ordered_sns = list(DF_M[0].index)
 			elif self.choices['analysis_parameters']['CensoredData']:
 				ordered_sns = self.RetainedSNe+self.CensoredSNe
@@ -187,7 +188,7 @@ class HBM_preprocessor:
 				dm15Bs.append(dm15B)
 				dm15B_errs.append(dm15Berr)
 		else:
-			S = DF_M[0].shape[0]
+			S          = self.S
 			dm15Bs     = np.ones(S)
 			dm15B_errs = np.ones(S)
 
@@ -350,6 +351,7 @@ class HBM_preprocessor:
 			print (len(stan_data['mags']), stan_data['S'], stan_data['SC'], stan_data['Nm'])
 			assert(len(stan_data['mags'])==(stan_data['S']-stan_data['SC'])*stan_data['Nm'])
 			assert(len(stan_data['mags_errs'])==(stan_data['S']-stan_data['SC'])*stan_data['Nm'])
+		print (len(stan_data['dm15Bs']))
 		assert(len(stan_data['dm15Bs'])==stan_data['S'])
 		assert(len(stan_data['dm15B_errs'])==stan_data['S'])
 		assert(len(stan_data['BVerrs_Cens'])==stan_data['SC'])
