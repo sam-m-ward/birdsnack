@@ -1,3 +1,31 @@
+"""
+HBM Preprocesser Module
+
+Module containing HBM_preprocessor class
+Used to take data products and prepare stan_data dictionry for HBM
+
+Contains:
+--------------------
+HBM_preprocessor class:
+	inputs: choices, DF_M
+
+	Methods are:
+		get_leff_rest()
+		get_dustlaw()
+		get_censored_data()
+		get_dm15Bs()
+		get_CM_transformation_matrix(DataTransformation=None, returner=False)
+		get_CC_transformation_matrices()
+		get_transformed_data()
+		multiply_dataset(stan_data)
+		data_model_checks(stan_data)
+		get_stan_file(stanpath)
+		modify_stan_file()
+--------------------
+
+Written by Sam M. Ward: smw92@cam.ac.uk
+"""
+
 import copy
 import numpy as np
 from snpy import fset
@@ -82,32 +110,6 @@ class HBM_preprocessor:
 				dM_fitz_block   = np.array([ M_fitz_block[i,:]-M_fitz_block[-1,:]  for i in range(M_fitz_block.shape[0]-1) ])
 			self.M_fitz_block = dM_fitz_block
 
-
-		'''
-		else:
-			import extinction
-			RV1,RV2 = 2,3#Dummy RV values used to back out the a,b values
-			_DRV    = (1/RV1 - 1/RV2)
-			if dustlaw=='ccm89':
-				b_vec   = (extinction.ccm89(l_eff_rest,1,RV1)-extinction.ccm89(l_eff_rest,1,RV2))/_DRV
-				a_vec   =  extinction.ccm89(l_eff_rest,1,RV1)-b_vec/RV1
-			elif dustlaw=='ccm89_o94':
-				b_vec   = (extinction.odonnell94(l_eff_rest,1,RV1)-extinction.odonnell94(l_eff_rest,1,RV2))/_DRV
-				a_vec   =  extinction.odonnell94(l_eff_rest,1,RV1)-b_vec/RV1
-
-			if DataTransformation=='Adjacent':
-				a_vec = a_vec[:-1]-a_vec[1:]
-				b_vec = b_vec[:-1]-b_vec[1:]
-			elif DataTransformation=='B-X':
-				a_vec = a_vec[0]-a_vec[1:]
-				b_vec = b_vec[0]-b_vec[1:]
-			elif DataTransformation=='X-H':
-				a_vec = a_vec[:-1]-a_vec[-1]
-				b_vec = b_vec[:-1]-b_vec[-1]
-			self.a_vec = a_vec
-			self.b_vec = b_vec
-		#'''
-
 	def get_censored_data(self):
 		"""
 		Get Censored Data
@@ -148,9 +150,9 @@ class HBM_preprocessor:
 			BVerrs_Cens = DF_M[0].loc[CensoredSNe][f"BV{errstr}"].values
 
 			self.RetainedSNe = RetainedSNe
+			self.BVerrs_Cens = BVerrs_Cens
 			self.CensoredSNe = CensoredSNe
 			self.ExcludedSNe = ExcludedSNe
-			self.BVerrs_Cens = BVerrs_Cens
 
 			self.S  = int(len(RetainedSNe)+len(CensoredSNe))
 			self.SC = int(len(CensoredSNe))
@@ -188,9 +190,8 @@ class HBM_preprocessor:
 				dm15Bs.append(dm15B)
 				dm15B_errs.append(dm15Berr)
 		else:
-			S          = self.S
-			dm15Bs     = np.ones(S)
-			dm15B_errs = np.ones(S)
+			dm15Bs     = np.ones(self.S)
+			dm15B_errs = np.ones(self.S)
 
 		self.dm15Bs     = dm15Bs
 		self.dm15B_errs = dm15B_errs
@@ -306,7 +307,7 @@ class HBM_preprocessor:
 				capps.extend(self.CM @ mags[s*Nm:(s+1)*Nm])
 				data_cov_matrix = self.CM @ np.diag( np.asarray( mags_errs[s*Nm:(s+1)*Nm] )**2 ) @ self.CM.T
 				capps_errs.append(data_cov_matrix)
-			self.capps = capps
+			self.capps      = capps
 			self.capps_errs = capps_errs
 
 	def multiply_dataset(self, stan_data):
