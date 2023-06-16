@@ -555,7 +555,7 @@ class BIRDSNACK:
 			print (f"Incorporating censored data: Fitting {stan_data['S']-stan_data['SC']} SNe and {stan_data['SC']} Censored SNe")
 			print (f"Censored SNe are: {modelloader.CensoredSNe}")
 			print (f"These have 0.3<=B-V<{self.choices['analysis_parameters']['CensoredCut']}")
-			print (f"Completely Excluded SNe are: {self.ExcludedSNe}")
+			print (f"Completely Excluded SNe are: {modelloader.ExcludedSNe}")
 
 
 		#Incorporate LC shape data measurements
