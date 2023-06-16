@@ -17,6 +17,8 @@ BIRDSNACK class
 		additional_cuts()
 
 --------------------
+
+Written by Sam M. Ward: smw92@cam.ac.uk
 """
 
 import copy,os,pickle,yaml
