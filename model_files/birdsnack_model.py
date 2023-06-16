@@ -25,6 +25,7 @@ from LC_object import *
 from miscellaneous import *
 from snoopy_corrections import *
 import stan
+import arviz as az
 
 class BIRDSNACK:
 	"""
@@ -557,7 +558,6 @@ class BIRDSNACK:
 			print (f"These have 0.3<=B-V<{self.choices['analysis_parameters']['CensoredCut']}")
 			print (f"Completely Excluded SNe are: {modelloader.ExcludedSNe}")
 
-
 		#Incorporate LC shape data measurements
 		modelloader.get_dm15Bs()
 		stan_data['dm15Bs']     = modelloader.dm15Bs
@@ -591,12 +591,17 @@ class BIRDSNACK:
 		stan_data = modelloader.multiply_dataset(stan_data)
 
 		#Initialise Stan Model Samples with Sample Average Mags
-		#mu_guesses = np.array([np.average(mi) for mi in np.array_split(stan_data['mags'],stan_data['S']-stan_data['SC'])])
-		#stan_init  = [{'mus':np.random.normal(mu_guesses,0.5)} for _ in range(n_chains)]
+		mu_guesses = np.array([np.average(mi) for mi in np.array_split(stan_data['mags'],stan_data['S']-stan_data['SC'])])
+		stan_init  = [{'mus':np.random.normal(mu_guesses,0.5)} for _ in range(n_chains)]
 
 		#Assert size of data vectors matches asserted integer lengths
 		modelloader.data_model_checks(stan_data)
 		#Print Data
+		#POPS FOR SUPERFLOUS DATA
+		stan_data.pop('Nc')
+		stan_data.pop('RVsmax')
+		stan_data.pop('a_sigma_cint')
+		stan_data.pop('CM')
 		print (stan_data)
 
 		#Get Stan File
@@ -605,9 +610,9 @@ class BIRDSNACK:
 		stan_file = modelloader.modify_stan_file()
 
 		#Build Stan Model
-		posterior  = stan.build(stan_file, data=stan_data, random_seed=random_seed)
+		posterior = stan.build(stan_file, data=stan_data, random_seed=random_seed)
 		#Fit Model
-		fit        = posterior.sample(num_chains=n_chains, num_samples=n_sampling, num_warmup = n_warmup)#,init=stan_init)
+		fit       = posterior.sample(num_chains=n_chains, num_samples=n_sampling, num_warmup = n_warmup,init=stan_init)
 		#Get samples as pandas df
 		df = fit.to_frame()
 		if n_sampling>1000:#Thin samples
@@ -616,6 +621,7 @@ class BIRDSNACK:
 			df = df.iloc[0:df.shape[0]:int(df.shape[0]/Nthinsize)]						#thin to e.g. 1000 samples per chain
 			dfdict = df.to_dict(orient='list')											#change to dictionary so key,value is parameter name and samples
 			fit = {key:np.array_split(value,n_chains) for key,value in dfdict.items()}	#change samples so split into chains
+
 		#Fitsummary including Rhat valuess
 		fitsummary = az.summary(fit)#feed dictionary into arviz to get summary stats of thinned samples
 		#Products of HMC fit
@@ -633,7 +639,6 @@ class BIRDSNACK:
 			print ('Par, median, std, 68%, 95% quantiles')
 			print (par,df[par].median().round(2),df[par].std().round(2), df[par].quantile(0.68).round(2),df[par].quantile(0.95).round(2))
 			print (f"Rhat = {fitsummary.loc[par]['r_hat']}")
-
 
 '''
 def load_analysis_lcs(self):
