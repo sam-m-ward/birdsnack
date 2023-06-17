@@ -94,77 +94,80 @@ class LCObj:
 			return mjd, bright, brighterr
 
 		Tmaxchoicestr = self.choices['Tmaxchoicestr']
-		if self.lc.meta[Tmaxchoicestr] is None or self.lc.meta[f'{Tmaxchoicestr}_std'] is None:
-			#Get bright_mode==either interpolate flux or magnitude data
-			bright_mode = self.choices['bright_mode']
+		if Tmaxchoicestr=='Tmax_GP_restframe':
+			if self.lc.meta[Tmaxchoicestr] is None or self.lc.meta[f'{Tmaxchoicestr}_std'] is None:
+				#Get bright_mode==either interpolate flux or magnitude data
+				bright_mode = self.choices['bright_mode']
 
-			#If 1DGP, use reference band to interpolate, use initial guess of Tmax, then trim on phase range
-			if self.choices['Tmax_method']=='1DGP':
-				for flt in [self.choices['ref_band']]:
-					#Get Ref-band Light Curve
-					lcf = get_lcf(self.lc,flt)
-					#Get Time in MJD, LC and LCerr
-					mjd,bright,brighterr = get_time_lc_arrays(lcf,mjd_or_phase='mjd',flux_or_mag=bright_mode)
-					#If LC has more than 1 data point
-					if len(bright)>1:
-						#Fit Ref-band Light Curve with 1D Squared Exponential GP
-						GPfit     = GP_1D_squaredexp(mjd,bright,brighterr,tau_guess=10)
-						if GPfit is not None:
-							mjd, bright, brighterr = trim_lcarrays_on_phase(bright_mode,GPfit,self.lc.meta['REDSHIFT_HELIO'],self.choices['phasemin'],self.choices['phasemax'],[mjd,bright,brighterr])
-							GPfit     = GP_1D_squaredexp(mjd,bright,brighterr,tau_guess=10)
-					else:
-						print (f"{self.lc.meta['SNID']} length of {bright_mode} vector in band {flt} is {len(bright)}")
-						GPfit = None
-			#If 2DGP, interpolate all bands, then use initial guess of Tmax in reference band to trim on phase range
-			elif self.choices['Tmax_method']=='2DGP':
-				lc  = self.lc
-				#Get Time in MJD, LC and LCerr
-				mjd,bright,brighterr = get_time_lc_arrays(lc,mjd_or_phase='mjd',flux_or_mag=bright_mode)
-				#Get lam to flt mapping
-				lam_to_flt  = dict(zip(lc.meta['lams'],lc.meta['flts']))
-				flt_to_lam  = dict(zip(lc.meta['flts'],lc.meta['lams']))
-				wavelengths = np.array([flt_to_lam[flt] for flt in lc['flt']])
-				lambdaC     = np.asarray(list(lam_to_flt.keys()))
-				#Get 2DGP Interpolation
-				gFIT   = GP_2D_Matern(mjd,bright,brighterr,lambdaC,wavelengths)#,x_pred = x_pred)
-				#Extract the reference band component for Tmax estimation
-				lamref = flt_to_lam[self.choices['ref_band']]
-				GPfit  = gFIT[lamref]
-				if GPfit is not None:#Re-fit data within phase range
-					mjd, bright, brighterr = trim_lcarrays_on_phase(bright_mode,GPfit,lc.meta['REDSHIFT_HELIO'],self.choices['phasemin'],self.choices['phasemax'],[mjd,bright,brighterr])
-					gFIT  = GP_2D_Matern(mjd,bright,brighterr,lambdaC,wavelengths)
-					GPfit = gFIT[lamref]
-
-			#With trimmed data, re-sample GP Ngpdraws times
-			if GPfit is not None:
-				tmax_resolution, tmax_window, Ngpdraws = self.choices['tmax_resolution'], self.choices['tmax_window'], self.choices['Ngpdraws']
-				if self.choices['Tmax_method']=='2DGP':
-					self.choices['tmax_resolution'] *= 10
-				#Using tmax window and resolution, identify maximum brightness by drawing GP samples
-				if bright_mode=='flux': tmax_grid = np.linspace(GPfit.x[np.argmax(GPfit.y)]-(tmax_window/2),GPfit.x[np.argmax(GPfit.y)]+(tmax_window/2),int(tmax_window/tmax_resolution))
-				elif bright_mode=='mag':tmax_grid = np.linspace(GPfit.x[np.argmin(GPfit.y)]-(tmax_window/2),GPfit.x[np.argmin(GPfit.y)]+(tmax_window/2),int(tmax_window/tmax_resolution))
+				#If 1DGP, use reference band to interpolate, use initial guess of Tmax, then trim on phase range
 				if self.choices['Tmax_method']=='1DGP':
-					f_samps     = GPfit.gp.sample_conditional(bright, tmax_grid, size=Ngpdraws)
+					for flt in [self.choices['ref_band']]:
+						#Get Ref-band Light Curve
+						lcf = get_lcf(self.lc,flt)
+						#Get Time in MJD, LC and LCerr
+						mjd,bright,brighterr = get_time_lc_arrays(lcf,mjd_or_phase='mjd',flux_or_mag=bright_mode)
+						#If LC has more than 1 data point
+						if len(bright)>1:
+							#Fit Ref-band Light Curve with 1D Squared Exponential GP
+							GPfit     = GP_1D_squaredexp(mjd,bright,brighterr,tau_guess=10)
+							if GPfit is not None:
+								mjd, bright, brighterr = trim_lcarrays_on_phase(bright_mode,GPfit,self.lc.meta['REDSHIFT_HELIO'],self.choices['phasemin'],self.choices['phasemax'],[mjd,bright,brighterr])
+								GPfit     = GP_1D_squaredexp(mjd,bright,brighterr,tau_guess=10)
+						else:
+							print (f"{self.lc.meta['SNID']} length of {bright_mode} vector in band {flt} is {len(bright)}")
+							GPfit = None
+				#If 2DGP, interpolate all bands, then use initial guess of Tmax in reference band to trim on phase range
 				elif self.choices['Tmax_method']=='2DGP':
-					print (f"{lc.meta['SNID']}; 2DGP samples to get Tmax take longer, therefore: tmax_resolution *= 10; Ndraws /= 10")
-					new_tpred   = np.vstack([np.hstack((tmax_grid for _ in range(len(lambdaC)))),np.array([lam for lam in lambdaC for _ in range(len(tmax_grid))])]).T
-					f_samps_all = GPfit.gp.sample_conditional(bright, new_tpred, size=int(Ngpdraws/10))
-					il          = list(lambdaC).index(lamref) ; Ngridt = copy.deepcopy(len(tmax_grid))
-					f_samps     = f_samps_all[:,il*Ngridt:(il+1)*Ngridt]
-				#Samples of tmax
-				tmaxs     = np.array([tmax_grid[i] for i in np.argmax(f_samps-2*f_samps*(bright_mode=='mag'),axis=1)])
-				#Tmax estimate and uncertainty is sample average and std. of tmax samples
-				Tmax = np.average(tmaxs) ; Tmax_std = np.std(tmaxs)
-			else:
-				Tmax, Tmax_std = None, None
-				tmax_grid,f_samps,tmaxs = None, None, None
+					lc  = self.lc
+					#Get Time in MJD, LC and LCerr
+					mjd,bright,brighterr = get_time_lc_arrays(lc,mjd_or_phase='mjd',flux_or_mag=bright_mode)
+					#Get lam to flt mapping
+					lam_to_flt  = dict(zip(lc.meta['lams'],lc.meta['flts']))
+					flt_to_lam  = dict(zip(lc.meta['flts'],lc.meta['lams']))
+					wavelengths = np.array([flt_to_lam[flt] for flt in lc['flt']])
+					lambdaC     = np.asarray(list(lam_to_flt.keys()))
+					#Get 2DGP Interpolation
+					gFIT   = GP_2D_Matern(mjd,bright,brighterr,lambdaC,wavelengths)#,x_pred = x_pred)
+					#Extract the reference band component for Tmax estimation
+					lamref = flt_to_lam[self.choices['ref_band']]
+					GPfit  = gFIT[lamref]
+					if GPfit is not None:#Re-fit data within phase range
+						mjd, bright, brighterr = trim_lcarrays_on_phase(bright_mode,GPfit,lc.meta['REDSHIFT_HELIO'],self.choices['phasemin'],self.choices['phasemax'],[mjd,bright,brighterr])
+						gFIT  = GP_2D_Matern(mjd,bright,brighterr,lambdaC,wavelengths)
+						GPfit = gFIT[lamref]
 
-			print (Tmax, Tmax_std)
-			self.lc.meta[Tmaxchoicestr] = Tmax
-			self.lc.meta[f'{Tmaxchoicestr}_std'] = Tmax_std
-		else:
-			print ('Tmax already estimated')
-			pass
+				#With trimmed data, re-sample GP Ngpdraws times
+				if GPfit is not None:
+					tmax_resolution, tmax_window, Ngpdraws = self.choices['tmax_resolution'], self.choices['tmax_window'], self.choices['Ngpdraws']
+					if self.choices['Tmax_method']=='2DGP':
+						self.choices['tmax_resolution'] *= 10
+					#Using tmax window and resolution, identify maximum brightness by drawing GP samples
+					if bright_mode=='flux': tmax_grid = np.linspace(GPfit.x[np.argmax(GPfit.y)]-(tmax_window/2),GPfit.x[np.argmax(GPfit.y)]+(tmax_window/2),int(tmax_window/tmax_resolution))
+					elif bright_mode=='mag':tmax_grid = np.linspace(GPfit.x[np.argmin(GPfit.y)]-(tmax_window/2),GPfit.x[np.argmin(GPfit.y)]+(tmax_window/2),int(tmax_window/tmax_resolution))
+					if self.choices['Tmax_method']=='1DGP':
+						f_samps     = GPfit.gp.sample_conditional(bright, tmax_grid, size=Ngpdraws)
+					elif self.choices['Tmax_method']=='2DGP':
+						print (f"{lc.meta['SNID']}; 2DGP samples to get Tmax take longer, therefore: tmax_resolution *= 10; Ndraws /= 10")
+						new_tpred   = np.vstack([np.hstack((tmax_grid for _ in range(len(lambdaC)))),np.array([lam for lam in lambdaC for _ in range(len(tmax_grid))])]).T
+						f_samps_all = GPfit.gp.sample_conditional(bright, new_tpred, size=int(Ngpdraws/10))
+						il          = list(lambdaC).index(lamref) ; Ngridt = copy.deepcopy(len(tmax_grid))
+						f_samps     = f_samps_all[:,il*Ngridt:(il+1)*Ngridt]
+					#Samples of tmax
+					tmaxs     = np.array([tmax_grid[i] for i in np.argmax(f_samps-2*f_samps*(bright_mode=='mag'),axis=1)])
+					#Tmax estimate and uncertainty is sample average and std. of tmax samples
+					Tmax = np.average(tmaxs) ; Tmax_std = np.std(tmaxs)
+				else:
+					Tmax, Tmax_std = None, None
+					tmax_grid,f_samps,tmaxs = None, None, None
+
+				print (Tmax, Tmax_std)
+				self.lc.meta[Tmaxchoicestr] = Tmax
+				self.lc.meta[f'{Tmaxchoicestr}_std'] = Tmax_std
+			else:
+				print ('Tmax already estimated')
+				pass
+		elif Tmaxchoicestr=='Tmax_snpy_fitted':
+			assert(self.lc.meta[Tmaxchoicestr] is not None)
 
 		if return_samps: return tmax_grid,f_samps,tmaxs
 
@@ -415,10 +418,16 @@ class LCObj:
 		----------
 		DF_M with sn interpolations appended
 		"""
+		#Update with mags in pblist at tilist
 		for ti in self.choices['tilist']:
 			DF_M[ti].loc[sn] = self.df_m.loc[ti]
+		#Update with extra features, e.g. m15(B)
 		for ti,pbmini in self.choices['Extra_Features'].items():
 			DF_M['extra'][ti].loc[sn] = self.df_m_extra[ti].loc[ti]
+		#Update with Tmax estimates
+		df_Tmax = pd.DataFrame(np.array([self.lc.meta['Tmax_GP_restframe'],self.lc.meta['Tmax_GP_restframe_std'],self.lc.meta['Tmax_snpy_fitted']]).reshape(1,3),index=[sn],columns=['Tmax_GP_restframe','Tmax_GP_restframe_std','Tmax_snpy_fitted'])
+		DF_M['Tmax'].loc[sn] = df_Tmax.loc[sn]
+
 		return DF_M
 
 	def plot_lc(self, plotter, mjd_or_phase='phase', bright_mode=None):
