@@ -23,7 +23,7 @@ if not os.path.exists(f'{dataloader.SNSpath}SNSsnpy_fiducial.pkl'):
             bs.trim_sample()
             SURVEYS[path_file_survey[-1]] = {'retained_lcs':bs.lcs,'trimmed_lcs':bs.trimmed_lcs, 'reasons':bs.reasons}
         #Use SURVEYS dictionary to get common sample of SNS, with those SNe appearing in multiple surveys selected according to Pecking order
-        dataloader.get_SNSsnpy_combined(SURVEYS)#Save SNSsnpy_combined.pkl
+        SNSsnpy_combined = dataloader.get_SNSsnpy_combined(SURVEYS)#Save SNSsnpy_combined.pkl
 
 
     bs = BIRDSNACK(loader={'SNSsnpy':SNSsnpy_combined}, configname='loader_config.yaml', edit_dict={'load_data_parameters':{'load_mode':'preproc'}}, dfmeta=dataloader.dfmeta)
