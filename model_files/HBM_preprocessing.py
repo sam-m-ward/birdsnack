@@ -373,7 +373,8 @@ class HBM_preprocessor:
 		if self.choices['analysis_parameters']['IntrinsicModel']=='Deviations':
 			if self.choices['analysis_parameters']['DataTransformation']=='mags':
 				print ("Applying Intrinsic Deviations Model to fit Apparent Magnitudes Data")
-				stan_file = f"{stanpath}mag_model_fit_mags_indRVs_popdist_FullModel_F99.stan"
+				stan_file = f"{stanpath}deviations_model_fit_mags_Dirichletmuint.stan"
+				#stan_file = f"{stanpath}deviations_model_fit_mags_Gaussianmuintref.stan"
 			else:
 				print (f"Applying Intrinsic Deviations Model to fit {self.choices['analysis_parameters']['DataTransformation']} Colours Data")
 				stan_file = f"{stanpath}mag_model_fit_colours_indRVs_popdist_FullModel_F99.stan"
