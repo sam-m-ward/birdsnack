@@ -261,14 +261,13 @@ class LOAD_DATA:
         df_spectral_types_RATIR['SubtypeIa'] = df_spectral_types_RATIR['SN'].apply(get_ratir_spec)
         df_spectral_types_RATIR['SpecType_Source'] = 'RATIR'
 
-        #Avelino Spectroscopic Types; #Assign normal to M20 sample of SNe
-        AvelinoSNs                = [re.findall(rf'{self.datapath}BayeSNLCs/snpytxtfiles/(.*)_snpy.txt',f)[0] for f in glob(f'{self.datapath}BayeSNLCs/snpytxtfiles/*_snpy.txt')]
-        df_spectral_types_Avelino = pd.DataFrame(data = dict(zip(['SN','SubtypeIa'],[AvelinoSNs,['normal' for _ in range(len(AvelinoSNs))]] ) ) )
-
+        #Avelino Spectroscopic Types; Assign normal to M20 sample of SNe
         #Misc Spectroscopic Types; Assign normal to all these SNe
+        AvelinoSNs                = [re.findall(rf'{self.datapath}BayeSNLCs/snpytxtfiles/(.*)_snpy.txt',f)[0] for f in glob(f'{self.datapath}BayeSNLCs/snpytxtfiles/*_snpy.txt')]
         MiscSNs                   = [re.findall(rf'{self.datapath}Misc/snpytxtfiles/(.*)_snpy.txt',f)[0] for f in glob(f'{self.datapath}Misc/snpytxtfiles/*_snpy.txt')]
-        df_spectral_types_Avelino = pd.DataFrame(data = dict(zip(['SN','SubtypeIa'],[MiscSNs,['normal' for _ in range(len(MiscSNs))]] ) ) )
-        df_spectral_types_Avelino['SpecType_Source'] = 'AvelinoM20Misc'
+        AvelinoM20MiscSNs = AvelinoSNs+MiscSNs
+        df_spectral_types_AvelinoM20Misc = pd.DataFrame(data = dict(zip(['SN','SubtypeIa'],[AvelinoM20MiscSNs,['normal' for _ in range(len(AvelinoM20MiscSNs))]] ) ) )
+        df_spectral_types_AvelinoM20Misc['SpecType_Source'] = 'AvelinoM20Misc'
 
         #Neill09 Host Masses
         df_SNhostmapper        = pd.read_csv(f'{self.datapath}Misc/Neill09/Table1.txt',sep='\s+&\s+',names=['SN','host','c','d','e','f'])[['SN','host']]
@@ -282,11 +281,11 @@ class LOAD_DATA:
 
         #Merge style may have double entries which conflict (i.e. same SN appears in multiple tables), where entries are the same only pick out once, else merge list of entries into one string
         df_host_masses    = pd.concat([df_host_masses_cspdr3,df_host_masses_CfA,df_host_masses_Ponder21, df_host_masses_Uddin17, df_host_masses_Johansson21, df_host_masses_Neill09],axis=0)
-        df_spectral_types = pd.concat([df_spectral_types_cspdr3,df_spectral_types_CfA,df_spectral_types_RATIR, df_spectral_types_Avelino],axis=0)
+        df_spectral_types = pd.concat([df_spectral_types_cspdr3,df_spectral_types_CfA,df_spectral_types_RATIR, df_spectral_types_AvelinoM20Misc],axis=0)
 
         df_host_masses    = df_host_masses[['SN','Mbest','HostMass_Source']]
         df_spectral_types = df_spectral_types[['SN','SubtypeIa','SpecType_Source']]
-        df_combined = df_host_masses.merge(df_spectral_types, on='SN')
+        df_combined = df_host_masses.merge(df_spectral_types, on='SN',how='outer')
 
         self.dfmeta = df_combined
 
@@ -349,3 +348,5 @@ class LOAD_DATA:
         else:
             with open(f'{self.SNSpath}SNSsnpy_combined.pkl','rb') as f:
                 SNSsnpy_combined = pickle.load(f)
+
+        return SNSsnpy_combined
