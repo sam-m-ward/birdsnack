@@ -5,9 +5,8 @@ Module contains simple functions that are called upon by various scripts
 
 Contains
 --------------------
-ensure_folders_to_file_exist(savename):
-    simple function to create directories to where file will be saved if dirs do not already exist
-
+ensure_folders_to_file_exist(savename)
+trim_to_common_SNS(DF_M, verbose=True, drop_sns=None)
 --------------------
 
 Written by Sam M. Ward: smw92@cam.ac.uk
@@ -38,7 +37,28 @@ def ensure_folders_to_file_exist(savename):
             os.mkdir(dir)
 
 def trim_to_common_SNS(DF_M, verbose=True, drop_sns=None):
-    columns = [c for c in DF_M if c not in ['extra']]
+    """
+    Trim to Common SNs
+
+    Takes in DF_M, which has multiple key,value entries, some of which may have SNe dropped
+    Pools info together and ensures all values have the same SNe in them
+
+    Parameters
+    ----------
+    DF_M : dict
+        keys are tilist, extra, Tmax, choices
+
+    verbose : bool (optional; default=True)
+        if True, print new sample size
+
+    drop_sns : list of str (optional; default = None)
+        list of specific SNs to drop
+
+    Returns
+    ----------
+    DF_M where all entries have same common SNS
+    """
+    columns = [c for c in DF_M if c not in ['extra','Tmax','choices']]
 
     if drop_sns is not None:
         DF_M[columns[0]].drop(drop_sns, axis=0, inplace=True)
@@ -59,6 +79,7 @@ def trim_to_common_SNS(DF_M, verbose=True, drop_sns=None):
         DF_M[ti] = DF_M[ti].loc[common_SNS]
     for ti in DF_M['extra']:
         DF_M['extra'][ti] = DF_M['extra'][ti].loc[common_SNS]
+    DF_M['Tmax'] = DF_M['Tmax'].loc[common_SNS]
 
     if verbose: print (f'New sample size in DF_M is {len(common_SNS)}')
 
