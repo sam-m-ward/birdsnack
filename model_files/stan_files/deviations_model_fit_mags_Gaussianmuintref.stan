@@ -54,7 +54,7 @@ parameters {
 	real<lower=0, upper=pi()/2> tauA_tform;           //Transform of tau_A, AV expontential dist. hyperparameter
 	//real<lower=0,upper=pi()/2> nu_tform;            //Gamma AVs distribution shape hyperparameter
   vector[Nm-1] FPC0m;                               //The zeroth intrinsic mag functional principal component (same for each SN) - using Simplex
-  vector[Nm-1] FPC0m;                               //The first intrinsic mag functional principal component (same for each SN) - using Simplex
+  vector[Nm-1] FPC1m;                               //The first intrinsic mag functional principal component (same for each SN) - using Simplex
 	cholesky_factor_corr[Nm] L_mint_eta;              //Cholesky factor of unscaled intrinsic mag covariance matrix
 	vector<lower=0,upper=pi()/2>[Nm] sigma_mint_eta;  //Scaling of covariance matrix for each intrinsic mag
 

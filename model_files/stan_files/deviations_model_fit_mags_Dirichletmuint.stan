@@ -134,8 +134,8 @@ transformed parameters {
 	if (SC>0) {
 		L_mint_Cens = L_mint[1:2,1:2];
 		for (s in S-SC+1:S) {
-			xivec[Nm*(s-1)+1:Nm*s]   = (Mmatrix * to_vector(yk[s,:])) / RVs[s];
-			mags_matrix_Cens[:,s-sp] = AVs[s]*xivec[Nm*(s-1)+1:Nm*(s-1)+2] + FPC0m[1:2] + gamma_res*L_mint_Cens*eta_mint_Cens[2*(s-sp-1)+1:2*(s-sp-1)+2] + gamma_shape*(dm15B_latent[s]-1.05)*FPC1m[1:2]; //Tripp98 offset is 1.05
+			dxivec[Nm*(s-1)+1:Nm*s]  = (Mmatrix * to_vector(yk[s,:])) / RVs[s];
+			mags_matrix_Cens[:,s-sp] = AVs[s]*dxivec[Nm*(s-1)+1:Nm*(s-1)+2] + FPC0m[1:2] + gamma_res*L_mint_Cens*eta_mint_Cens[2*(s-sp-1)+1:2*(s-sp-1)+2] + gamma_shape*(dm15B_latent[s]-1.05)*FPC1m[1:2]; //Tripp98 offset is 1.05
 			BVslatent_Cens[s-sp]     = mags_matrix_Cens[1,s-sp]-mags_matrix_Cens[2,s-sp];
 		}
 	}
