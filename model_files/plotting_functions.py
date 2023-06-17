@@ -83,16 +83,16 @@ def get_parlabels(choices):
 	Parameters
 	----------
 	choices : dict
-        analysis choices
+		analysis choices
 
 	Returns
 	----------
 	parnames,parlabels,bounds : lists
 		respectively, the parameter names in MCMC chains, the parameter labels used in plots, and the prior bounds on parameters
 	'''
-    AVprior = choices['analysis_parameters']['AVprior']
-    muRVmin = choices['analysis_parameters']['muRVmin']
-    muRVmax = choices['analysis_parameters']['muRVmax']
+	AVprior = choices['analysis_parameters']['AVprior']
+	muRVmin = choices['analysis_parameters']['muRVmin']
+	muRVmax = choices['analysis_parameters']['muRVmax']
 
 	parnames   = ['tauA','mu_RV','sig_RV']
 	parlabels  = ['$\\tau_A$','$\\mu_{R_V}$','$\\sigma_{R_V}$']
@@ -191,7 +191,7 @@ def get_Lines(choices, NSNe, NCens):
 		else:
 			if IntrinsicModel=='Adjacent':
 				return f'Model {IntrinsicModel} Intrinsic Colours'
-			elif IntrinsicModel in ['B-X','X-H']
+			elif IntrinsicModel in ['B-X','X-H']:
 				return f'Model Intrinsic $%s$ Colours'%IntrinsicModel
 
 	def get_LC_shape_string(include_LCshape):
