@@ -576,6 +576,7 @@ class BIRDSNACK:
 		stan_data = {}
 		stan_data['Nm'] = len(pblist)
 		stan_data['Nc'] = stan_data['Nm']-1
+		stan_data['zero_index']  = self.choices['analysis_parameters']['zero_index']
 		stan_data['gamma_shape'] = 1 if self.choices['analysis_parameters']['include_LCshape']   else 0
 		stan_data['gamma_res']   = 1 if self.choices['analysis_parameters']['include_residuals'] else 0
 		analysis_parameters_list = ['muRVmin','muRVmax','RVsmin','RVsmax','disp_sigmaRV','a_sigma_mint','a_sigma_cint']
