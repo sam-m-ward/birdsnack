@@ -21,13 +21,13 @@ BIRDSNACK class
 Written by Sam M. Ward: smw92@cam.ac.uk
 """
 
+import arviz as az
 import copy,os,pickle,yaml
 from HBM_preprocessing import *
 from LC_object import *
 from miscellaneous import *
 from snoopy_corrections import *
 import stan
-import arviz as az
 
 class BIRDSNACK:
 	"""
@@ -393,17 +393,21 @@ class BIRDSNACK:
 			with open(DF_M_name,'wb') as f:
 				pickle.dump(DF_M, f)
 		else:#Load DF_M
+			print (f'Loading pre-created DF_M=={DF_M_name}')
 			with open(DF_M_name,'rb') as f:
 				DF_M = pickle.load(f)
 
 		self.DF_M = DF_M
 
-	def plot_lcs(self,**kwargs):
+	def plot_lcs(self,sns=None,**kwargs):
 		"""
 		Plot Light Curves
 
 		Parameters
 		----------
+		sns : list of str (optional; default=None)
+			if list, plot only sns in the list
+
 		**kwargs : any
 			optional to change e.g. plotting_parameters
 
@@ -419,9 +423,13 @@ class BIRDSNACK:
 					if key==kkey:
 						choices[glob_key][key] = value
 
-		for sn,lc in self.lcs.items():
+		#List of sns to plot
+		if sns is None:
+			sns = list(self.lcs.keys())
+
+		for sn in sns:
 			#Initialise LCobj of lc
-			lcobj = LCObj(lc,choices['preproc_parameters'])
+			lcobj = LCObj(self.lcs[sn],choices['preproc_parameters'])
 			#Get Tmax
 			lcobj.get_Tmax()
 			#Trim on phase
@@ -516,6 +524,8 @@ class BIRDSNACK:
 
 		#Reset attribute with cuts to sample
 		self.DF_M = DF_M
+		self.lcs  = {sn:self.lcs[sn] for sn in self.lcs if sn in list(DF_M[list(DF_M.keys())[0]].index)}
+		self.sns  = list(self.lcs.keys())
 		print ('###'*5)
 
 	def fit_stan_model(self):
