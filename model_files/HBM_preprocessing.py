@@ -172,7 +172,7 @@ class HBM_preprocessor:
 		"""
 		DF_M = copy.deepcopy(self.DF_M)
 		include_LCshape = self.choices['analysis_parameters']['include_LCshape']
-
+		errstr = self.choices['preproc_parameters']['errstr']
 		def get_dm15B(DF_M,sn):
 			dm15B    =  DF_M['extra'][15]['B'].loc[sn]-DF_M[0]['B'].loc[sn]
 			dm15Berr = (DF_M['extra'][15][f'B{errstr}'].loc[sn]**2+DF_M[0][f'B{errstr}'].loc[sn]**2)**0.5
@@ -186,7 +186,7 @@ class HBM_preprocessor:
 				ordered_sns = self.RetainedSNe+self.CensoredSNe
 			#Append dm15Bs in correct order, Retained SNe then Censored SNe
 			for sn in ordered_sns:
-				dm15B,dm15Berr = get_dm15Bs(DF_M,sn)
+				dm15B,dm15Berr = get_dm15B(DF_M,sn)
 				dm15Bs.append(dm15B)
 				dm15B_errs.append(dm15Berr)
 		else:
