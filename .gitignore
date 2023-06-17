@@ -4,6 +4,7 @@ analysis/__pycache__
 .DS_Store
 analysis/.DS_Store
 data/.DS_Store
+*/*/.DS_store
 model_files/.DS_Store
 products/.DS_Store
 products/snpy_SNS/.DS_Store
