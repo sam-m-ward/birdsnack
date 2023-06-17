@@ -348,8 +348,14 @@ class BIRDSNACK:
 			for pb in pbmini:
 				DF_extra[ti] = pd.DataFrame(columns = pbmini+[pb+errstr for pb in pbmini])
 
+		#Save Tmax estimates
+		DF_Tmax = pd.DataFrame(columns=['Tmax_GP_restframe','Tmax_GP_restframe_std','Tmax_snpy_fitted'])
+
+		#Save pre-processing choices made to create the peak mags list
+		choices_dict = {glob_key:self.choices[glob_key] for glob_key in self.choices if glob_key in ['snpy_parameters','preproc_parameters']}
+
 		#Combine
-		DF_M = {**DF_m,**{'extra':DF_extra}}
+		DF_M = {**DF_m,**{'extra':DF_extra},**{'Tmax':DF_Tmax},**{'choices':choices_dict}}
 		return DF_M
 
 	def get_peak_mags(self, savekey=None, overwrite=False):
@@ -371,7 +377,7 @@ class BIRDSNACK:
 		DF_M: dict of pandas.df
 			DF = {ti:df_ti for ti in tilist,**{'extra':df_ti_extra}}; df_ti is GP interpolation data at a given phase for pblist, df_ti_extra is same for Extra_Features
 		"""
-		if savekey is None: savekey = self.choices['analysis_parameters']['DF_savekey']
+		if savekey is None: savekey = self.choices['preproc_parameters']['DF_savekey']
 		DF_M_name = f'{self.DFpath}DF_M_{savekey}.pkl'
 
 		if overwrite or not os.path.exists(DF_M_name):
