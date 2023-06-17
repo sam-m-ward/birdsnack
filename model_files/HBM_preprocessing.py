@@ -349,10 +349,8 @@ class HBM_preprocessor:
 			dictionary of input data
 		"""
 		if self.choices['analysis_parameters']['IntrinsicModel']=='Deviations':
-			print (len(stan_data['mags']), stan_data['S'], stan_data['SC'], stan_data['Nm'])
 			assert(len(stan_data['mags'])==(stan_data['S']-stan_data['SC'])*stan_data['Nm'])
 			assert(len(stan_data['mags_errs'])==(stan_data['S']-stan_data['SC'])*stan_data['Nm'])
-		print (len(stan_data['dm15Bs']))
 		assert(len(stan_data['dm15Bs'])==stan_data['S'])
 		assert(len(stan_data['dm15B_errs'])==stan_data['S'])
 		assert(len(stan_data['BVerrs_Cens'])==stan_data['SC'])
@@ -400,15 +398,14 @@ class HBM_preprocessor:
 		stan_file = copy.deepcopy(self.stan_file)
 		AVprior   = self.choices['analysis_parameters']['AVprior']
 
-		if AVprior!='exp':#If AV prior is not exponential on tau
+		if AVprior!='Exp':#If AV prior is not exponential on tau
 			with open(stan_file,'r') as f:
 				stan_file = f.read().splitlines()
 			for il,line in enumerate(stan_file):
 				###Model Block
 				#Get rid of exponential prior
-				if AVprior!='exp':
-					if bool(re.match(r'\s*AVs\s*~\s*exponential\(inv\(tauA\)\)',line)):
-						stan_file[il] = line.replace('AVs','//AVs')
+				if bool(re.match(r'\s*AVs\s*~\s*exponential\(inv\(tauA\)\)',line)):
+					stan_file[il] = line.replace('AVs','//AVs')
 				#Introduce gamma prior
 				if AVprior == 'Gamma':
 					if bool(re.match(r'\s*//\s*AVs\s*~\s*gamma\(nu,1/tauA\)',line)):

@@ -13,8 +13,10 @@ BIRDSNACK class
 		trim_sample(apply_trims=True, return_trimmed=False)
 		load_empty_DF_M()
 		get_peak_mags(savekey='Default', overwrite=False)
-		plot_lcs(**kwargs)
+		plot_lcs(sns=None,**kwargs)
 		additional_cuts()
+		fit_stan_model()
+		plot_posterior_samples()
 
 --------------------
 
@@ -27,6 +29,7 @@ from HBM_preprocessing import *
 from LC_object import *
 from miscellaneous import *
 from snoopy_corrections import *
+from plotting_functions import get_parlabels, get_Lines
 import stan
 
 class BIRDSNACK:
@@ -76,7 +79,6 @@ class BIRDSNACK:
 
 		#Set Pathnames
 		self.rootpath     = self.choices['rootpath']
-		self.analysispath = self.rootpath+'analysis/'
 		self.datapath     = self.rootpath+'data/'
 		self.plotpath     = self.rootpath+'plots/'
 		self.productpath  = self.rootpath+'products/'
@@ -85,7 +87,7 @@ class BIRDSNACK:
 		self.SNSpath      = self.productpath+'snpy_SNS/'
 		self.FITSpath     = self.productpath+'stan_fits/FITS/'
 		self.snanapath    = self.SNSpath+'snana_copies/'
-		for path in [self.analysispath,self.datapath,self.plotpath,self.productpath,self.modelpath,self.DFpath,self.SNSpath,self.FITSpath,self.snanapath]:
+		for path in [self.datapath,self.plotpath,self.productpath,self.modelpath,self.DFpath,self.SNSpath,self.FITSpath,self.snanapath]:
 			ensure_folders_to_file_exist(path)
 
 		#Load up metadata
@@ -358,7 +360,7 @@ class BIRDSNACK:
 
 		Parameters
 		----------
-		savekey : str (optional; default='Default')
+		savekey : str (optional; default is None)
 			name for DF_M file
 
 		overwrite : bool (optional; default=False)
@@ -369,7 +371,7 @@ class BIRDSNACK:
 		DF_M: dict of pandas.df
 			DF = {ti:df_ti for ti in tilist,**{'extra':df_ti_extra}}; df_ti is GP interpolation data at a given phase for pblist, df_ti_extra is same for Extra_Features
 		"""
-		if savekey is None: savekey = self.choices['analysis_parameters']['savekey']
+		if savekey is None: savekey = self.choices['analysis_parameters']['DF_savekey']
 		DF_M_name = f'{self.DFpath}DF_M_{savekey}.pkl'
 
 		if overwrite or not os.path.exists(DF_M_name):
@@ -542,7 +544,7 @@ class BIRDSNACK:
 		"""
 
 		DF_M    = self.DF_M
-		savekey = self.choices['analysis_parameters']['savekey']
+		savekey = self.choices['analysis_parameters']['HBM_savekey']
 		pblist  = self.choices['preproc_parameters']['pblist']
 		tref    = self.choices['preproc_parameters']['tilist'][self.choices['preproc_parameters']['tref_index']]
 		DataTransformation = self.choices['analysis_parameters']['DataTransformation']
@@ -609,12 +611,11 @@ class BIRDSNACK:
 		#Assert size of data vectors matches asserted integer lengths
 		modelloader.data_model_checks(stan_data)
 		#Print Data
-		#POPS FOR SUPERFLOUS DATA
+		#POPS FOR SUPERFLOUS DATA (OTHERWISE DOESN'T RUN)
 		stan_data.pop('Nc')
 		stan_data.pop('RVsmax')
 		stan_data.pop('a_sigma_cint')
 		stan_data.pop('CM')
-		print (stan_data)
 
 		#Get Stan File
 		modelloader.get_stan_file(stanpath=self.modelpath+'stan_files/')
@@ -652,48 +653,68 @@ class BIRDSNACK:
 			print (par,df[par].median().round(2),df[par].std().round(2), df[par].quantile(0.68).round(2),df[par].quantile(0.95).round(2))
 			print (f"Rhat = {fitsummary.loc[par]['r_hat']}")
 
-'''
-def load_analysis_lcs(self):
-	"""
-	Load Analysis LCs
+	def plot_posterior_samples(self):
+		"""
+		Plot Posterior Samples
 
-	Method to create/save and/or load analysis lcs; these lcs are trimmed on phase, only have filters in interpflts, and have Tmax already estimated.
+		Method to take FIT.pkl object and plot posterior samples
 
-	End Product(s)
-	----------
-	lcs : dict
-		{sn:lc}, each lc is trimmed on phase, has interpflts only, Tmax is estimated
-	"""
-	import snanaio as io
-	#Folder where snana lcs for analysis are loaded from and/or saved into
-	self.analysis_folder = self.snanapath+get_snana_foldername(self.choices['snpy_parameters']) + 'analysis/'
-	ensure_folders_to_file_exist(self.analysis_folder)
-	#Check that all analysis lcs are created
-	missing_lcs = []
-	for sn in self.SNSsnpy:
-		path_snana_product  = f"{self.analysis_folder}{sn}_{self.SNSsnpy[sn]['survey']}.snana.dat"
-		if not os.path.exists(path_snana_product):
-			missing_lcs.append(sn)
-	#If there are analysis lcs missing, select those SNe and save analysis lcs
-	if missing_lcs!=[]:
-		self.load_and_preprocess_snana_lcs()
-		for sn in missing_lcs:
-			lcobj = LCObj(self.lcs[sn],self.choices['preproc_parameters'])
-			lcobj.get_Tmax()
-			lcobj.get_phase()
-			lc   = lcobj.lc
-			Tmax = lc.meta[lcobj.choices['Tmaxchoicestr']]
-			io.write_snana_lcfile(self.analysis_folder, sn, lc['mjd'], lc['flt'], lc['mag'], lc['magerr'], Tmax,
-			lc.meta['REDSHIFT_HELIO'], lc.meta['REDSHIFT_CMB'], lc.meta['REDSHIFT_CMB_ERR'], lc.meta['MWEBV'],ra=lc.meta['RA'],dec=lc.meta['DEC'], survey=lc.meta['SOURCE']
+		End Product(s)
+		----------
+		"""
+		'''
+		Plot Posterior Samples
 
-			)
-	#Now that all analysis lcs are pre-computed, load them up
-	lcs = {}
-	for sn in self.SNSsnpy:
-		path_snana_product  = f"{self.analysis_folder}{sn}_{self.SNSsnpy[sn]['survey']}.snana.dat"
-		sn , lc  = io.read_snana_lcfile(path_snana_product)
-		lc.meta[self.choices['preproc_parameters'].choices['Tmaxchoicestr']] = lc.meta['PEAKMJD']
-		lcs[sn] = lc
-	#Set lcs attribute
-	self.lcs = lcs
-'''
+		Function to take posterior samples and plot corner plot and display all analysis choices
+
+		Parameters
+		----------
+		savekey: str (optional; default='')
+			unique key to load up posterior samples
+
+		show: bool (optional; default=True)
+			if True, show the plot
+
+		thin: bool (optional;default=False)
+			if True, thin the posterior samples to make it quicker to plot
+
+		returner: bool (optional; default=False)
+			if True, return the summary strings == the posterior summary statistics used in LaTeX tables
+
+		quick: bool (optional; default=True)
+			if True, ignore 2D contours
+
+		paperstyle: bool (optional; default=True)
+			if False, show Rhat values
+
+		pathappender: str
+			append str to start of savepath, e.g. '' or '../'
+
+		Returns
+		----------
+		Summary_Strs: dict
+			key is parameter
+			value is string of posterior summary statistic for use in LaTeX Tables
+		'''
+
+		filename = f'{self.FITSpath}FIT{savekey}.pkl'
+		with open(filename,'rb') as f:
+			FIT = pickle.load(f)
+
+		df         = FIT['df']
+		fitsummary = FIT['fitsummary']
+		NSNe       = FIT['stan_data']['S']
+		NCens      = FIT['stan_data']['SC']
+
+		parnames,parlabels,bounds = get_parlabels(FIT['choices'])
+
+		Rhats      = {par:fitsummary.loc[par]['r_hat'] for par in parnames}
+		samples    = {par:np.asarray(df[par].values)   for par in parnames}
+		print (Rhats)
+
+		Lines = get_Lines(FIT['choices'],NSNe-NCens, NCens)
+
+		Summary_Strs = PLOTTER(parnames,parlabels,bounds,samples,Lines,FIT['choices']['RVdist'],savekey,Rhats=Rhats,paperstyle=paperstyle,quick=quick,show=show,save=True,pathappender=pathappender)
+
+		if returner:
+			return Summary_Strs, Rhats, NSNe
