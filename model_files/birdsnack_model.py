@@ -404,6 +404,10 @@ class BIRDSNACK:
 			print (f'Loading pre-created DF_M=={DF_M_name}')
 			with open(DF_M_name,'rb') as f:
 				DF_M = pickle.load(f)
+
+			######################
+			#Check to ensure DF_M that is being pre-loaded actually agrees with the current pre-processing choices
+			#Designed to catch instances where .yaml choices have been changed but DF_savekey is set to load up DF_M from different .yaml choices
 			disagreements   = {}
 			for glob_key in DF_M['choices']:
 				for key,previous_choice in DF_M['choices'][glob_key].items():
@@ -415,6 +419,7 @@ class BIRDSNACK:
 					print (f"Current '{choice}' is '{disagreements[choice][0]}' but DF_savekey='{savekey}' had '{choice}' set to '{disagreements[choice][1]}'")
 					print (('###!!!'*3+'###')*5)
 				raise Exception('As precaution, please ensure DF_savekey is chosen to align with current .yaml choices')
+			######################
 
 		self.DF_M = DF_M
 
