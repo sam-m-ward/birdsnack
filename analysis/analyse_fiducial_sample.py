@@ -8,13 +8,20 @@ from birdsnack_model import BIRDSNACK
 dataloader = LOAD_DATA()
 SNSsnpy_fiducial = dataloader.load_SNSsnpy('SNSsnpy_fiducial.pkl')
 dfmeta           = dataloader.dfmeta
+#edit_dict = {}
+#edit_dict = {'analysis_parameters':{'savekey':{}}}
+
 
 #Load into Bird-Snack
-bs = BIRDSNACK(loader={'SNSsnpy':SNSsnpy_fiducial}, configname='loader_config.yaml', dfmeta=dfmeta)
+bs = BIRDSNACK(loader={'SNSsnpy':SNSsnpy_fiducial}, configname='loader_config.yaml', dfmeta=dfmeta, edit_dict=edit_dict)
 
 #Get peak magnitudes
 bs.get_peak_mags()
+
 #Perform additional sample cuts
 bs.additional_cuts()
+
+#print (bs.lcs)
+print (bs.sns)
 #Fit HBM to data
-bs.fit_stan_model()
+#bs.fit_stan_model()
