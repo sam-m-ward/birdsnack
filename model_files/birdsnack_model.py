@@ -677,14 +677,16 @@ class BIRDSNACK:
 			print (par,df[par].median().round(2),df[par].std().round(2), df[par].quantile(0.68).round(2),df[par].quantile(0.95).round(2))
 			print (f"Rhat = {fitsummary.loc[par]['r_hat']}")
 
-	def plot_posterior_samples(self):
+	def plot_posterior_samples(self, returner=False):
 		"""
 		Plot Posterior Samples
 
 		Method to take FIT.pkl object and plot posterior samples
 
-		End Product(s)
+		Parameters
 		----------
+		returner : bool (optional; default=False)
+			if True, return Summary_Strs
 
 		Returns
 		----------
@@ -706,34 +708,14 @@ class BIRDSNACK:
 
 		Rhats      = {par:fitsummary.loc[par]['r_hat'] for par in parnames}
 		samples    = {par:np.asarray(df[par].values)   for par in parnames}
-		print (Rhats)
+		print ('Rhats:',Rhats)
 
-		Lines = get_Lines(FIT['choices'],NSNe-NCens, NCens)
-
+		#Corner Plot
 		postplot = POSTERIOR_PLOTTER(samples, parnames, parlabels, bounds, Rhats, self.choices['plotting_parameters'])
+		Summary_Strs = postplot.corner_plot()#Table Summary
 
-		Summary_Strs = postplot.plot_posterior_samples()
-		fig = postplot.fig
-		ax  = postplot.ax
+		plotpath        =  self.plotpath+'Corner_Plot/'
+		save,quick,show = [self.choices['plotting_parameters'][x] for x in ['save','quick','show']][:]
+		finish_corner_plot(postplot.fig,postplot.ax,get_Lines(FIT['choices'],NSNe-NCens, NCens),save,quick,show,plotpath,savekey)
 
-		FS      = 14
-		delta_y = 0.15
-		colour  = 'C0'
-		pl.annotate(r"Bird-Snack",      xy=(0.5,len(ax)-1-0.5+delta_y/2),xycoords='axes fraction',fontsize=FS+6,color='black',weight='bold',ha='center',fontname='Courier New')#'monospace')
-		pl.annotate(Lines[0],          xy=(0.5,len(ax)-1-0.5-delta_y/2),xycoords='axes fraction',fontsize=FS+3,color='black',weight='bold',ha='center')
-		for counter,line in enumerate(Lines[1:]):
-			pl.annotate(line, xy=(1,len(ax)-delta_y*(counter-1)),xycoords='axes fraction',fontsize=FS+1,color=colour,weight='bold',ha='right')#bbox=dict(facecolor='none', edgecolor='black'))
-		########################################################################################################
-		fig.subplots_adjust(top=0.9)
-		fig.subplots_adjust(wspace=0.075, hspace=0.075)
-		#if save:
-		#	if quick:
-		#		pl.savefig(pathappender+f"plots/RVGP_Posteriors/Quick/{savekey}.pdf",bbox_inches='tight')
-		#	else:
-		#		pl.savefig(pathappender+f"plots/RVGP_Posteriors/{savekey}.pdf",bbox_inches='tight')
-		#if show:
-		pl.show()
-		#return Summary_Strs
-
-		if returner:
-			return Summary_Strs, Rhats, NSNe
+		if returner: return Summary_Strs
