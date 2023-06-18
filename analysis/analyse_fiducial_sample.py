@@ -8,8 +8,11 @@ from birdsnack_model import BIRDSNACK
 dataloader = LOAD_DATA()
 SNSsnpy_fiducial = dataloader.load_SNSsnpy('SNSsnpy_fiducial.pkl')
 dfmeta           = dataloader.dfmeta
-#edit_dict = {}
-#edit_dict = {'analysis_parameters':{'savekey':{}}}
+edit_dict = {}
+edit_dict = {'preproc_parameters':{'DF_savekey':'fiducial'},
+            'analysis_parameters':{'HBM_savekey':'CensoredCut1.0','CensoredData':True,'CensoredCut':'1.0'}}
+#edit_dict = {'preproc_parameters':{'DF_savekey':'fiducial'},
+#            'analysis_parameters':{'HBM_savekey':'CensoredCut1.0_wLCshape','CensoredData':True,'CensoredCut':'1.0','include_LCshape':True}}
 
 
 #Load into Bird-Snack
@@ -21,7 +24,8 @@ bs.get_peak_mags()
 #Perform additional sample cuts
 bs.additional_cuts()
 
-#print (bs.lcs)
-print (bs.sns)
 #Fit HBM to data
 #bs.fit_stan_model()
+
+#Plot posterior samples
+bs.plot_posterior_samples()
