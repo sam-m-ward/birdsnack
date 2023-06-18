@@ -75,6 +75,9 @@ snpy_parameters:
   interpflts    : 'uBgVriYJH'
 ########################################################
 preproc_parameters:
+  #key for saving/loading peak mags
+  DF_savekey  : 'fiducial'
+
   #passband list, used for extracting magnitude measurements
   pblist : ['B','V','r','i','J','H']
   #List of phases to interpolate to
@@ -190,8 +193,8 @@ additional_cut_parameters:
   extra_drop_SNe : {'2008gb':'Removing 2008gb because (only sometimes) 2DGP-mag returns large mag. measurement error. Also Tmax is not obvious on visual inspection.'}
 ########################################################
 analysis_parameters:
-  #key for saving analysis files
-  savekey  : 'fiducial'
+  #key for saving/loading posterior samples
+  HBM_savekey : 'default'
 
   #Lower and upper bounds on muRV
   muRVmin   : 1
@@ -219,7 +222,7 @@ analysis_parameters:
 
   #Population distribution of AVs prior
   AVprior : 'Gamma'
-  AVprior : 'exp'
+  AVprior : 'Exp'
 
   #Choice of effective wavelengths
   lam_choice : 'effective_thetaOFF'
@@ -227,6 +230,11 @@ analysis_parameters:
   lam_choice : 'central'
   lam_choice : 'effective_taustar'
   lam_choice : 'effective_thetaON'
+
+  #Choice of which element in population mean intrinsic deviation vector to set to zero
+  #Note this choice is arbitrary and does not affect inferences...Dirichlet prior is a lot neater cos doesn't require this choice ;)
+  #Note this is a Stan index so BVriJH is 123456
+  zero_index : 1
 
   #Choice of whether to include dm15B in model or not
   include_LCshape : True
@@ -260,8 +268,17 @@ plotting_parameters :
   FS   : 18
 
   #Show plot
-  show : False
   show : True
+  show : False
 
   #Save plot
+  save : False
   save : True
+
+  #Paperstyle
+  paperstyle : False
+  paperstyle : True
+
+  #Quick
+  quick : True
+  quick : False
