@@ -16,6 +16,7 @@ PLOTTER class:
 Functions include:
 	get_parlabels(choices)
 	get_Lines(choices)
+	finish_corner_plot(fig,ax,Lines,save,quick,show,plotpath,savekey)
 --------------------
 
 Written by Sam M. Ward: smw92@cam.ac.uk
@@ -266,3 +267,46 @@ def get_Lines(choices, NSNe, NCens, posterior=True):
 	if not choices['CensoredData'] or NCens==-1:
 		Lines.remove(get_CensoredSNe_string(choices['CensoredData']))
 	return Lines
+
+def finish_corner_plot(fig,ax,Lines,save,quick,show,plotpath,savekey):
+	"""
+	Finish Corner Plot
+
+	Simple function to complete corner plot
+
+	Parameters
+	----------
+	fig,ax : of pl.subplots()
+
+	Lines : list of str
+		each line is analysis choice
+
+	save,quick,show : bools
+		whether, to save plot, show 2D KDE or 2D scatter samples, show plot
+
+	plotpath : str
+		path/to/plot/save/location
+
+	savekey : str
+		plot filname
+
+	End Product(s)
+	----------
+	plot that is saved and/or shown
+	"""
+	delta_y = 0.15
+	pl.annotate(r"Bird-Snack",     xy=(0.5,len(ax)-1-0.5+delta_y/2),xycoords='axes fraction',fontsize=20,color='black',weight='bold',ha='center',fontname='Courier New')
+	pl.annotate(Lines[0],          xy=(0.5,len(ax)-1-0.5-delta_y/2),xycoords='axes fraction',fontsize=17,color='black',weight='bold',ha='center')
+	for counter,line in enumerate(Lines[1:]):
+		pl.annotate(line, xy=(1,len(ax)-delta_y*(counter-1)),xycoords='axes fraction',fontsize=15,color='C0',weight='bold',ha='right')
+	fig.subplots_adjust(top=0.9)
+	fig.subplots_adjust(wspace=0.075, hspace=0.075)
+	ensure_folders_to_file_exist(plotpath)
+	ensure_folders_to_file_exist(plotpath+'Quick/')
+	if save:
+		if quick:
+			pl.savefig(f"{plotpath}Quick/{savekey}.pdf",bbox_inches='tight')
+		else:
+			pl.savefig(f"{plotpath}{savekey}.pdf",		bbox_inches='tight')
+	if show:
+		pl.show()
