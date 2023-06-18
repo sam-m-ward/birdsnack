@@ -30,6 +30,7 @@ from LC_object import *
 from miscellaneous import *
 from snoopy_corrections import *
 from plotting_functions import get_parlabels, get_Lines
+from posterior_plotter import *
 import stan
 
 class BIRDSNACK:
@@ -684,42 +685,14 @@ class BIRDSNACK:
 
 		End Product(s)
 		----------
-		"""
-		'''
-		Plot Posterior Samples
-
-		Function to take posterior samples and plot corner plot and display all analysis choices
-
-		Parameters
-		----------
-		savekey: str (optional; default='')
-			unique key to load up posterior samples
-
-		show: bool (optional; default=True)
-			if True, show the plot
-
-		thin: bool (optional;default=False)
-			if True, thin the posterior samples to make it quicker to plot
-
-		returner: bool (optional; default=False)
-			if True, return the summary strings == the posterior summary statistics used in LaTeX tables
-
-		quick: bool (optional; default=True)
-			if True, ignore 2D contours
-
-		paperstyle: bool (optional; default=True)
-			if False, show Rhat values
-
-		pathappender: str
-			append str to start of savepath, e.g. '' or '../'
 
 		Returns
 		----------
 		Summary_Strs: dict
 			key is parameter
 			value is string of posterior summary statistic for use in LaTeX Tables
-		'''
-
+		"""
+		savekey  = self.choices['analysis_parameters']['HBM_savekey']
 		filename = f'{self.FITSpath}FIT{savekey}.pkl'
 		with open(filename,'rb') as f:
 			FIT = pickle.load(f)
@@ -737,7 +710,30 @@ class BIRDSNACK:
 
 		Lines = get_Lines(FIT['choices'],NSNe-NCens, NCens)
 
-		Summary_Strs = PLOTTER(parnames,parlabels,bounds,samples,Lines,FIT['choices']['RVdist'],savekey,Rhats=Rhats,paperstyle=paperstyle,quick=quick,show=show,save=True,pathappender=pathappender)
+		postplot = POSTERIOR_PLOTTER(samples, parnames, parlabels, bounds, Rhats, self.choices['plotting_parameters'])
+
+		Summary_Strs = postplot.plot_posterior_samples()
+		fig = postplot.fig
+		ax  = postplot.ax
+
+		FS      = 14
+		delta_y = 0.15
+		colour  = 'C0'
+		pl.annotate(r"Bird-Snack",      xy=(0.5,len(ax)-1-0.5+delta_y/2),xycoords='axes fraction',fontsize=FS+6,color='black',weight='bold',ha='center',fontname='Courier New')#'monospace')
+		pl.annotate(Lines[0],          xy=(0.5,len(ax)-1-0.5-delta_y/2),xycoords='axes fraction',fontsize=FS+3,color='black',weight='bold',ha='center')
+		for counter,line in enumerate(Lines[1:]):
+			pl.annotate(line, xy=(1,len(ax)-delta_y*(counter-1)),xycoords='axes fraction',fontsize=FS+1,color=colour,weight='bold',ha='right')#bbox=dict(facecolor='none', edgecolor='black'))
+		########################################################################################################
+		fig.subplots_adjust(top=0.9)
+		fig.subplots_adjust(wspace=0.075, hspace=0.075)
+		#if save:
+		#	if quick:
+		#		pl.savefig(pathappender+f"plots/RVGP_Posteriors/Quick/{savekey}.pdf",bbox_inches='tight')
+		#	else:
+		#		pl.savefig(pathappender+f"plots/RVGP_Posteriors/{savekey}.pdf",bbox_inches='tight')
+		#if show:
+		pl.show()
+		#return Summary_Strs
 
 		if returner:
 			return Summary_Strs, Rhats, NSNe
