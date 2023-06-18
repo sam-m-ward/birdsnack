@@ -280,5 +280,5 @@ plotting_parameters :
   paperstyle : True
 
   #Quick
-  quick : True
   quick : False
+  quick : True
