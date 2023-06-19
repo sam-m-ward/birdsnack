@@ -2,10 +2,11 @@ data {
 	int S;                         //Total Number of SNe (Censored + Uncensored)
 	int SC;                        //Number of Censored SNe
 	int<lower=1> Nm;               //Number of mags per SN
+	int<lower=1> Nc;               //Number of colours per SN
 
-	vector[(S-SC)*Nm] mags;        //Vector of apparent magnitude point estimates
-	vector[(S-SC)*Nm] mags_errs;   //Vector of apparent magnitude measurement errors
-	vector[SC] BVerrs_Cens;        //Vector of B-V measurements errors on censored SNe
+	vector[Nc*(S-SC)] capps;               //Vector of apparent colours
+  array[S-SC] matrix[Nc,Nc] capps_errs;  //Vector of matrices, each matrix is covariance of colour measurement errors
+	vector[SC] BVerrs_Cens;        		     //Vector of B-V measurements errors on censored SNe
 
 	vector[9] xk;                  //Fitzpatrick99 knot wavelengths
 	matrix [Nm, 9] Mmatrix;        //Fitzpatrick99 knots->lambda
@@ -21,6 +22,10 @@ data {
 	vector[S] dm15B_errs;          //Light curve shape measurement errors, if gamma_shape=0, then these are dummy values
 	real gamma_shape;              //If 1, include LC shape term, if 0, exclude LC shape term
 	real gamma_res;                //If 1, include intrinsic colour residuals, if 0, exclude residuals
+
+	real zero_index;               //Index denoting reference band that is set to zero in mu_int
+
+	matrix[Nc,Nm] CM;						 	 //Matrix to transform from mags to colours
 }
 
 transformed data {
@@ -51,8 +56,8 @@ parameters {
 	real<lower=0> eta_sig_RV;                         //Transform of RV population dispersion hyperparameter
 	real<lower=0, upper=pi()/2> tauA_tform;           //Transform of tau_A, AV expontential dist. hyperparameter
 	//real<lower=0,upper=pi()/2> nu_tform;            //Gamma AVs distribution shape hyperparameter
-	simplex[Nm] FPC0m_simp;                           //The zeroth intrinsic mag functional principal component (same for each SN) - using Simplex
-	simplex[Nm] FPC1m_simp;                           //The first intrinsic mag functional principal component (same for each SN) - using Simplex
+	vector[Nm-1] FPC0m;                               //The zeroth intrinsic mag functional principal component (same for each SN)
+	vector[Nm-1] FPC1m;                               //The first intrinsic mag functional principal component (same for each SN)
 	cholesky_factor_corr[Nm] L_mint_eta;              //Cholesky factor of unscaled intrinsic mag covariance matrix
 	vector<lower=0,upper=pi()/2>[Nm] sigma_mint_eta;  //Scaling of covariance matrix for each intrinsic mag
 
@@ -60,13 +65,13 @@ parameters {
 
 transformed parameters {
 	matrix[Nm,S-SC] mags_matrix;       //Matrix of latent apparent magnitudes
-	vector[(S-SC)*Nm] mags_latent;     //Vector of latent apparent magnitudes
+	vector[Nc*S] capps_latent;         //Vector of latent apparent colours
 	matrix[2,SC] mags_matrix_Cens;     //Matrix of latent apparent magnitudes for censored SNe
 	vector[SC] BVslatent_Cens;         //Vector of latent BV colours of censored SNe
 
 	//Rescaled Parameters
 	vector<lower=RVsmin>[S] RVs;       //Individual Dust-Law Shape Parameters
-	vector[S*Nm] dxivec;               //Dust law deviations
+	vector[S*Nm] xivec;               //Dust law deviations
 
 	//Rescaled Hyperparameters
 	real<lower=0> tauA;                //Dust extinction Hyperparameter
@@ -74,8 +79,8 @@ transformed parameters {
 
 	vector<lower=0>[Nm] sigma_mint;    //Vector of intrinsic mag dispersions
 	matrix[Nm,Nm] L_mint;              //Cholesky decomposition of intrinsic magnitudes
-	vector[Nm] FPC0m;                  //The zeroth intrinsic mag functional principal component (same for each SN)
-	vector[Nm] FPC1m;                  //The zeroth intrinsic mag functional principal component (same for each SN)
+	vector[Nm] FPC0;                   //The zeroth intrinsic mag functional principal component (same for each SN)
+	vector[Nm] FPC1;                   //The first intrinsic mag functional principal component (same for each SN)
 	matrix[2,2] L_mint_Cens;           //Cholesky decomposition of BV intrinsic magnitudes
 
 	real<upper=0> alpha;
@@ -88,10 +93,10 @@ transformed parameters {
 	real f99_c2;
 	real RV;
 
+
 	//Rescaled Dust Extinction Population Distribution Hyperparameters
 	tauA    = tan(tauA_tform);
 	sig_RV  = eta_sig_RV*disp_sigmaRV;
-
 
 	//Tranform nuRVs->RVs via truncated Gaussian (RVsmin=RVsmin, RVsmax=inf)
 	alpha  = (RVsmin - mu_RV)/sig_RV;
@@ -99,7 +104,6 @@ transformed parameters {
 	//Upper-Truncated-Normal
 	//beta   = (RVsTrunc - mu_RV)/sig_RV;
 	//RVs  = mu_RV + sig_RV*(inv_Phi(nuRVs*(Phi(beta)-Phi(alpha)) + Phi(alpha)));
-
 
 	//Compute Fitzpatrick99 parameters
 	for (s in 1:S) {
@@ -117,25 +121,35 @@ transformed parameters {
 		yk[s,8:9] = to_row_vector(f99_c1 + f99_c2*xk[8:9] + f99_c3*f99_d);
 	}
 
-	//Re-scaled Covariance Matrix for Intrinsic Mags
+	//Re-scaled Covariance Matrix for Intrinsic Colours
 	sigma_mint   = a_sigma_mint*tan(sigma_mint_eta);
 	L_mint       = diag_pre_multiply(sigma_mint,L_mint_eta);
-	FPC0m        = 100*(FPC0m_simp-1.0/Nm);
-	FPC1m        = 100*(FPC1m_simp-1.0/Nm);
+	for (n in 1:Nm){
+		int ncounter = 0;
+		if (n>zero_index) {
+			ncounter = 1;
+		}
+		if (n==zero_index) {
+			FPC0[n] = 0;
+			FPC1[n] = 0;
+		} else {
+			FPC0[n] = FPC0m[n-ncounter];
+			FPC1[n] = FPC1m[n-ncounter];
+		}
+	}
 
 	//Dust Reddening is Fitzpatrick99 evaluated at central wavelength
 	for (s in 1:S-SC) {
-		dxivec[Nm*(s-1)+1:Nm*s] = (Mmatrix * to_vector(yk[s,:])  - mean (Mmatrix * to_vector(yk[s,:]) ) ) / RVs[s] ; //Subtract mean here so <m_i>_i is mu, but this subtraction doesn't affect inferences
-		mags_matrix[:,s]        = mus[s] + AVs[s]*dxivec[Nm*(s-1)+1:Nm*s] + FPC0m + gamma_res * L_mint * eta_mint[Nm*(s-1)+1:Nm*s] + gamma_shape*(dm15B_latent[s]-1.05)*FPC1m; //Tripp98 offset is 1.05
+		xivec[Nm*(s-1)+1:Nm*s] = Mmatrix * to_vector(yk[s,:])/RVs[s]; //No Mean Subtraction
+		mags_matrix[:,s]       = mus[s] + AVs[s]*xivec[Nm*(s-1)+1:Nm*s] + FPC0 + gamma_res * L_mint * eta_mint[Nm*(s-1)+1:Nm*s] + gamma_shape*(dm15B_latent[s]-1.05)*FPC1; //Tripp98 offset is 1.05
+		capps_latent[Nc*(s-1)+1:Nc*s] = CM * to_vector(mags_matrix[:,s]);
 	}
-	//Apparent Magnitudes are combination of Intrinsic Abs Mags and Dust Extinction and Distance
-	mags_latent = to_vector(mags_matrix);
 
 	if (SC>0) {
 		L_mint_Cens = L_mint[1:2,1:2];
 		for (s in S-SC+1:S) {
-			dxivec[Nm*(s-1)+1:Nm*s]  = (Mmatrix * to_vector(yk[s,:])) / RVs[s];
-			mags_matrix_Cens[:,s-sp] = AVs[s]*dxivec[Nm*(s-1)+1:Nm*(s-1)+2] + FPC0m[1:2] + gamma_res*L_mint_Cens*eta_mint_Cens[2*(s-sp-1)+1:2*(s-sp-1)+2] + gamma_shape*(dm15B_latent[s]-1.05)*FPC1m[1:2]; //Tripp98 offset is 1.05
+			xivec[Nm*(s-1)+1:Nm*s]   = (Mmatrix * to_vector(yk[s,:])) / RVs[s];
+			mags_matrix_Cens[:,s-sp] = AVs[s]*xivec[Nm*(s-1)+1:Nm*(s-1)+2] + FPC0[1:2] + gamma_res*L_mint_Cens*eta_mint_Cens[2*(s-sp-1)+1:2*(s-sp-1)+2] + gamma_shape*(dm15B_latent[s]-1.05)*FPC1[1:2]; //Tripp98 offset is 1.05
 			BVslatent_Cens[s-sp]     = mags_matrix_Cens[1,s-sp]-mags_matrix_Cens[2,s-sp];
 		}
 	}
@@ -155,14 +169,15 @@ model {
 	eta_sig_RV     ~ std_normal();
 	tauA_tform     ~ uniform(0,pi()/2);
 	//nu_tform     ~ uniform(0,pi()/2);
-	FPC0m_simp     ~ dirichlet(rep_vector(1,Nm));//Gives same results as normal prior, but much more stable (Rhats->1)
-	FPC1m_simp     ~ dirichlet(rep_vector(1,Nm));
+	FPC0m          ~ normal(0,10);
+	FPC1m          ~ normal(0,10);
 	L_mint_eta     ~ lkj_corr_cholesky(1);
 	sigma_mint_eta ~ uniform(0,pi()/2);
 
-
 	//Likelihood
 	dm15Bs   ~ normal(dm15B_latent,dm15B_errs);
-	mags     ~ normal(mags_latent, mags_errs);
+	for (s in 1:S-SC) {
+    capps[Nc*(s-1)+1:Nc*s] ~ multi_normal(capps_latent[Nc*(s-1)+1:Nc*s], capps_errs[s]);
+  }
 	BVs_Cens ~ normal(BVslatent_Cens, BVerrs_Cens);
 }

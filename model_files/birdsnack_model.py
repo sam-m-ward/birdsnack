@@ -571,6 +571,7 @@ class BIRDSNACK:
 		pblist  = self.choices['preproc_parameters']['pblist']
 		tref    = self.choices['preproc_parameters']['tilist'][self.choices['preproc_parameters']['tref_index']]
 		DataTransformation = self.choices['analysis_parameters']['DataTransformation']
+		IntrinsicModel     = self.choices['analysis_parameters']['IntrinsicModel']
 		n_warmup,n_sampling,n_chains,n_thin,random_seed = self.choices['analysis_parameters']['n_warmup'],self.choices['analysis_parameters']['n_sampling'],self.choices['analysis_parameters']['n_chains'],self.choices['analysis_parameters']['n_thin'],self.choices['analysis_parameters']['random_seed']
 
 		#Initialisation of stan_data
@@ -604,14 +605,16 @@ class BIRDSNACK:
 		#Get dust law items
 		modelloader.get_dustlaw()
 		stan_data['xk'] = modelloader.xk
-		stan_data['Mmatrix'] = modelloader.M_fitz_block
+		if IntrinsicModel=='Deviations': stan_data['Mmatrix'] = modelloader.M_fitz_block
+		else:							 stan_data['DelM']    = modelloader.dM_fitz_block
 
 		#Get transformation matrix from mags to colours
 		modelloader.get_CM_transformation_matrix()
-		stan_data['CM'] = modelloader.CM
+		if IntrinsicModel=='Deviations' and DataTransformation!='mags':
+			stan_data['CM'] = modelloader.CM
 
 		#Get transformation matrix from 1 colours model to another set of colours
-		if self.choices['analysis_parameters']['IntrinsicModel']!='Deviations':
+		if IntrinsicModel!='Deviations':
 			modelloader.get_CC_transformation_matrices()
 			stan_data['CC'] = modelloader.CC
 			stan_data['CC_to_adj'] = modelloader.CC_to_adj
@@ -629,17 +632,10 @@ class BIRDSNACK:
 		stan_data = modelloader.multiply_dataset(stan_data)
 
 		#Initialise Stan Model Samples with Sample Average Mags
-		mu_guesses = np.array([np.average(mi) for mi in np.array_split(stan_data['mags'],stan_data['S']-stan_data['SC'])])
-		stan_init  = [{'mus':np.random.normal(mu_guesses,0.5)} for _ in range(n_chains)]
+		stan_init = modelloader.get_init(stan_data)
 
-		#Assert size of data vectors matches asserted integer lengths
-		modelloader.data_model_checks(stan_data)
-		#Print Data
-		#POPS FOR SUPERFLOUS DATA (OTHERWISE DOESN'T RUN)
-		stan_data.pop('Nc')
-		stan_data.pop('RVsmax')
-		stan_data.pop('a_sigma_cint')
-		stan_data.pop('CM')
+		#Assert size of data vectors matches asserted integer lengths, remove data not neeeded
+		stan_data = modelloader.data_model_checks(stan_data)
 
 		#Get Stan File
 		modelloader.get_stan_file(stanpath=self.modelpath+'stan_files/')

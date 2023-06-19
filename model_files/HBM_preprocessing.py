@@ -18,6 +18,7 @@ HBM_preprocessor class:
 		get_CC_transformation_matrices()
 		get_transformed_data()
 		multiply_dataset(stan_data)
+		get_init(stan_data)
 		data_model_checks(stan_data)
 		get_stan_file(stanpath)
 		modify_stan_file()
@@ -93,22 +94,22 @@ class HBM_preprocessor:
 			depends on dustlaw and data transformation
 			for example,
 		"""
-		DataTransformation = self.choices['analysis_parameters']['DataTransformation']
+		IntrinsicModel = self.choices['analysis_parameters']['IntrinsicModel']
 		l_eff_rest = self.get_leff_rest()
 
 		self.xk = np.array([0.0, 1e4/26500., 1e4/12200., 1e4/6000., 1e4/5470., 1e4/4670., 1e4/4110., 1e4/2700., 1e4/2600.])
 		KD_x    = spline_utils.invKD_irr(self.xk)
-		if DataTransformation=='mags':
-			M_fitz_block = spline_utils.spline_coeffs_irr(1e4/l_eff_rest, self.xk, KD_x)
+		M_fitz_block = spline_utils.spline_coeffs_irr(1e4/l_eff_rest, self.xk, KD_x)
+		if IntrinsicModel=='Deviations':
 			self.M_fitz_block = M_fitz_block
 		else:
-			if DataTransformation=='Adjacent':	#Adjacent Colours
+			if IntrinsicModel=='Adjacent':	#Adjacent Colours
 				dM_fitz_block   = np.array([ M_fitz_block[i,:]-M_fitz_block[i+1,:] for i in range(M_fitz_block.shape[0]-1) ])
-			elif DataTransformation=='B-X':		#B-X colours
+			elif IntrinsicModel=='B-X':		#B-X colours
 				dM_fitz_block   = np.array([ M_fitz_block[0,:]-M_fitz_block[i+1,:] for i in range(M_fitz_block.shape[0]-1) ])
-			elif DataTransformation=='X-H':		#X-H colours
+			elif IntrinsicModel=='X-H':		#X-H colours
 				dM_fitz_block   = np.array([ M_fitz_block[i,:]-M_fitz_block[-1,:]  for i in range(M_fitz_block.shape[0]-1) ])
-			self.M_fitz_block = dM_fitz_block
+			self.dM_fitz_block = dM_fitz_block
 
 	def get_censored_data(self):
 		"""
@@ -274,7 +275,6 @@ class HBM_preprocessor:
 					else: pass
 			CCS[ccc] = CCC
 
-		self.N          = (stan_data['S']-stan_data['SC'])*(Nm-1)
 		self.CC         = CCS['CC']
 		self.CC_to_adj  = CCS['CC_to_adj']
 
@@ -337,23 +337,66 @@ class HBM_preprocessor:
 					stan_data[key] = np.concatenate((stan_data[key],OG[key]))
 		return stan_data
 
+	def get_init(self, stan_data):
+		"""
+		Get Stan Initialisations
+
+		Parameters
+		----------
+		stan_data : dict
+			dictionary of data
+
+		Returns
+		----------
+		stan_init : dict
+		 	dictionary of initialisations
+		"""
+		n_chains = self.choices['analysis_parameters']['n_chains']
+		if self.choices['analysis_parameters']['IntrinsicModel']=='Deviations':
+			mu_guesses = np.array([np.average(mi) for mi in np.array_split(self.mags,stan_data['S']-stan_data['SC'])])
+			stan_init  = [{'mus':np.random.normal(mu_guesses,0.5)} for _ in range(n_chains)]
+		else:
+			stan_init  = [{} for _ in range(n_chains)]
+		return stan_init
+
 	def data_model_checks(self,stan_data):
 		"""
 		Data Model Checks
 
 		Simple method to assert lengths of data vectors match those asserted by S,SC and Nm integers
+		Also removes any data not required by stan file
 
 		Parameters
 		----------
 		stan_data : dict
 			dictionary of input data
+
+		Returns
+		----------
+		stan_data with any superfluous data removed
 		"""
-		if self.choices['analysis_parameters']['IntrinsicModel']=='Deviations':
+		if self.choices['analysis_parameters']['DataTransformation']=='mags':
 			assert(len(stan_data['mags'])==(stan_data['S']-stan_data['SC'])*stan_data['Nm'])
 			assert(len(stan_data['mags_errs'])==(stan_data['S']-stan_data['SC'])*stan_data['Nm'])
+		else:
+			assert(len(stan_data['capps'])==(stan_data['S']-stan_data['SC'])*stan_data['Nc'])
+			assert(len(stan_data['capps_errs'])==(stan_data['S']-stan_data['SC']))
 		assert(len(stan_data['dm15Bs'])==stan_data['S'])
 		assert(len(stan_data['dm15B_errs'])==stan_data['S'])
 		assert(len(stan_data['BVerrs_Cens'])==stan_data['SC'])
+
+		DataTransformation = self.choices['analysis_parameters']['DataTransformation']
+		IntrinsicModel     = self.choices['analysis_parameters']['IntrinsicModel']
+		stan_data.pop('RVsmax')
+		if IntrinsicModel=='Deviations':
+			stan_data.pop('a_sigma_cint')
+			if DataTransformation=='mags':
+				stan_data.pop('Nc')
+		else:
+			stan_data.pop('a_sigma_mint')
+			stan_data.pop('Nm')
+			stan_data.pop('zero_index')
+		return stan_data
 
 	def get_stan_file(self,stanpath):
 		"""
@@ -377,10 +420,10 @@ class HBM_preprocessor:
 				#stan_file = f"{stanpath}deviations_model_fit_mags_Dirichletmuint.stan"
 			else:
 				print (f"Applying Intrinsic Deviations Model to fit {self.choices['analysis_parameters']['DataTransformation']} Colours Data")
-				stan_file = f"{stanpath}mag_model_fit_colours_indRVs_popdist_FullModel_F99.stan"
+				stan_file = f"{stanpath}deviations_model_fit_colours_Gaussianmuintref.stan"
 		else:
 			print (f"Applying {self.choices['analysis_parameters']['IntrinsicModel']} Intrinsic Colours Model to fit {self.choices['analysis_parameters']['DataTransformation']} Colours Data")
-			stan_file = f"{stanpath}colour_model_indRVs_popdist_FullModel_F99.stan"
+			stan_file = f"{stanpath}colours_model.stan"
 
 		self.stan_file = stan_file
 

@@ -53,8 +53,8 @@ parameters {
 	real<lower=0> eta_sig_RV;                         //Transform of RV population dispersion hyperparameter
 	real<lower=0, upper=pi()/2> tauA_tform;           //Transform of tau_A, AV expontential dist. hyperparameter
 	//real<lower=0,upper=pi()/2> nu_tform;            //Gamma AVs distribution shape hyperparameter
-	vector[Nm-1] FPC0m;                               //The zeroth intrinsic mag functional principal component (same for each SN) - using Simplex
-	vector[Nm-1] FPC1m;                               //The first intrinsic mag functional principal component (same for each SN) - using Simplex
+	vector[Nm-1] FPC0m;                               //The zeroth intrinsic mag functional principal component (same for each SN)
+	vector[Nm-1] FPC1m;                               //The first intrinsic mag functional principal component (same for each SN)
 	cholesky_factor_corr[Nm] L_mint_eta;              //Cholesky factor of unscaled intrinsic mag covariance matrix
 	vector<lower=0,upper=pi()/2>[Nm] sigma_mint_eta;  //Scaling of covariance matrix for each intrinsic mag
 
@@ -64,7 +64,7 @@ transformed parameters {
 	matrix[Nm,S-SC] mags_matrix;       //Matrix of latent apparent magnitudes
 	vector[(S-SC)*Nm] mags_latent;     //Vector of latent apparent magnitudes
 	matrix[2,SC] mags_matrix_Cens;     //Matrix of latent apparent magnitudes for censored SNe
-	vector[SC] BVslatent_Cens;         //Matrix of latent BV colours of censored SNe
+	vector[SC] BVslatent_Cens;         //Vector of latent BV colours of censored SNe
 
 	//Rescaled Parameters
 	vector<lower=RVsmin>[S] RVs;       //Individual Dust-Law Shape Parameters
