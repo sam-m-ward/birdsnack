@@ -31,7 +31,7 @@ bs.plot_mag_deviations()
 bs.plot_colour_corner()
 
 #Fit HBM to data
-#bs.fit_stan_model()
+bs.fit_stan_model()
 
 #Plot posterior samples
 bs.plot_posterior_samples()
