@@ -201,7 +201,7 @@ analysis_parameters:
   muRVmax   : 5
   #Lower and upper bounds on individual RVs parameters
   RVsmin : 1
-  RVsmax : 'inf'
+  RVsmax : 'inf' #Haven't implemented in public version yet
   #Dispersion of Half-normal prior on sigmaRV
   disp_sigmaRV : 2
   #Dispersion on HalfCauchy prior on intrinsic mags/colours
