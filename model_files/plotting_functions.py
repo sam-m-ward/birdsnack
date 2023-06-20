@@ -18,6 +18,7 @@ Functions include:
 	get_Lines(choices)
 	finish_corner_plot(fig,ax,Lines,save,quick,show,plotpath,savekey)
 	get_mass_label(mass,choices,nocol='black',hicol='blue',locol='magenta')
+	get_list_of_colours_for_corner(pblist,Style,Input=None,parstr='parnames')
 --------------------
 
 Written by Sam M. Ward: smw92@cam.ac.uk
@@ -337,3 +338,60 @@ def get_mass_label(mass,choices,nocol='black',hicol='blue',locol='magenta'):
 			return hicol, True
 		else:			  #Low Mass
 			return locol, False
+
+
+
+def get_list_of_colours_for_corner(pblist,Style,Input=None,parstr='parnames'):
+	"""
+	Get list of colours for corner
+
+	Function to return the colours plotted in the colour-colour corner plot based on input Style
+
+	Parameters
+	----------
+	pblist: list
+		list of passbands
+
+	Style: str
+		dictates which set of colours will be plotted, e.g. 'FixedBlue','Adjacent' or 'Input' is B-?, BV->Vr etc., or ['BV','VH',etc.]
+
+	Input: list or None (optional; default is None)
+		if list, a list of manually inputted colours to inspect
+
+	parstr: str (optional; default='parnames')
+		arbitrary keyword
+
+	Returns
+	----------
+	grid_sets: dict
+		key is the plot name, value is list of colours in that plot (and also the plot axis values e.g. '$B-V$ (mag)')
+
+	grid_names: list of str
+		the list of plot names
+
+	"""
+
+	if Style == 'FixedBlue':#For example BV,Br,Bi,BJ,BH and then another set is Vr,Vi,VJ,VH, all through to JH
+		dstr   = {f"{Style}_{pb}":[] for pb in pblist[:-2]} ; dname  = {f"{Style}_{pb}_{parstr}":[] for pb in pblist[:-2]}
+		grid_sets = {**dstr,**dname}
+		for ifblue,fblue in enumerate(pblist[:-2]):
+			for ifred,fred in enumerate(pblist[ifblue+1:]):
+				grid_sets[f"{Style}_{fblue}"].append(fblue+fred)
+				grid_sets[f"{Style}_{fblue}_{parstr}"].append(r'$%s-%s$ (mag)'%(fblue,fred))
+
+	if Style == 'Adjacent':
+		grid_sets = {f"{Style}":[],f"{Style}_{parstr}":[]}
+		for if1,pb1 in enumerate(pblist[:-1]):
+			pb2 = pblist[if1+1]
+			grid_sets[f"{Style}"].append(pb1+pb2)
+			grid_sets[f"{Style}_{parstr}"].append(r'$%s-%s$ (mag)'%(pb1,pb2))
+
+	if Style == 'Input':
+		grid_sets = {f"{Style}":[],f"{Style}_{parstr}":[]}
+		for col in Input:
+			pb1,pb2 = col[0],col[1]
+			grid_sets[f"{Style}"].append(pb1+pb2)
+			grid_sets[f"{Style}_{parstr}"].append(r'$%s-%s$ (mag)'%(pb1,pb2))
+
+	grid_names = [s for s in grid_sets if parstr not in s]
+	return grid_sets, grid_names
