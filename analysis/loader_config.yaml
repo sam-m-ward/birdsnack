@@ -282,3 +282,16 @@ plotting_parameters :
   #Quick
   quick : False
   quick : True
+
+  #ColourCornerPlots
+  #Style
+  ColourCornerStyle : 'FixedBlue'
+  ColourCornerStyle : 'Input'
+  ColourCornerStyle : 'Adjacent'
+  #Manual Input
+  ColourCornerInput : ['BV','BJ','BH','VJ','VH']
+  ColourCornerInput : ['BJ','VJ','rJ','iJ']
+  ColourCornerInput : ['BJ','BH','VJ','VH','rJ','rH','iJ','iH']
+  ColourCornerInput : ['BV','Br','Bi','BJ','BH']
+  ColourCornerInput : ['Bi','BJ','BH','VJ','VH','rH']
+  ColourCornerInput : ['BH','VH','rH','iH','JH']
