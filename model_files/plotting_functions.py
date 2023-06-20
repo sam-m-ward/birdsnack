@@ -17,6 +17,7 @@ Functions include:
 	get_parlabels(choices)
 	get_Lines(choices)
 	finish_corner_plot(fig,ax,Lines,save,quick,show,plotpath,savekey)
+	get_mass_label(mass,choices,nocol='black',hicol='blue',locol='magenta')
 --------------------
 
 Written by Sam M. Ward: smw92@cam.ac.uk
@@ -51,7 +52,7 @@ class PLOTTER:
 			the y-axis label
 
 		savename : str
-
+			name of figure to save
 
 		invert: bool (optional; default=False)
 			if True, flip the y-axis
@@ -69,8 +70,8 @@ class PLOTTER:
 			pl.gca().invert_yaxis()
 		pl.tight_layout()
 		if self.save and savename is not None:
-			ensure_folders_to_file_exist(savename)
-			pl.savefig(savename,bbox_inches='tight')
+			ensure_folders_to_file_exist(self.plotpath+savename)
+			pl.savefig(self.plotpath+savename,bbox_inches='tight')
 		if self.show:
 			pl.show()
 
@@ -310,3 +311,29 @@ def finish_corner_plot(fig,ax,Lines,save,quick,show,plotpath,savekey):
 			pl.savefig(f"{plotpath}{savekey}.pdf",		bbox_inches='tight')
 	if show:
 		pl.show()
+
+
+def get_mass_label(mass,choices,nocol='black',hicol='blue',locol='magenta'):
+	"""
+	Get Mass Label
+
+	Parameters
+	----------
+	mass : float
+		logM/Modot host galaxy stellar mass
+
+	nocol,hicol,locol : strs (optional; defaults are black,blue,magenta)
+		colour strings for whether sn is low/high mass or unknown
+
+	Returns
+	----------
+	str, bool: colour for data point, if Mass is high
+	"""
+	logMcut = choices['additional_cut_parameters']['logMcut']
+	if mass is None:#Unknown mass
+		return nocol, None
+	else:
+		if mass>=logMcut:#High Mass
+			return hicol, True
+		else:			  #Low Mass
+			return locol, False
