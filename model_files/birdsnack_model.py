@@ -15,10 +15,10 @@ BIRDSNACK class
 		get_peak_mags(savekey='Default', overwrite=False)
 		plot_lcs(sns=None,**kwargs)
 		additional_cuts()
-		plot_mag_deviations()
-		plot_colour_corner()
 		fit_stan_model()
 		plot_posterior_samples()
+		plot_mag_deviations()
+		plot_colour_corner()
 
 --------------------
 
@@ -555,6 +555,169 @@ class BIRDSNACK:
 		self.sns  = list(self.lcs.keys())
 		print ('###'*5)
 
+	def fit_stan_model(self):
+		"""
+		Fit Stan Model
+
+		Method to perform hierarchical Bayesian inference on magnitude measurements to infer pop. dists. in intrinsic and extrinsic components
+
+		Parameters
+		----------
+
+		Returns
+		----------
+		"""
+
+		DF_M    = self.DF_M
+		savekey = self.choices['analysis_parameters']['HBM_savekey']
+		pblist  = self.choices['preproc_parameters']['pblist']
+		tref    = self.choices['preproc_parameters']['tilist'][self.choices['preproc_parameters']['tref_index']]
+		DataTransformation = self.choices['analysis_parameters']['DataTransformation']
+		IntrinsicModel     = self.choices['analysis_parameters']['IntrinsicModel']
+		n_warmup,n_sampling,n_chains,n_thin,random_seed = self.choices['analysis_parameters']['n_warmup'],self.choices['analysis_parameters']['n_sampling'],self.choices['analysis_parameters']['n_chains'],self.choices['analysis_parameters']['n_thin'],self.choices['analysis_parameters']['random_seed']
+
+		#Initialisation of stan_data
+		stan_data = {}
+		stan_data['Nm'] = len(pblist)
+		stan_data['Nc'] = stan_data['Nm']-1
+		stan_data['zero_index']  = self.choices['analysis_parameters']['zero_index']
+		stan_data['gamma_shape'] = 1 if self.choices['analysis_parameters']['include_LCshape']   else 0
+		stan_data['gamma_res']   = 1 if self.choices['analysis_parameters']['include_residuals'] else 0
+		analysis_parameters_list = ['muRVmin','muRVmax','RVsmin','RVsmax','disp_sigmaRV','a_sigma_mint','a_sigma_cint']
+		for par in analysis_parameters_list:
+			stan_data[par] = self.choices['analysis_parameters'][par]
+
+		#Incorporate Censored Data
+		modelloader = HBM_preprocessor(self.choices, DF_M)
+		modelloader.get_censored_data()
+		stan_data['S']  = modelloader.S
+		stan_data['SC'] = modelloader.SC
+		stan_data['BVerrs_Cens'] = modelloader.BVerrs_Cens
+		if self.choices['analysis_parameters']['CensoredData']:
+			print (f"Incorporating censored data: Fitting {stan_data['S']-stan_data['SC']} SNe and {stan_data['SC']} Censored SNe")
+			print (f"Censored SNe are: {modelloader.CensoredSNe}")
+			print (f"These have 0.3<=B-V<{self.choices['analysis_parameters']['CensoredCut']}")
+			print (f"Completely Excluded SNe are: {modelloader.ExcludedSNe}")
+
+		#Incorporate LC shape data measurements
+		modelloader.get_dm15Bs()
+		stan_data['dm15Bs']     = modelloader.dm15Bs
+		stan_data['dm15B_errs'] = modelloader.dm15B_errs
+
+		#Get dust law items
+		modelloader.get_dustlaw()
+		stan_data['xk'] = modelloader.xk
+		if IntrinsicModel=='Deviations': stan_data['Mmatrix'] = modelloader.M_fitz_block
+		else:							 stan_data['DelM']    = modelloader.dM_fitz_block
+
+		#Get transformation matrix from mags to colours
+		modelloader.get_CM_transformation_matrix()
+		if IntrinsicModel=='Deviations' and DataTransformation!='mags':
+			stan_data['CM'] = modelloader.CM
+
+		#Get transformation matrix from 1 colours model to another set of colours
+		if IntrinsicModel!='Deviations':
+			modelloader.get_CC_transformation_matrices()
+			stan_data['CC'] = modelloader.CC
+			stan_data['CC_to_adj'] = modelloader.CC_to_adj
+
+		#Get list of peak mags or colours, and measurement errors
+		modelloader.get_transformed_data()
+		if DataTransformation=='mags':
+			stan_data['mags']      = modelloader.mags
+			stan_data['mags_errs'] = modelloader.mags_errs
+		else:
+			stan_data['capps']      = modelloader.capps
+			stan_data['capps_errs'] = modelloader.capps_errs
+
+		#Make replica copies of data and fit multiplied sample
+		stan_data = modelloader.multiply_dataset(stan_data)
+
+		#Initialise Stan Model Samples with Sample Average Mags
+		stan_init = modelloader.get_init(stan_data)
+
+		#Assert size of data vectors matches asserted integer lengths, remove data not neeeded
+		stan_data = modelloader.data_model_checks(stan_data)
+
+		#Get Stan File
+		modelloader.get_stan_file(stanpath=self.modelpath+'stan_files/')
+		#Modify Stan File, e.g. changes to AVprior
+		stan_file = modelloader.modify_stan_file()
+
+		#Build Stan Model
+		posterior = stan.build(stan_file, data=stan_data, random_seed=random_seed)
+		#Fit Model
+		fit       = posterior.sample(num_chains=n_chains, num_samples=n_sampling, num_warmup = n_warmup,init=stan_init)
+		#Get samples as pandas df
+		df = fit.to_frame()
+		if n_sampling>1000:#Thin samples
+			print (f'Thinning samples down to {n_thin} per chain to save on space complexity')
+			Nthinsize = int(n_thin*n_chains)
+			df = df.iloc[0:df.shape[0]:int(df.shape[0]/Nthinsize)]						#thin to e.g. 1000 samples per chain
+			dfdict = df.to_dict(orient='list')											#change to dictionary so key,value is parameter name and samples
+			fit = {key:np.array_split(value,n_chains) for key,value in dfdict.items()}	#change samples so split into chains
+
+		#Fitsummary including Rhat valuess
+		fitsummary = az.summary(fit)#feed dictionary into arviz to get summary stats of thinned samples
+		#Products of HMC fit
+		FIT        = {'df':df,'fitsummary':fitsummary,'stan_data':stan_data,'choices':self.choices}
+		#Save FIT
+		with open(f'{self.FITSpath}FIT{savekey}.pkl','wb') as f:
+			pickle.dump(FIT,f)
+		#Set attribute
+		self.FIT   = FIT
+
+		#Print Posterior summaries
+		print ('~~~'*5+f'\n{savekey} FIT summary')
+		for par in ['mu_RV','sig_RV','tauA']:
+			print ('###'*5)
+			print ('Par, median, std, 68%, 95% quantiles')
+			print (par,df[par].median().round(2),df[par].std().round(2), df[par].quantile(0.68).round(2),df[par].quantile(0.95).round(2))
+			print (f"Rhat = {fitsummary.loc[par]['r_hat']}")
+
+	def plot_posterior_samples(self, returner=False):
+		"""
+		Plot Posterior Samples
+
+		Method to take FIT.pkl object and plot posterior samples
+
+		Parameters
+		----------
+		returner : bool (optional; default=False)
+			if True, return Summary_Strs
+
+		Returns
+		----------
+		Summary_Strs: dict
+			key is parameter
+			value is string of posterior summary statistic for use in LaTeX Tables
+		"""
+		savekey  = self.choices['analysis_parameters']['HBM_savekey']
+		filename = f'{self.FITSpath}FIT{savekey}.pkl'
+		with open(filename,'rb') as f:
+			FIT = pickle.load(f)
+
+		df         = FIT['df']
+		fitsummary = FIT['fitsummary']
+		NSNe       = FIT['stan_data']['S']
+		NCens      = FIT['stan_data']['SC']
+
+		parnames,parlabels,bounds = get_parlabels(FIT['choices'])
+
+		Rhats      = {par:fitsummary.loc[par]['r_hat'] for par in parnames}
+		samples    = {par:np.asarray(df[par].values)   for par in parnames}
+		print ('Rhats:',Rhats)
+
+		#Corner Plot
+		postplot = POSTERIOR_PLOTTER(samples, parnames, parlabels, bounds, Rhats, self.choices['plotting_parameters'])
+		Summary_Strs = postplot.corner_plot()#Table Summary
+
+		plotpath        =  self.plotpath+'Corner_Plot/'
+		save,quick,show = [self.choices['plotting_parameters'][x] for x in ['save','quick','show']][:]
+		finish_corner_plot(postplot.fig,postplot.ax,get_Lines(FIT['choices'],NSNe-NCens, NCens),save,quick,show,plotpath,savekey)
+
+		if returner: return Summary_Strs
+
 	def plot_mag_deviations(self):
 		"""
 		Plot Mag Deviations
@@ -761,167 +924,3 @@ class BIRDSNACK:
 					pl.savefig(savefile,bbox_inches='tight')
 				if self.choices['plotting_parameters']['show']:
 					pl.show()
-
-
-	def fit_stan_model(self):
-		"""
-		Fit Stan Model
-
-		Method to perform hierarchical Bayesian inference on magnitude measurements to infer pop. dists. in intrinsic and extrinsic components
-
-		Parameters
-		----------
-
-		Returns
-		----------
-		"""
-
-		DF_M    = self.DF_M
-		savekey = self.choices['analysis_parameters']['HBM_savekey']
-		pblist  = self.choices['preproc_parameters']['pblist']
-		tref    = self.choices['preproc_parameters']['tilist'][self.choices['preproc_parameters']['tref_index']]
-		DataTransformation = self.choices['analysis_parameters']['DataTransformation']
-		IntrinsicModel     = self.choices['analysis_parameters']['IntrinsicModel']
-		n_warmup,n_sampling,n_chains,n_thin,random_seed = self.choices['analysis_parameters']['n_warmup'],self.choices['analysis_parameters']['n_sampling'],self.choices['analysis_parameters']['n_chains'],self.choices['analysis_parameters']['n_thin'],self.choices['analysis_parameters']['random_seed']
-
-		#Initialisation of stan_data
-		stan_data = {}
-		stan_data['Nm'] = len(pblist)
-		stan_data['Nc'] = stan_data['Nm']-1
-		stan_data['zero_index']  = self.choices['analysis_parameters']['zero_index']
-		stan_data['gamma_shape'] = 1 if self.choices['analysis_parameters']['include_LCshape']   else 0
-		stan_data['gamma_res']   = 1 if self.choices['analysis_parameters']['include_residuals'] else 0
-		analysis_parameters_list = ['muRVmin','muRVmax','RVsmin','RVsmax','disp_sigmaRV','a_sigma_mint','a_sigma_cint']
-		for par in analysis_parameters_list:
-			stan_data[par] = self.choices['analysis_parameters'][par]
-
-		#Incorporate Censored Data
-		modelloader = HBM_preprocessor(self.choices, DF_M)
-		modelloader.get_censored_data()
-		stan_data['S']  = modelloader.S
-		stan_data['SC'] = modelloader.SC
-		stan_data['BVerrs_Cens'] = modelloader.BVerrs_Cens
-		if self.choices['analysis_parameters']['CensoredData']:
-			print (f"Incorporating censored data: Fitting {stan_data['S']-stan_data['SC']} SNe and {stan_data['SC']} Censored SNe")
-			print (f"Censored SNe are: {modelloader.CensoredSNe}")
-			print (f"These have 0.3<=B-V<{self.choices['analysis_parameters']['CensoredCut']}")
-			print (f"Completely Excluded SNe are: {modelloader.ExcludedSNe}")
-
-		#Incorporate LC shape data measurements
-		modelloader.get_dm15Bs()
-		stan_data['dm15Bs']     = modelloader.dm15Bs
-		stan_data['dm15B_errs'] = modelloader.dm15B_errs
-
-		#Get dust law items
-		modelloader.get_dustlaw()
-		stan_data['xk'] = modelloader.xk
-		if IntrinsicModel=='Deviations': stan_data['Mmatrix'] = modelloader.M_fitz_block
-		else:							 stan_data['DelM']    = modelloader.dM_fitz_block
-
-		#Get transformation matrix from mags to colours
-		modelloader.get_CM_transformation_matrix()
-		if IntrinsicModel=='Deviations' and DataTransformation!='mags':
-			stan_data['CM'] = modelloader.CM
-
-		#Get transformation matrix from 1 colours model to another set of colours
-		if IntrinsicModel!='Deviations':
-			modelloader.get_CC_transformation_matrices()
-			stan_data['CC'] = modelloader.CC
-			stan_data['CC_to_adj'] = modelloader.CC_to_adj
-
-		#Get list of peak mags or colours, and measurement errors
-		modelloader.get_transformed_data()
-		if DataTransformation=='mags':
-			stan_data['mags']      = modelloader.mags
-			stan_data['mags_errs'] = modelloader.mags_errs
-		else:
-			stan_data['capps']      = modelloader.capps
-			stan_data['capps_errs'] = modelloader.capps_errs
-
-		#Make replica copies of data and fit multiplied sample
-		stan_data = modelloader.multiply_dataset(stan_data)
-
-		#Initialise Stan Model Samples with Sample Average Mags
-		stan_init = modelloader.get_init(stan_data)
-
-		#Assert size of data vectors matches asserted integer lengths, remove data not neeeded
-		stan_data = modelloader.data_model_checks(stan_data)
-
-		#Get Stan File
-		modelloader.get_stan_file(stanpath=self.modelpath+'stan_files/')
-		#Modify Stan File, e.g. changes to AVprior
-		stan_file = modelloader.modify_stan_file()
-
-		#Build Stan Model
-		posterior = stan.build(stan_file, data=stan_data, random_seed=random_seed)
-		#Fit Model
-		fit       = posterior.sample(num_chains=n_chains, num_samples=n_sampling, num_warmup = n_warmup,init=stan_init)
-		#Get samples as pandas df
-		df = fit.to_frame()
-		if n_sampling>1000:#Thin samples
-			print (f'Thinning samples down to {n_thin} per chain to save on space complexity')
-			Nthinsize = int(n_thin*n_chains)
-			df = df.iloc[0:df.shape[0]:int(df.shape[0]/Nthinsize)]						#thin to e.g. 1000 samples per chain
-			dfdict = df.to_dict(orient='list')											#change to dictionary so key,value is parameter name and samples
-			fit = {key:np.array_split(value,n_chains) for key,value in dfdict.items()}	#change samples so split into chains
-
-		#Fitsummary including Rhat valuess
-		fitsummary = az.summary(fit)#feed dictionary into arviz to get summary stats of thinned samples
-		#Products of HMC fit
-		FIT        = {'df':df,'fitsummary':fitsummary,'stan_data':stan_data,'choices':self.choices}
-		#Save FIT
-		with open(f'{self.FITSpath}FIT{savekey}.pkl','wb') as f:
-			pickle.dump(FIT,f)
-		#Set attribute
-		self.FIT   = FIT
-
-		#Print Posterior summaries
-		print ('~~~'*5+f'\n{savekey} FIT summary')
-		for par in ['mu_RV','sig_RV','tauA']:
-			print ('###'*5)
-			print ('Par, median, std, 68%, 95% quantiles')
-			print (par,df[par].median().round(2),df[par].std().round(2), df[par].quantile(0.68).round(2),df[par].quantile(0.95).round(2))
-			print (f"Rhat = {fitsummary.loc[par]['r_hat']}")
-
-	def plot_posterior_samples(self, returner=False):
-		"""
-		Plot Posterior Samples
-
-		Method to take FIT.pkl object and plot posterior samples
-
-		Parameters
-		----------
-		returner : bool (optional; default=False)
-			if True, return Summary_Strs
-
-		Returns
-		----------
-		Summary_Strs: dict
-			key is parameter
-			value is string of posterior summary statistic for use in LaTeX Tables
-		"""
-		savekey  = self.choices['analysis_parameters']['HBM_savekey']
-		filename = f'{self.FITSpath}FIT{savekey}.pkl'
-		with open(filename,'rb') as f:
-			FIT = pickle.load(f)
-
-		df         = FIT['df']
-		fitsummary = FIT['fitsummary']
-		NSNe       = FIT['stan_data']['S']
-		NCens      = FIT['stan_data']['SC']
-
-		parnames,parlabels,bounds = get_parlabels(FIT['choices'])
-
-		Rhats      = {par:fitsummary.loc[par]['r_hat'] for par in parnames}
-		samples    = {par:np.asarray(df[par].values)   for par in parnames}
-		print ('Rhats:',Rhats)
-
-		#Corner Plot
-		postplot = POSTERIOR_PLOTTER(samples, parnames, parlabels, bounds, Rhats, self.choices['plotting_parameters'])
-		Summary_Strs = postplot.corner_plot()#Table Summary
-
-		plotpath        =  self.plotpath+'Corner_Plot/'
-		save,quick,show = [self.choices['plotting_parameters'][x] for x in ['save','quick','show']][:]
-		finish_corner_plot(postplot.fig,postplot.ax,get_Lines(FIT['choices'],NSNe-NCens, NCens),save,quick,show,plotpath,savekey)
-
-		if returner: return Summary_Strs
