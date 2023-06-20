@@ -559,72 +559,56 @@ class BIRDSNACK:
 
 		Plot to show the combination of dust and intrinsic colour in a population
 		"""
-
-		DF_M = self.DF_M ;
+		#Initialisations
+		DF_M = self.DF_M
 		modelloader = HBM_preprocessor(self.choices, DF_M)
 		l_eff_rest  = modelloader.get_leff_rest()
 		pblist      = self.choices['preproc_parameters']['pblist']
 		errstr      = self.choices['preproc_parameters']['errstr']
 		tref        = self.choices['preproc_parameters']['tilist'][self.choices['preproc_parameters']['tref_index']]
-		Nm          = len(pblist)
 		FS          = self.choices['plotting_parameters']['FS']
+		Nm          = len(pblist)
+		linestyles  = ['-',':','-.','--']
 
+		#Set up figure
 		pl.figure(figsize=(9.6,7.2))
 		pl.title("Magnitude Deviations from each SN's Mean Apparent Magnitude:\n"+r'$m^s_i-\langle m_i^s \rangle_i = \delta N^s_i - \langle \delta N_i^s \rangle_i + A^s_V\delta \xi^s_i$', fontsize=FS)
 		mags = DF_M[tref][pblist].stack().transpose().values; magerrs = DF_M[tref][[pb+errstr for pb in pblist]].stack().transpose().values
-		Nl = 100 ; RVs = np.array([1.5,2.5,3.5,4.5])
-		lams = np.linspace(l_eff_rest[0],l_eff_rest[-1],Nl)
-		NCOL = 4
-		linestyles = ['-',':','-.','--'];
-		MATRIX = {_:[] for _ in range(Nm)}
+		Nl = 100 ; RVs = np.array([1.5,2.5,3.5,4.5]) ; lams = np.linspace(l_eff_rest[0],l_eff_rest[-1],Nl) ; NCOL = 4
+		#Plot deviations for each SN
 		for s in range(DF_M[tref].shape[0]):
-		####################################
-			sn   = DF_M[tref].index[s] ; mass = self.lcs[sn].meta['Mbest']
-			if mass is not None: highmass = mass>=10 ; lowmass  = mass<10 ; nomass   = False
-			else: highmass = False ; lowmass = False ; nomass = True
-			colour = get_mass_label(mass,self.choices)[0]
-		####################################
+			sn   = DF_M[tref].index[s] ; mass = self.lcs[sn].meta['Mbest'] ; colour, highmass = get_mass_label(mass,self.choices)[0]
+			DL   = 100-200*(not highmass)
 			mean_mag = np.average(mags[s*Nm:(s+1)*Nm])
 			vec      = (np.array([mags[s*Nm+_] for _ in range(Nm)])-mean_mag)
 			mean_mag_err = (sum(magerrs[s*Nm:(s+1)*Nm]**2)**0.5)/Nm
 			vec_err      = (np.array([magerrs[s*Nm+_]**2 for _ in range(Nm)])+mean_mag_err**2)**0.5
-			B_V = mags[s*Nm]-mags[s*Nm+1]<0.3
-			DL  = 100*highmass-100*(lowmass)
 			for _ in range(Nm):
-				pl.errorbar(l_eff_rest[_]+DL,vec[_],c=colour,linestyle='None',marker={True:'o',False:'x'}[B_V],alpha=0.45,capsize=2)
-				MATRIX[_].append(vec[_])
-				if s==0:
-					pl.annotate(pblist[_],xy=(l_eff_rest[_]-200,0.79),weight='bold',fontsize=FS+4)
+				pl.errorbar(l_eff_rest[_]+DL,vec[_],c=colour,linestyle='None',marker={True:'o',False:'x'}[mags[s*Nm]-mags[s*Nm+1]<0.3],alpha=0.45,capsize=2)
+				if s==0:	pl.annotate(pblist[_],xy=(l_eff_rest[_]-200,0.79),weight='bold',fontsize=FS+4)
 			pl.plot(l_eff_rest+DL,vec,c='black',linestyle='-',alpha=0.05)
+		#Plot RV lines
 		for iRV,RV in enumerate(RVs):
 			xibar = np.average(extinction.fitzpatrick99(l_eff_rest,1,RV))
 			xi    = extinction.fitzpatrick99(lams,1,RV)
 			pl.plot(lams,(xi-xibar),label=f'$R_V$={RV}',linestyle=linestyles[iRV])
-		X = copy.deepcopy(pl.gca().get_xlim())
-		pl.xlim(X)
+		#Plot masses legend
+		pl.xlim(pl.gca().get_xlim())
 		pl.scatter(1000,0,c=get_mass_label(logMcut*2,self.choices)[0],alpha=0.45,label='$\log M/M_{\odot}\geq 10$')
 		pl.scatter(1000,0,c=get_mass_label(logMcut*0.5,self.choices)[0],alpha=0.45,label='$\log M/M_{\odot}<10$')
 		try: pl.scatter(1000,0,c=get_mass_label(None,self.choices)[0],alpha=0.45,label='N/A')
 		except: NCOL += -1
 		pl.annotate(
-			r"      $|B-V|<0.3\,$mag        High Reddening  ",
-			xy=(0.025, 0.05),
-			xycoords="axes fraction",
-			fontsize=FS-2,
-			bbox=dict(
-				boxstyle="round",
-				alpha=0.25,
-				facecolor = "white",
-				edgecolor = "grey"
-			),
-		)
+			r"      $|B-V|<0.3\,$mag        High Reddening  ",xy=(0.025, 0.05),xycoords="axes fraction",fontsize=FS-2,
+			bbox=dict(boxstyle="round",alpha=0.25,facecolor = "white",edgecolor = "grey"))
+		#Plot high-reddening legend
 		pl.errorbar(4300,-0.7775,c='black',marker='o',alpha=0.45)
 		pl.errorbar(8275,-0.7775,c='black',marker='x',alpha=0.45)
 		pl.annotate('Fitzpatrick99 Dust Law',xy=(0.130,0.925),xycoords='axes fraction',fontsize=FS-1)
 		pl.annotate('Host Galaxy Stellar Mass',xy=(0.575,0.925),xycoords='axes fraction',fontsize=FS-1)
 		pl.legend(fontsize=FS-2,loc='upper center',ncol=NCOL,bbox_to_anchor=(0.54,0.925),columnspacing=0.985)
 		pl.plot(list(pl.gca().get_xlim()),[0,0],c='black')
-
+		#Finish Plot
 		plotter = PLOTTER(self.choices['plotting_parameters'], self.plotpath)
 		plotter.finish_plot(r'$\lambda (\AA)$',r'$\delta N_i - \langle \delta N_i \rangle_i + A_V \delta \xi_i$ (mag)',savename='MagDeviations.pdf')
 
