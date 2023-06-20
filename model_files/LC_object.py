@@ -430,7 +430,7 @@ class LCObj:
 
 		return DF_M
 
-	def plot_lc(self, plotter, mjd_or_phase='phase', bright_mode=None):
+	def plot_lc(self, plotter, mjd_or_phase=None, bright_mode=None):
 		"""
 		Plot GP Interpolation
 
@@ -456,7 +456,7 @@ class LCObj:
 		lc   = FIT['lc']
 		flts = lc.meta['flts']
 
-		#Get bright_mode
+		if mjd_or_phase is None: mjd_or_phase = 'phase' if lc.meta[self.choices['Tmaxchoicestr']] is not None else 'mjd'
 		if bright_mode is None: bright_mode = self.choices['bright_mode']
 		legend = {'flux':True,'mag':False}[bright_mode]
 
