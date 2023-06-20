@@ -17,7 +17,7 @@ LCObj class:
 		get_GP_interpolation()
 		extract_interpolations()
 		update_DF_M(DF_M, sn)
-		plot_lc(plotter, mjd_or_phase='phase', bright_mode=None)
+		plot_lc(plotter, mjd_or_phase=None, bright_mode=None)
 --------------------
 
 Written by Sam M. Ward: smw92@cam.ac.uk
@@ -441,7 +441,7 @@ class LCObj:
 		plotter : class object
 			for plotting, contains e.g. fontsize, choice to show/save etc.
 
-		mjd_or_phase : str (optional; default='phase')
+		mjd_or_phase : str (optional; default=None)
 			choice of time data to plot
 
 		bright_mode : str or None (optional; default=None)
