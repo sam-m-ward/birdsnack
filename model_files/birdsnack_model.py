@@ -571,13 +571,11 @@ class BIRDSNACK:
 
 		pl.figure(figsize=(9.6,7.2))
 		pl.title("Magnitude Deviations from each SN's Mean Apparent Magnitude:\n"+r'$m^s_i-\langle m_i^s \rangle_i = \delta N^s_i - \langle \delta N_i^s \rangle_i + A^s_V\delta \xi^s_i$', fontsize=FS)
-
 		mags = DF_M[tref][pblist].stack().transpose().values; magerrs = DF_M[tref][[pb+errstr for pb in pblist]].stack().transpose().values
 		Nl = 100 ; RVs = np.array([1.5,2.5,3.5,4.5])
 		lams = np.linspace(l_eff_rest[0],l_eff_rest[-1],Nl)
 		NCOL = 4
 		linestyles = ['-',':','-.','--'];
-		pbs = pblist
 		MATRIX = {_:[] for _ in range(Nm)}
 		for s in range(DF_M[tref].shape[0]):
 		####################################
@@ -585,9 +583,6 @@ class BIRDSNACK:
 			if mass is not None: highmass = mass>=10 ; lowmass  = mass<10 ; nomass   = False
 			else: highmass = False ; lowmass = False ; nomass = True
 			colour = get_mass_label(mass,self.choices)[0]
-			if highmass:  hcol = copy.deepcopy(colour)
-			elif lowmass: lcol = copy.deepcopy(colour)
-			elif nomass:  ncol = copy.deepcopy(colour)
 		####################################
 			mean_mag = np.average(mags[s*Nm:(s+1)*Nm])
 			vec      = (np.array([mags[s*Nm+_] for _ in range(Nm)])-mean_mag)
@@ -599,7 +594,7 @@ class BIRDSNACK:
 				pl.errorbar(l_eff_rest[_]+DL,vec[_],c=colour,linestyle='None',marker={True:'o',False:'x'}[B_V],alpha=0.45,capsize=2)
 				MATRIX[_].append(vec[_])
 				if s==0:
-					pl.annotate(pbs[_],xy=(l_eff_rest[_]-200,0.79),weight='bold',fontsize=FS+4)
+					pl.annotate(pblist[_],xy=(l_eff_rest[_]-200,0.79),weight='bold',fontsize=FS+4)
 			pl.plot(l_eff_rest+DL,vec,c='black',linestyle='-',alpha=0.05)
 		for iRV,RV in enumerate(RVs):
 			xibar = np.average(extinction.fitzpatrick99(l_eff_rest,1,RV))
@@ -607,9 +602,9 @@ class BIRDSNACK:
 			pl.plot(lams,(xi-xibar),label=f'$R_V$={RV}',linestyle=linestyles[iRV])
 		X = copy.deepcopy(pl.gca().get_xlim())
 		pl.xlim(X)
-		pl.scatter(1000,0,c=hcol,alpha=0.45,label='$\log M/M_{\odot}\geq 10$')
-		pl.scatter(1000,0,c=lcol,alpha=0.45,label='$\log M/M_{\odot}<10$')
-		try: pl.scatter(1000,0,c=ncol,alpha=0.45,label='N/A')
+		pl.scatter(1000,0,c=get_mass_label(logMcut*2,self.choices)[0],alpha=0.45,label='$\log M/M_{\odot}\geq 10$')
+		pl.scatter(1000,0,c=get_mass_label(logMcut*0.5,self.choices)[0],alpha=0.45,label='$\log M/M_{\odot}<10$')
+		try: pl.scatter(1000,0,c=get_mass_label(None,self.choices)[0],alpha=0.45,label='N/A')
 		except: NCOL += -1
 		pl.annotate(
 			r"      $|B-V|<0.3\,$mag        High Reddening  ",
@@ -632,12 +627,6 @@ class BIRDSNACK:
 
 		plotter = PLOTTER(self.choices['plotting_parameters'], self.plotpath)
 		plotter.finish_plot(r'$\lambda (\AA)$',r'$\delta N_i - \langle \delta N_i \rangle_i + A_V \delta \xi_i$ (mag)',savename='MagDeviations.pdf')
-		#pl.ylabel(r'$\delta N_i - \langle \delta N_i \rangle_i + A_V \delta \xi_i$ (mag)',fontsize=FS)
-		#pl.xlabel(r'$\lambda (\AA)$',fontsize=FS)
-		#pl.tick_params(labelsize=FS)
-		#pl.tight_layout()
-		#pl.savefig(f"{self.plotpath}MagDeviations.pdf",bbox_inches='tight')
-		#pl.show()
 
 	def fit_stan_model(self):
 		"""
