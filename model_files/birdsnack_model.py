@@ -15,6 +15,8 @@ BIRDSNACK class
 		get_peak_mags(savekey='Default', overwrite=False)
 		plot_lcs(sns=None,**kwargs)
 		additional_cuts()
+		plot_mag_deviations()
+		plot_colour_corner()
 		fit_stan_model()
 		plot_posterior_samples()
 
@@ -558,6 +560,10 @@ class BIRDSNACK:
 		Plot Mag Deviations
 
 		Plot to show the combination of dust and intrinsic colour in a population
+
+		End Product(s)
+		----------
+		MagDeviations.pdf in self.plotpath
 		"""
 		#Initialisations
 		DF_M = self.DF_M
@@ -611,6 +617,151 @@ class BIRDSNACK:
 		#Finish Plot
 		plotter = PLOTTER(self.choices['plotting_parameters'], self.plotpath)
 		plotter.finish_plot(r'$\lambda (\AA)$',r'$\delta N_i - \langle \delta N_i \rangle_i + A_V \delta \xi_i$ (mag)',savename='MagDeviations.pdf')
+
+	def plot_colour_corner(self):
+		"""
+		Plot Colour Colour
+
+		Function to plot colour colour corner plot
+
+		Returns
+		-----------
+			Either saves plot, or shows plot, or both
+		"""
+
+		DF_M = self.DF_M
+		modelloader = HBM_preprocessor(self.choices, DF_M)
+		l_eff_rest  = modelloader.get_leff_rest()
+		pblist      = self.choices['preproc_parameters']['pblist']
+		tilist      = self.choices['preproc_parameters']['tilist']
+		errstr      = self.choices['preproc_parameters']['errstr']
+		tref        = self.choices['preproc_parameters']['tilist'][self.choices['preproc_parameters']['tref_index']]
+		Style       = self.choices['plotting_parameters']['ColourCornerStyle']
+		Input       = self.choices['plotting_parameters']['ColourCornerInput']
+		parstr      = 'parnames'
+
+		def lam(f): return dict(zip(pblist,l_eff_rest))[f]
+		def fitz(lam,RV): return extinction.fitzpatrick99(np.array([lam]),1,RV)
+
+		grid_sets, grid_names = get_list_of_colours_for_corner(pblist,Style,Input=Input,parstr=parstr)
+		#Plot Hyperparams
+		colour    = 'C0'
+		alph      = 0.2
+		FS        = 15
+		Nsim      = 100
+		DC        = 0.1
+		for ti in tilist:
+			for gname in grid_names:
+				#Set up grid
+				col_list = grid_sets[gname]
+				parnames = grid_sets[f"{gname}_{parstr}"]
+				sfigx,sfigy = 2.5*len(col_list),2.5*len(col_list)
+				fig,ax = pl.subplots(len(col_list),len(col_list),figsize=(sfigx,sfigy),sharex='col',sharey=False)
+				#Initialisations
+				Cmeans = {}
+				dfBV        = (DF_M[ti]['B']-DF_M[ti]['V']).dropna().copy().values
+				highBVbools = [not BV<0.3 for BV in dfBV]
+				for iax,col in enumerate(col_list):
+					parname     = parnames[iax]
+					df          = DF_M[ti].dropna().copy()
+					c1s, c1errs = (df[col[0]]-df[col[1]]).values, ((df[col[0]+errstr]**2+df[col[1]+errstr]**2)**0.5).values
+					chain       = np.sort(np.array([np.random.normal(c1,c1err) for c1,c1err in zip(c1s,c1errs) for _ in range(Nsim)]))
+					data = PARAMETER(chain,col,r'$%s-%s$'%(col[0],col[1]),[min(chain)-2*np.std(chain),max(chain)+2*np.std(chain)],[None,None],1,iax,self.choices,3)
+					data.get_xgrid_KDE()
+					#Get Quantiles
+					i50,x50,K50 = data.get_KDE_values(value=data.samp_median)
+					i16         = data.get_KDE_values(value=chain[int((len(chain)-1)*0.16)],return_only_index=True)
+					i84         = data.get_KDE_values(value=chain[int((len(chain)-1)*0.84)],return_only_index=True)+1
+					i05,x05,K05 = data.get_KDE_values(value=chain[int((len(chain)-1)*0.05)])
+					i95         = data.get_KDE_values(value=chain[int((len(chain)-1)*0.95)],return_only_index=True)+1
+					#Plot KDEs
+					ax[iax,iax].set_title(f"{str(parname).replace(' (mag)','')} = "+r"$%s^{+%s}_{-%s}$"%(round(data.samp_median,2),round(data.dfchain.par.quantile(0.84)-data.samp_median,2),round(data.samp_median-data.dfchain.par.quantile(0.16),2)),fontsize=FS)
+					ax[iax,iax].plot(data.xgrid,data.KDE, color=colour)
+					ax[iax,iax].plot(np.ones(2)*data.samp_median,[0,data.KDE[i50]],c=colour)
+					ax[iax,iax].fill_between(data.xgrid[i16:i84],np.zeros(i84-i16),data.KDE[i16:i84],color=colour,alpha=alph)
+					ax[iax,iax].fill_between(data.xgrid[i05:i95],np.zeros(i95-i05),data.KDE[i05:i95],color=colour,alpha=alph)
+					ax[iax,iax].set_ylim([0,None])
+					ax[iax,iax].set_xlim([min(c1s)-0.1, max(c1s)+0.1])
+					ax[iax,iax].set_yticks([])
+					Cmeans[col]  = [x05, min(c1s)-DC, max(c1s)+DC ]
+					ax[len(col_list)-1,iax].set_xlabel(parname,fontsize=FS)
+					if iax>0:
+						ax[iax,0].set_ylabel(parname,fontsize=FS)
+					for iaxbelow in range(iax):
+						ax[iaxbelow,iax].axis('off')
+					if iax==len(col_list)-1:
+						ax[iax,iax].tick_params(labelsize=FS)
+				#Plot 2D colour scatter panels
+				lobool=True ; hibool=True ; highmassbool = True; lowmassbool = True
+				for ix,c1 in enumerate(col_list[:-1]):
+					for ic2,c2 in enumerate(col_list[ix+1:]):
+						iy  = ic2+ix+1
+						df  = DF_M[ti].dropna().copy()
+						sns = list(df.index)
+						c1s, c1errs = (df[c1[0]]-df[c1[1]]).values, ((df[c1[0]+errstr]**2+df[c1[1]+errstr]**2)**0.5).values
+						c2s, c2errs = (df[c2[0]]-df[c2[1]]).values, ((df[c2[0]+errstr]**2+df[c2[1]+errstr]**2)**0.5).values
+						if ix==0:
+							ax[iy,ix].tick_params(labelsize=FS)
+						else:
+							ax[iy,ix].set_yticks(ax[iy,0].get_yticks())
+							ax[iy,ix].set_yticklabels([])
+							ax[iy,ix].set_ylim(ax[iy,0].get_ylim())
+						if iy==len(col_list)-1:
+							ax[iy,ix].tick_params(labelsize=FS)
+						for cc1,cc2,c1e,c2e,highBVbool,sn in zip(c1s,c2s,c1errs,c2errs,highBVbools,sns):
+							ccc = 'C0'
+							ccc,highmass = get_mass_label(self.lcs[sn].meta['Mbest'],self.choices)
+							if lobool or hibool:
+								if highBVbool and hibool and iy==1 and ix==0:
+									ax[iy,ix].errorbar(cc1,cc2,xerr=c1e,yerr=c2e,color=ccc,marker={False:'o',True:'s'}[highBVbool],capsize=0,alpha={False:0.09,True:0.45}[highBVbool],markersize=6,linestyle='none',label='High Reddening')
+									hibool = False
+								if not highBVbool and lobool and iy==1 and ix==0 and not hibool:
+									ax[iy,ix].errorbar(cc1,cc2,xerr=c1e,yerr=c2e,color=ccc,marker={False:'o',True:'s'}[highBVbool],capsize=0,alpha={False:0.09,True:0.45}[highBVbool],markersize=6,linestyle='none',label=r'$|B-V|<0.3\,$mag')
+									lobool = False
+							else:
+								if highmass and highmassbool and iy==2 and ix==0 and highBVbool:
+									print (iy,ix,'high')
+									ax[iy,ix].errorbar(cc1,cc2,xerr=c1e,yerr=c2e,color=ccc,marker={False:'o',True:'s'}[highBVbool],capsize=0,alpha={False:0.09,True:0.45}[highBVbool],markersize=6,linestyle='none',label='High Mass')
+									highmassbool = False
+								elif not highmass and lowmassbool and iy==2 and ix==0 and highBVbool:
+									print (iy,ix,'low')
+									ax[iy,ix].errorbar(cc1,cc2,xerr=c1e,yerr=c2e,color=ccc,marker={False:'o',True:'s'}[highBVbool],capsize=0,alpha={False:0.09,True:0.45}[highBVbool],markersize=6,linestyle='none',label='Low Mass')
+									lowmassbool  = False
+								else:
+									ax[iy,ix].errorbar(cc1,cc2,xerr=c1e,yerr=c2e,color=ccc,marker={False:'o',True:'s'}[highBVbool],capsize=0,alpha={False:0.09,True:0.45}[highBVbool],markersize=6,linestyle='none')
+						ax[1,0].legend(fontsize=FS,bbox_to_anchor=(5.225,-0.01),loc='upper right')
+						ax[2,0].legend(fontsize=FS,bbox_to_anchor=(5.225, 1.512),loc='upper right')
+						X = np.linspace(Cmeans[c1][1],Cmeans[c1][2],10)
+						RVS = [1.5,2.5,3.5][::-1]
+						for iRV,RV in enumerate(RVS):
+							gradient = (fitz(lam(c2[0]),RV)-fitz(lam(c2[1]),RV))/(fitz(lam(c1[0]),RV)-fitz(lam(c1[1]),RV))
+							Y = Cmeans[c2][0] + (X-Cmeans[c1][0])*gradient
+							ax[iy,ix].plot(X,Y,color=f"C{3-iRV}",linestyle=[':','-','-.'][::-1][iRV],label=f'$R_V={RV}$'*(iy==len(col_list)-1 and ix==len(col_list)-2))#*(ix==0 and iy==1))
+							ax[iy,ix].plot([Cmeans[c1][0],Cmeans[c1][0]+fitz(lam(c1[0]),RV)-fitz(lam(c1[1]),RV)],[Cmeans[c2][0],Cmeans[c2][0]+fitz(lam(c2[0]),RV)-fitz(lam(c2[1]),RV)],color=f"C{3-iRV}",linestyle=[':','-','-.'][iRV-iRV+1],linewidth=5,alpha=0.4)
+							if iy==len(col_list)-1 and ix==len(col_list)-2:
+								ax[iy,ix].legend(fontsize=FS,bbox_to_anchor=(2,2.75),loc='upper right')
+				#Fix up axes
+				for col in range(len(col_list)):
+					increments = ax[len(col_list)-1,col].get_xticks()
+					step_order = -int(np.floor(np.log10(np.average(increments[1:]-increments[:-1]))))
+					ax[len(col_list)-1,col].set_xticklabels(np.round(ax[len(col_list)-1,col].get_xticks(),step_order))
+				fig.subplots_adjust(top=0.9)
+				fig.subplots_adjust(wspace=0.075, hspace=0.075)
+				#Lines annotations
+				delta_y = 0.15
+				Lines = get_Lines(self.choices, DF_M[tref].shape[0], 0, posterior=False)
+				pl.annotate(r'Peak Colour Measurements', xy=(1,len(ax)+delta_y),xycoords='axes fraction',fontsize=FS+2,color='black',weight='bold',ha='right')
+				pl.annotate(Lines[0], xy=(1,len(ax)),xycoords='axes fraction',fontsize=FS+2,color='black',weight='bold',ha='right')
+				for counter,line in enumerate(Lines[1:]):
+					pl.annotate(line, xy=(1,len(ax)-delta_y*(counter+1)),xycoords='axes fraction',fontsize=FS+1,color=colour,weight='bold',ha='right')
+				#Save and/or show plot
+				if self.choices['plotting_parameters']['save']:
+					savefile = f"{self.plotpath}ColourCorner/{gname}.pdf"
+					ensure_folders_to_file_exist(savefile)
+					pl.savefig(savefile,bbox_inches='tight')
+				if self.choices['plotting_parameters']['show']:
+					pl.show()
+
 
 	def fit_stan_model(self):
 		"""
