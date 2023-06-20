@@ -271,10 +271,10 @@ def create_phase_column(lc,Tmax,phasemin=None,phasemax=None):
 	"""
 	if Tmax is not None:
 		lc['phase'] = (lc['mjd']-Tmax)/(1+lc.meta['REDSHIFT_HELIO'])
-	if phasemin is not None:
-		lc = lc[lc['phase']>=phasemin]
-	if phasemax is not None:
-		lc = lc[lc['phase']<=phasemax]
+		if phasemin is not None:
+			lc = lc[lc['phase']>=phasemin]
+		if phasemax is not None:
+			lc = lc[lc['phase']<=phasemax]
 	return lc
 
 
