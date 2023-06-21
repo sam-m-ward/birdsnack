@@ -755,9 +755,6 @@ class BIRDSNACK:
 		for s in range(DF_M[tref].shape[0]):
 			sn   = DF_M[tref].index[s] ; mass = self.lcs[sn].meta['Mbest'] ; colour, highmass = get_mass_label(mass,self.choices)
 			DL   = 100-200*(highmass is False)-100*(highmass is None)
-			if highmass is None: print (sn)
-			if sn=='2017cbv':
-				print (highmass, mass)
 			mean_mag = np.average(mags[s*Nm:(s+1)*Nm])
 			vec      = (np.array([mags[s*Nm+_] for _ in range(Nm)])-mean_mag)
 			mean_mag_err = (sum(magerrs[s*Nm:(s+1)*Nm]**2)**0.5)/Nm
