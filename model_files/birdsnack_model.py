@@ -741,6 +741,7 @@ class BIRDSNACK:
 		pblist      = self.choices['preproc_parameters']['pblist']
 		errstr      = self.choices['preproc_parameters']['errstr']
 		tref        = self.choices['preproc_parameters']['tilist'][self.choices['preproc_parameters']['tref_index']]
+		logMcut     = self.choices['additional_cut_parameters']['logMcut']
 		FS          = self.choices['plotting_parameters']['FS']
 		Nm          = len(pblist)
 		linestyles  = ['-',':','-.','--']
@@ -752,8 +753,11 @@ class BIRDSNACK:
 		Nl = 100 ; RVs = np.array([1.5,2.5,3.5,4.5]) ; lams = np.linspace(l_eff_rest[0],l_eff_rest[-1],Nl) ; NCOL = 4
 		#Plot deviations for each SN
 		for s in range(DF_M[tref].shape[0]):
-			sn   = DF_M[tref].index[s] ; mass = self.lcs[sn].meta['Mbest'] ; colour, highmass = get_mass_label(mass,self.choices)[0]
-			DL   = 100-200*(not highmass)
+			sn   = DF_M[tref].index[s] ; mass = self.lcs[sn].meta['Mbest'] ; colour, highmass = get_mass_label(mass,self.choices)
+			DL   = 100-200*(highmass is False)-100*(highmass is None)
+			if highmass is None: print (sn)
+			if sn=='2017cbv':
+				print (highmass, mass)
 			mean_mag = np.average(mags[s*Nm:(s+1)*Nm])
 			vec      = (np.array([mags[s*Nm+_] for _ in range(Nm)])-mean_mag)
 			mean_mag_err = (sum(magerrs[s*Nm:(s+1)*Nm]**2)**0.5)/Nm
