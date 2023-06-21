@@ -50,7 +50,8 @@ parameters {
 	real<lower=muRVmin,upper=muRVmax> mu_RV;          //RV population mean hyperparameter
 	real<lower=0> eta_sig_RV;                         //Transform of RV population dispersion hyperparameter
 	real<lower=0, upper=pi()/2> tauA_tform;           //Transform of tau_A, AV expontential dist. hyperparameter
-	//real<lower=0,upper=pi()/2> nu_tform;            //Gamma AVs distribution shape hyperparameter
+	//Transformed Gamma AVs distribution shape hyperparameter
+	//real<lower=0,upper=pi()/2> nu_tform;
 	simplex[Nm] FPC0m_simp;                           //The zeroth intrinsic mag functional principal component (same for each SN) - using Simplex
 	simplex[Nm] FPC1m_simp;                           //The first intrinsic mag functional principal component (same for each SN) - using Simplex
 	cholesky_factor_corr[Nm] L_mint_eta;              //Cholesky factor of unscaled intrinsic mag covariance matrix
@@ -91,6 +92,7 @@ transformed parameters {
 	//Rescaled Dust Extinction Population Distribution Hyperparameters
 	tauA    = tan(tauA_tform);
 	sig_RV  = eta_sig_RV*disp_sigmaRV;
+	//nu      = tan(nu_tform);
 
 
 	//Tranform nuRVs->RVs via truncated Gaussian (RVsmin=RVsmin, RVsmax=inf)

@@ -51,7 +51,8 @@ parameters {
 	real<lower=muRVmin,upper=muRVmax> mu_RV;          //RV population mean hyperparameter
 	real<lower=0> eta_sig_RV;                         //Transform of RV population dispersion hyperparameter
 	real<lower=0, upper=pi()/2> tauA_tform;           //Transform of tau_A, AV expontential dist. hyperparameter
-	//real<lower=0,upper=pi()/2> nu_tform;            //Gamma AVs distribution shape hyperparameter
+	//Transformed Gamma AVs distribution shape hyperparameter
+	//real<lower=0,upper=pi()/2> nu_tform;
 	vector[Nc] FPC0;                                  //The zeroth intrinsic colour functional principal component (same for each SN)
 	vector[Nc] FPC1;                                  //The first intrinsic colour functional principal component (same for each SN)
 	cholesky_factor_corr[Nc] L_cint_eta;              //Cholesky factor of unscaled intrinsic colour covariance matrix
@@ -90,6 +91,7 @@ transformed parameters {
 	//Rescaled Dust Extinction Population Distribution Hyperparameters
 	tauA    = tan(tauA_tform);
 	sig_RV  = eta_sig_RV*disp_sigmaRV;
+	//nu      = tan(nu_tform);
 
 	//Tranform nuRVs->RVs via truncated Gaussian (RVsmin=RVsmin, RVsmax=inf)
 	alpha  = (RVsmin - mu_RV)/sig_RV;
