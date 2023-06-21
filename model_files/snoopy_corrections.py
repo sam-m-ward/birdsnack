@@ -157,6 +157,7 @@ class SNOOPY_CORRECTIONS:
 
 			Tmax_Kcorrdict['snpy_cut_bools'] = snpy_cut_bools
 
+			ensure_folders_to_file_exist(filename)
 			with open(filename,'wb') as f:
 				pickle.dump(Tmax_Kcorrdict,f)
 
@@ -231,8 +232,9 @@ class SNOOPY_CORRECTIONS:
 		#If we are pre-subtracting out the MWay Extinction (and thus adopting the SED approximation)
 		if snpy_params['apply_EBVMW_corrections']=='Presubtract':
 			####################################
-			EBVMW = copy.deepcopy(self.snsnpy.EBVgal)
-			RVMW  = snpy_params['RVMW']
+			dustlaw = self.snpychoices['dustlaw']
+			EBVMW   = copy.deepcopy(self.snsnpy.EBVgal)
+			RVMW    = snpy_params['RVMW']
 			#MWay Extinction Correction;
 			#Apply this to observer-frame magnitude data
 			lambdaC = {filt:fset[filt].ave_wave for filt in self.snsnpy.allbands()}
@@ -293,6 +295,7 @@ class SNOOPY_CORRECTIONS:
 		if snpy_product['snpy_cut']:
 			print (f'SNooPy Corrections Failed for {self.snsnpy.name}')
 
+		ensure_folders_to_file_exist(self.path_snpy_product)
 		with open(self.path_snpy_product,'wb') as f:
 			pickle.dump(snpy_product,f)
 
