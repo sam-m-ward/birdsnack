@@ -138,9 +138,10 @@ class LCObj:
 
 				#With trimmed data, re-sample GP Ngpdraws times
 				if GPfit is not None:
-					tmax_resolution, tmax_window, Ngpdraws = self.choices['tmax_resolution'], self.choices['tmax_window'], self.choices['Ngpdraws']
+					tmax_resolution, tmax_window, Ngpdraws = copy.deepcopy(self.choices['tmax_resolution']), copy.deepcopy(self.choices['tmax_window']), copy.deepcopy(self.choices['Ngpdraws'])
 					if self.choices['Tmax_method']=='2DGP':
-						self.choices['tmax_resolution'] *= 10
+						tmax_resolution *= 10
+						Ngpdraws        /= 10
 					#Using tmax window and resolution, identify maximum brightness by drawing GP samples
 					if bright_mode=='flux': tmax_grid = np.linspace(GPfit.x[np.argmax(GPfit.y)]-(tmax_window/2),GPfit.x[np.argmax(GPfit.y)]+(tmax_window/2),int(tmax_window/tmax_resolution))
 					elif bright_mode=='mag':tmax_grid = np.linspace(GPfit.x[np.argmin(GPfit.y)]-(tmax_window/2),GPfit.x[np.argmin(GPfit.y)]+(tmax_window/2),int(tmax_window/tmax_resolution))
@@ -149,7 +150,7 @@ class LCObj:
 					elif self.choices['Tmax_method']=='2DGP':
 						print (f"{lc.meta['SNID']}; 2DGP samples to get Tmax take longer, therefore: tmax_resolution *= 10; Ndraws /= 10")
 						new_tpred   = np.vstack([np.hstack((tmax_grid for _ in range(len(lambdaC)))),np.array([lam for lam in lambdaC for _ in range(len(tmax_grid))])]).T
-						f_samps_all = GPfit.gp.sample_conditional(bright, new_tpred, size=int(Ngpdraws/10))
+						f_samps_all = GPfit.gp.sample_conditional(bright, new_tpred, size=int(Ngpdraws))
 						il          = list(lambdaC).index(lamref) ; Ngridt = copy.deepcopy(len(tmax_grid))
 						f_samps     = f_samps_all[:,il*Ngridt:(il+1)*Ngridt]
 					#Samples of tmax
