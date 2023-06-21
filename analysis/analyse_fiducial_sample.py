@@ -8,12 +8,7 @@ from birdsnack_model import BIRDSNACK
 dataloader = LOAD_DATA()
 SNSsnpy_fiducial = dataloader.load_SNSsnpy('SNSsnpy_fiducial.pkl')
 dfmeta           = dataloader.dfmeta
-edit_dict = {}
-#edit_dict = {'preproc_parameters':{'DF_savekey':'fiducial'},
-#            'analysis_parameters':{'HBM_savekey':'XHmodel_CensoredCut1.0_fitXHcols','CensoredData':True,'CensoredCut':'1.0','DataTransformation':'X-H','IntrinsicModel':'X-H'}}
-#edit_dict = {'preproc_parameters':{'DF_savekey':'fiducial'},
-#            'analysis_parameters':{'HBM_savekey':'CensoredCut1.0_wLCshape','CensoredData':True,'CensoredCut':'1.0','include_LCshape':True}}
-
+edit_dict        = {}
 
 #Load into Bird-Snack
 bs = BIRDSNACK(loader={'SNSsnpy':SNSsnpy_fiducial}, configname='loader_config.yaml', dfmeta=dfmeta, edit_dict=edit_dict)
