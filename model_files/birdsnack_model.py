@@ -958,18 +958,18 @@ def get_edit_dict(choices,CYCLE_DICT,HBM_savekey):
 	----------
 		XXX
 	"""
-    #Initialise edit_dict
-    edit_dict = {glob_key:{} for glob_key in choices if glob_key!='rootpath'}
-    #Get changes
-    COMMON_CHANGES       = CYCLE_DICT['COMMON_CHANGES']['newdict']
-    HBM_savekey_appender = CYCLE_DICT['COMMON_CHANGES']['HBMappender']
-    RUNS                 = CYCLE_DICT['RUNS']
-    newdict              = {**RUNS[HBM_savekey]['newdict'],**COMMON_CHANGES}
-    #Implement changes
-    for key in newdict:
-        for glob_key in edit_dict:
-            for kkey,vvalue in choices[glob_key].items():
-                if kkey==key:   edit_dict[glob_key][key] = newdict[key]
-    edit_dict['analysis_parameters']['HBM_savekey'] = f"{HBM_savekey}_{HBM_savekey_appender}"
-    #Return changes
-    return edit_dict
+	#Initialise edit_dict
+	edit_dict = {glob_key:{} for glob_key in choices if glob_key!='rootpath'}
+	#Get changes
+	COMMON_CHANGES       = CYCLE_DICT['COMMON_CHANGES']['newdict']
+	HBM_savekey_appender = CYCLE_DICT['COMMON_CHANGES']['HBMappender']
+	RUNS                 = CYCLE_DICT['RUNS']
+	newdict              = {**RUNS[HBM_savekey]['newdict'],**COMMON_CHANGES}
+	#Implement changes
+	for key in newdict:
+		for glob_key in edit_dict:
+			for kkey,vvalue in choices[glob_key].items():
+				if kkey==key:   edit_dict[glob_key][key] = newdict[key]
+	edit_dict['analysis_parameters']['HBM_savekey'] = f"{HBM_savekey}_{HBM_savekey_appender}"
+	#Return changes
+	return edit_dict
