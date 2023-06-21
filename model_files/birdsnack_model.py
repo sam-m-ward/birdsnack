@@ -20,6 +20,8 @@ BIRDSNACK class
 		plot_mag_deviations()
 		plot_colour_corner()
 
+Functions include:
+	get_edit_dict(choices,CYCLE_DICT,HBM_savekey)
 --------------------
 
 Written by Sam M. Ward: smw92@cam.ac.uk
@@ -494,10 +496,12 @@ class BIRDSNACK:
 
 		#Remove NaNs
 		print ("###"*5+"\nRemoving NaNs")
-		for ti in tilist:
-			DF_M[ti].dropna(inplace=True)
-		for ti in Extra_Features:
-			DF_M['extra'][ti].dropna(inplace=True)
+		if self.choices['preproc_parameters']['trim_on_pblist']:
+			for ti in tilist:
+				DF_M[ti].dropna(inplace=True)
+		if self.choices['preproc_parameters']['trim_on_extras']:
+			for ti in Extra_Features:
+				DF_M['extra'][ti].dropna(inplace=True)
 		DF_M = trim_to_common_SNS(DF_M)
 
 		#Remove spectrosopically peculiar SNe
@@ -516,14 +520,16 @@ class BIRDSNACK:
 		#Trim on magnitude measurement errors
 		if choices['magerrcut'] and cutter:
 			print ("###"*5+f"\nCutting so magnitude measurement errors are <{choices['magerrcut']}")
-			for ti in tilist:
-				errcols = [col for col in DF_M[ti].columns if self.choices['preproc_parameters']['errstr'] in col]
-				for col in errcols:
-					DF_M[ti] = DF_M[ti][DF_M[ti][col]<choices['magerrcut']]
-			for ti in Extra_Features:
-				errcols = [col for col in DF_M['extra'][ti].columns if self.choices['preproc_parameters']['errstr'] in col]
-				for col in errcols:
-					DF_M['extra'][ti] = DF_M['extra'][ti][DF_M['extra'][ti][col]<choices['magerrcut']]
+			if self.choices['preproc_parameters']['trim_on_pblist']:
+				for ti in tilist:
+					errcols = [col for col in DF_M[ti].columns if self.choices['preproc_parameters']['errstr'] in col]
+					for col in errcols:
+						DF_M[ti] = DF_M[ti][DF_M[ti][col]<choices['magerrcut']]
+			if self.choices['preproc_parameters']['trim_on_extras']:
+				for ti in Extra_Features:
+					errcols = [col for col in DF_M['extra'][ti].columns if self.choices['preproc_parameters']['errstr'] in col]
+					for col in errcols:
+						DF_M['extra'][ti] = DF_M['extra'][ti][DF_M['extra'][ti][col]<choices['magerrcut']]
 			DF_M = trim_to_common_SNS(DF_M)
 
 		#Trim pre-selected SNe and quote reason why
@@ -650,6 +656,7 @@ class BIRDSNACK:
 		#Modify Stan File, e.g. changes to AVprior
 		stan_file = modelloader.modify_stan_file()
 
+		print (f'Beginning HBM_savekey fit: {savekey}')
 		#Build Stan Model
 		posterior = stan.build(stan_file, data=stan_data, random_seed=random_seed)
 		#Fit Model
@@ -931,3 +938,38 @@ class BIRDSNACK:
 					pl.savefig(savefile,bbox_inches='tight')
 				if self.choices['plotting_parameters']['show']:
 					pl.show()
+
+def get_edit_dict(choices,CYCLE_DICT,HBM_savekey):
+	"""
+	Get Edit Dictionary
+
+	Function for running multiple analysis choices
+
+	Parameters
+	----------
+	choice : dict
+		XXX
+	CYCLE_DICT :dict
+		XXX
+	HBM_savekey : str
+		XXX
+
+	Returns
+	----------
+		XXX
+	"""
+    #Initialise edit_dict
+    edit_dict = {glob_key:{} for glob_key in choices if glob_key!='rootpath'}
+    #Get changes
+    COMMON_CHANGES       = CYCLE_DICT['COMMON_CHANGES']['newdict']
+    HBM_savekey_appender = CYCLE_DICT['COMMON_CHANGES']['HBMappender']
+    RUNS                 = CYCLE_DICT['RUNS']
+    newdict              = {**RUNS[HBM_savekey]['newdict'],**COMMON_CHANGES}
+    #Implement changes
+    for key in newdict:
+        for glob_key in edit_dict:
+            for kkey,vvalue in choices[glob_key].items():
+                if kkey==key:   edit_dict[glob_key][key] = newdict[key]
+    edit_dict['analysis_parameters']['HBM_savekey'] = f"{HBM_savekey}_{HBM_savekey_appender}"
+    #Return changes
+    return edit_dict
