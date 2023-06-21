@@ -32,6 +32,7 @@ import numpy as np
 from snpy import fset
 import pandas as pd
 import spline_utils
+import re
 
 class HBM_preprocessor:
 
