@@ -250,8 +250,8 @@ analysis_parameters:
   CensoredData : False
 
   #Upper bound on B-V where SNe within 0.3<B-V<CensoredCut will be included as CensoredData, those above CensoredCut are cut from sample entirely.
-  CensoredCut : 'inf'
   CensoredCut : 1.0
+  CensoredCut : 'inf'
 
   #Option to make multiple copies of sample to fit
   copymode : 1
