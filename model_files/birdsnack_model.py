@@ -14,7 +14,7 @@ BIRDSNACK class
 		load_empty_DF_M()
 		get_peak_mags(savekey='Default', overwrite=False)
 		plot_lcs(sns=None,**kwargs)
-		additional_cuts()
+		additional_cuts(cutter=True)
 		fit_stan_model()
 		plot_posterior_samples()
 		plot_mag_deviations()
@@ -467,11 +467,17 @@ class BIRDSNACK:
 			lcobj.plot_lc(PLOTTER(choices['plotting_parameters'],self.plotpath))
 
 
-	def additional_cuts(self):
+	def additional_cuts(self, cutter=True):
 		"""
 		Additional Cuts
 
 		Methods to apply additional cuts sample, based on metadata, e.g. B-V colour, Host galaxys stellar mass, Spectroscopic type etc., and also measurement errors
+
+		Parameters
+		----------
+		cutter : bool (optional; default=True)
+			if False, don't cut on these items
+			(For example, Kcorrections without mangling leads to large measurement errors, but we want to fit same sample, so apply cutter bool to this cut)
 
 		End Product(s)
 		----------
@@ -508,7 +514,7 @@ class BIRDSNACK:
 			DF_M = trim_to_common_SNS(DF_M, drop_sns=drop_sns)
 
 		#Trim on magnitude measurement errors
-		if choices['magerrcut']:
+		if choices['magerrcut'] and cutter:
 			print ("###"*5+f"\nCutting so magnitude measurement errors are <{choices['magerrcut']}")
 			for ti in tilist:
 				errcols = [col for col in DF_M[ti].columns if self.choices['preproc_parameters']['errstr'] in col]
@@ -538,7 +544,7 @@ class BIRDSNACK:
 		#Apply host galaxy stellar mass cut
 		if choices['mass_mode']!='all_masses':
 			print ("###"*5+f"\nCutting on host galaxy stellar mass to retain: {choices['mass_mode']}; defined at logMcut={choices['logMcut']}")
-			drop_sns = []
+			drop_sns = [] ; logMcut = self.choices['additional_cut_parameters']['logMcut']
 			for sn in list(DF_M[tref].index):
 				Mbest = self.lcs[sn].meta['Mbest']
 				if Mbest is None:
