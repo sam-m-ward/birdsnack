@@ -83,15 +83,15 @@ class LCObj:
 			----------
 			phase trimmed mjd, bright, brighterr
 			"""
-			mjd,bright,brighterr = data[:]
+			mjd = data[0]
 			#Get intial Tmax guess
 			if bright_mode=='mag':      initial_Tmax_guess = GPfit.x[np.argmin(GPfit.y)]
 			elif bright_mode=='flux':   initial_Tmax_guess = GPfit.x[np.argmax(GPfit.y)]
 			phase        = (mjd-initial_Tmax_guess)/(1+zhelio)
 			#Trim on Phase
 			drop_indices = [i for i,pp in enumerate(phase) if pp<phasemin or pp>phasemax]
-			mjd = np.delete(mjd,drop_indices) ; bright = np.delete(bright,drop_indices) ; brighterr = np.delete(brighterr,drop_indices)
-			return mjd, bright, brighterr
+			#Return Trimmed Arrays
+			return [np.delete(x,drop_indices) for x in data]
 
 		Tmaxchoicestr = self.choices['Tmaxchoicestr']
 		if Tmaxchoicestr=='Tmax_GP_restframe':
@@ -132,7 +132,7 @@ class LCObj:
 					lamref = flt_to_lam[self.choices['ref_band']]
 					GPfit  = gFIT[lamref]
 					if GPfit is not None:#Re-fit data within phase range
-						mjd, bright, brighterr = trim_lcarrays_on_phase(bright_mode,GPfit,lc.meta['REDSHIFT_HELIO'],self.choices['phasemin'],self.choices['phasemax'],[mjd,bright,brighterr])
+						mjd, bright, brighterr, wavelengths = trim_lcarrays_on_phase(bright_mode,GPfit,lc.meta['REDSHIFT_HELIO'],self.choices['phasemin'],self.choices['phasemax'],[mjd,bright,brighterr,wavelengths])
 						gFIT  = GP_2D_Matern(mjd,bright,brighterr,lambdaC,wavelengths)
 						GPfit = gFIT[lamref]
 
@@ -160,7 +160,7 @@ class LCObj:
 					Tmax, Tmax_std = None, None
 					tmax_grid,f_samps,tmaxs = None, None, None
 
-				print (Tmax, Tmax_std)
+				print (f"GPTmax:{Tmax}+/-{Tmax_std}")
 				self.lc.meta[Tmaxchoicestr] = Tmax
 				self.lc.meta[f'{Tmaxchoicestr}_std'] = Tmax_std
 			else:
@@ -168,6 +168,7 @@ class LCObj:
 				pass
 		elif Tmaxchoicestr=='Tmax_snpy_fitted':
 			assert(self.lc.meta[Tmaxchoicestr] is not None)
+		print (f"Using {Tmaxchoicestr} = {self.lc.meta[Tmaxchoicestr]}")
 
 		if return_samps: return tmax_grid,f_samps,tmaxs
 
