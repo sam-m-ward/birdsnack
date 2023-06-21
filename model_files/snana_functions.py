@@ -39,6 +39,7 @@ get_time_lc_arrays(lcf,mjd_or_phase='mjd',flux_or_mag='flux'):
 Written by Sam M. Ward: smw92@cam.ac.uk
 """
 import numpy as np
+import math
 
 def get_snana_foldername(snpy_params):
 	"""
@@ -196,11 +197,14 @@ def update_lcmetadata(lc,dfsn,snpy_product):
 	"""
 	#Insert Mass metadata
 	try:
-		lc.meta['Mbest'] = dfsn['Mbest'].mean()
-	except:
+		Mbest = dfsn['Mbest'].astype(float).mean()
+		lc.meta['Mbest'] = Mbest
+	except Exception as e:
 		Ms = [float(m) for m in dfsn['Mbest'] if m!='--']
 		if Ms==[]: 	lc.meta['Mbest'] = None
 		else:		lc.meta['Mbest'] = np.average(Ms)
+	if lc.meta['Mbest'] is not None:
+		if np.isnan(lc.meta['Mbest']): lc.meta['Mbest'] = None
 
 	#Insert Spectype metadata
 	spectypes = list(dfsn['SubtypeIa'].values)
