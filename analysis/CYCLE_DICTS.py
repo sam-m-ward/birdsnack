@@ -3,9 +3,9 @@ CYCLE_DICT_Science = {
 
                 'RUNS' : {
 
-				'AVexp'                 :       {    'newdict': {'AVprior':'exp'},
+				'AVexp_Full'                 :       {    'newdict': {'AVprior':'exp'},
 													 'label':'$A^s_V \sim \\rm{Exp}(\\tau_A)$'},
-				'AVGamma'               :       {    'newdict': {'AVprior':'Gamma','n_sampling':5000},
+				'AVGamma_Full'               :       {    'newdict': {'AVprior':'Gamma','n_sampling':5000},
 													 'label':'$A_V^s \sim $ Gamma$(\\nu_A,\\tau_A)$\\tnote{b}'},
                 'AVexp_lowBV'           :       {    'newdict': {'AVprior':'exp','BVcut':True},
 													 'label':'$A^s_V \sim \\rm{Exp}(\\tau_A)$'},
@@ -14,9 +14,8 @@ CYCLE_DICT_Science = {
 				}
             }
 
-
 CYCLE_DICT_CensoredData = {
-                'COMMON_CHANGES' : {'newdict':{'CensoredData':True}},
+                'COMMON_CHANGES' : {'newdict':{'CensoredData':True,'CensoredCut':1.0},'HBMappender':'Cens1.0'},
 
                 'RUNS' : {
 
@@ -33,10 +32,11 @@ CYCLE_DICT_CensoredData = {
 											'label':'Pre-subtract $E(B-V)_{\\rm{MW}}$'},
 				'PreProc_1DGPTMax_KCorrNoMangle'   :       {   'newdict': {'mangle': False,'n_sampling':3000,'DF_savekey':'KcorrNoMangle'},
 											'label':'No Mangling'},
-				#'PreProc_2DGPTmax'                 :       {   'newdict': {'Tmax_method':'2DGP','n_sampling':3000,'DF_savekey':'2DGPTmax'},
-				#							'label':'2DGP'},
+				'PreProc_2DGPTmax'                 :       {   'newdict': {'Tmax_method':'2DGP','n_sampling':3000,'DF_savekey':'2DGPTmax'},
+											'label':'2DGP'},
 				'PreProc_SNPYTmax'                 :       {   'newdict': {'Tmaxchoicestr': 'Tmax_snpy_fitted','n_sampling':3000,'DF_savekey':'snpyTmax'},
 											'label':'\\textsc{SNooPy}'},
+
 				'PreProc_2Dfl'          :       {   'newdict': {'method' : '2DGP', 'bright_mode':'flux','n_sampling':3000,'DF_savekey':'2DGPfluxinterp'},
 											'label':'2DGP Flux Interp.'},
 				'PreProc_1Dmg'          :       {   'newdict': {'method' : '1DGP', 'bright_mode':'mag','n_sampling':3000,'DF_savekey':'1DGPmaginterp'},
@@ -59,16 +59,17 @@ CYCLE_DICT_CensoredData = {
 													'n_sampling':2000,'n_warmup':2000},
 											'label':'$X-H$'},
                 ###############
-                'LCShapeInc'         	:       {   'newdict': {'include_LCshape': True,'n_sampling':3000},
+                'LCShapeInc'         	:       {   'newdict': {'include_LCshape': True,'trim_on_extras':True,'DF_savekey':'IncLCShape',
+                                                            'n_sampling':3000},
 													'label':'With LC Shape'},
 
-				'AdjCols_wLCshape'      :       {    'newdict': {'include_LCshape': True,'DataTransformation':'Adjacent','IntrinsicModel':'Adjacent',
+				'AdjCols_wLCshape'      :       {    'newdict': {'include_LCshape': True,'DataTransformation':'Adjacent','IntrinsicModel':'Adjacent','trim_on_extras':True,'DF_savekey':'IncLCShape',
 															'n_sampling':2000,'n_warmup':2000},
 											'label':'Adjacent Colours'},
-				'BXCols_wLCshape'          :       {    'newdict': {'include_LCshape': True,'DataTransformation':'B-X','IntrinsicModel':'B-X',
+				'BXCols_wLCshape'          :       {    'newdict': {'include_LCshape': True,'DataTransformation':'B-X','IntrinsicModel':'B-X','trim_on_extras':True,'DF_savekey':'IncLCShape',
 															'n_sampling':2000,'n_warmup':2000},
 											'label':'$B-X$'},
-				'XHCols_wLCshape'          :       {    'newdict': {'include_LCshape': True,'DataTransformation':'X-H','IntrinsicModel':'X-H',
+				'XHCols_wLCshape'          :       {    'newdict': {'include_LCshape': True,'DataTransformation':'X-H','IntrinsicModel':'X-H','trim_on_extras':True,'DF_savekey':'IncLCShape',
 													'n_sampling':2000,'n_warmup':2000},
 											'label':'$X-H$'},
                 ###############
@@ -84,5 +85,6 @@ CYCLE_DICT_CensoredData = {
 				'XHCols_NoIntVar'          :       {    'newdict': {'DataTransformation':'X-H','IntrinsicModel':'X-H',
 															'n_sampling':1000,'n_warmup':1000, 'include_residuals':False},
 											'label':'$X-H$'},
+
                 }
             }

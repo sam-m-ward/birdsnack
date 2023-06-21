@@ -190,6 +190,7 @@ additional_cut_parameters:
   #spectype  : 'all'
   spectype  : 'normal'
 
+  #Extra SNe to intentionally drop
   extra_drop_SNe : {'2008gb':'Removing 2008gb because (only sometimes) 2DGP-mag returns large mag. measurement error. Also Tmax is not obvious on visual inspection.'}
 ########################################################
 analysis_parameters:
@@ -249,8 +250,8 @@ analysis_parameters:
   CensoredData : False
 
   #Upper bound on B-V where SNe within 0.3<B-V<CensoredCut will be included as CensoredData, those above CensoredCut are cut from sample entirely.
-  CensoredCut : 1.0
   CensoredCut : 'inf'
+  CensoredCut : 1.0
 
   #Option to make multiple copies of sample to fit
   copymode : 1
@@ -290,8 +291,5 @@ plotting_parameters :
   ColourCornerStyle : 'Adjacent'
   #Manual Input
   ColourCornerInput : ['BV','BJ','BH','VJ','VH']
-  ColourCornerInput : ['BJ','VJ','rJ','iJ']
-  ColourCornerInput : ['BJ','BH','VJ','VH','rJ','rH','iJ','iH']
-  ColourCornerInput : ['BV','Br','Bi','BJ','BH']
   ColourCornerInput : ['Bi','BJ','BH','VJ','VH','rH']
   ColourCornerInput : ['BH','VH','rH','iH','JH']

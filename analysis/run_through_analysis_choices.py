@@ -3,7 +3,7 @@ import sys
 sys.path.append('../model_files/')
 from load_raw_data import *
 from CYCLE_DICTS import *
-from birdsnack_model import BIRDSNACK
+from birdsnack_model import BIRDSNACK, get_edit_dict
 import argparse
 parser = argparse.ArgumentParser(description="BirdSnack Analysis Cycle Script")
 parser.add_argument("--mode",default='Science',help='Options are Science,CensoredData')
@@ -15,26 +15,15 @@ dataloader = LOAD_DATA()
 SNSsnpy_fiducial = dataloader.load_SNSsnpy('SNSsnpy_fiducial.pkl')
 dfmeta           = dataloader.dfmeta
 
-COMMON_CHANGES = CYCLE_DICT['COMMON_CHANGES']['newdict']
-RUNS           = CYCLE_DICT['RUNS']
-
-for HBM_savekey in RUNS:
+for HBM_savekey in CYCLE_DICT['RUNS']:
+    edit_dict = get_edit_dict(dataloader.choices,CYCLE_DICT,HBM_savekey)
     print ('###'*10)
-    print (f'MODE{MODE}; Performing analysis on {HBM_savekey}')
-    def get_edit_dict(choices,newdict):
-        edit_dict = {glob_key:{} for glob_key in choices if glob_key!='rootpath'}
-        for key in newdict:
-            for glob_key in edit_dict:
-                for kkey,vvalue in choices[glob_key].items():
-                    if kkey==key:   edit_dict[glob_key][key] = newdict[key]
-        return edit_dict
-
-    edit_dict = get_edit_dict(dataloader.choices,{**RUNS[HBM_savekey]['newdict'],**COMMON_CHANGES})
+    print (f"MODE{MODE}; Performing analysis on {edit_dict['analysis_parameters']['HBM_savekey']}")
     #Load into Bird-Snack
     bs = BIRDSNACK(loader={'SNSsnpy':SNSsnpy_fiducial}, configname='loader_config.yaml', dfmeta=dfmeta, edit_dict=edit_dict)
     #Get peak magnitudes
     bs.get_peak_mags()
-    #Perform additional sample cuts
+    #Perform additional sample cuts; set cutter=False (so SNe with magerrs>0.3mag are retained, ensures common sample fitted for consistency across analysis variants)
     bs.additional_cuts(cutter=False)
     #Fit HBM to data
-    #bs.fit_stan_model()
+    bs.fit_stan_model()
