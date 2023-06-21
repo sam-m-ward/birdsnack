@@ -944,19 +944,27 @@ def get_edit_dict(choices,CYCLE_DICT,HBM_savekey):
 	Get Edit Dictionary
 
 	Function for running multiple analysis choices
+	Edits the Bird-Snack choices
+	Takes in changes common to all CYCLE_DICT['RUNS']
+	and Individual changes specific to HBM_savekey : {'newdict':{changes}}
 
 	Parameters
 	----------
-	choice : dict
-		XXX
+	choices : dict
+		default dictionary of choices from .yaml
 	CYCLE_DICT :dict
-		XXX
+		{'COMMON_CHANGES':{'newdict':{key,value pairs}, 'HBMappender':str },
+		 'RUNS' : {
+		 	'HBM_savekey' : {'newdict' : {key,value pairs},
+									'label': str}
+		 }}
 	HBM_savekey : str
-		XXX
+		Name of an analysis variant in CYCLE_DICT['RUNS']
 
 	Returns
 	----------
-		XXX
+	edit_dict : dict
+		contains updated analysis choices and HBM_savekey
 	"""
 	#Initialise edit_dict
 	edit_dict = {glob_key:{} for glob_key in choices if glob_key!='rootpath'}
