@@ -3,11 +3,11 @@ CYCLE_DICT_Science = {
 
                 'RUNS' : {
 
-				'AVexp_Full'                 :       {    'newdict': {'AVprior':'exp'},
+				'AVexp_Full'                 :       {    'newdict': {'AVprior':'Exp'},
 													 'label':'$A^s_V \sim \\rm{Exp}(\\tau_A)$'},
 				'AVGamma_Full'               :       {    'newdict': {'AVprior':'Gamma','n_sampling':5000},
 													 'label':'$A_V^s \sim $ Gamma$(\\nu_A,\\tau_A)$\\tnote{b}'},
-                'AVexp_lowBV'           :       {    'newdict': {'AVprior':'exp','BVcut':True},
+                'AVexp_lowBV'           :       {    'newdict': {'AVprior':'Exp','BVcut':True},
 													 'label':'$A^s_V \sim \\rm{Exp}(\\tau_A)$'},
 				'AVGamma_lowBV'         :       {    'newdict': {'AVprior':'Gamma','n_sampling':5000,'BVcut':True},
 													 'label':'$A_V^s \sim $ Gamma$(\\nu_A,\\tau_A)$\\tnote{b}'},
@@ -19,7 +19,7 @@ CYCLE_DICT_CensoredData = {
 
                 'RUNS' : {
 
-				'AVexp'                 :       {    'newdict': {'AVprior':'exp'},
+				'AVexp'                 :       {    'newdict': {'AVprior':'Exp'},
 													 'label':'$A^s_V \sim \\rm{Exp}(\\tau_A)$'},
 				'AVGamma'               :       {    'newdict': {'AVprior':'Gamma','n_warmup':2000,'n_sampling':10000},
 													 'label':'$A_V^s \sim $ Gamma$(\\nu_A,\\tau_A)$\\tnote{e}'},
