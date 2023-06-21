@@ -1,5 +1,5 @@
 CYCLE_DICT_Science = {
-                'COMMON_CHANGES' : {'newdict':{}},
+                'COMMON_CHANGES' : {'newdict':{},'HBMappender':''},
 
                 'RUNS' : {
 
