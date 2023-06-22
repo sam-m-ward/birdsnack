@@ -2,7 +2,6 @@
 **B**ayesian **I**nference of **R**v **D**istributions using **SN** Ia **A**pparent **C**olours at pea**K**
 ---
 ![Logo](logo/BirdSnackLogo.png)
-![Logo](logo/BirdSnackLogo.jpg)
 
 This pipeline uses:
 
