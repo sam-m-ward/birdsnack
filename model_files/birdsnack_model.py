@@ -194,11 +194,13 @@ class BIRDSNACK:
 			update self.lcs and self.sns; excludes trimmed SNe
 		"""
 
-		def trims_on_SNooPy_fit_and_Tmax(reasons):
+		def trims_on_SNooPy_fit_Tmax_and_data_availability(reasons):
 			"""
-			Trims on SNooPy Fit and Tmax
+			Trims on SNooPy Fit, Tmax and Data Availability
 
-			Uses lc.meta data to trim on whether SNooPy fit succeeded/failed, and whether Tmax estimate succeeded/failed
+			Uses lc.meta data to trim on whether SNooPy fit succeeded/failed,
+			whether Tmax estimate succeeded/failed,
+			and if there is at least 1 datum per lc in pblist
 
 			Parameters
 			----------
@@ -230,6 +232,11 @@ class BIRDSNACK:
 				if lc.meta['Tmax_GP_restframe'] is not None:
 					if lc.meta['Tmax_GP_restframe_std']>Tmax_stdmax:
 						reasons['Large_Tmax_GP_restframe_std'].append(sn) ; trim = True
+			#Ensure at least one data point somewhere in light curve for each of passbands in pblist
+			for pb in pblist:
+				if pb not in lc.meta['flts']:
+					reasons['Has_pblist'].append(sn) ; trim = True
+					break
 
 			return trim, reasons
 
@@ -237,13 +244,12 @@ class BIRDSNACK:
 		pblist = trim_choices['pblist'] ; tilist = trim_choices['tilist'] ; Extra_Features = trim_choices['Extra_Features'] ; Tmax_stdmax = trim_choices['Tmax_stdmax']
 
 		#Initialise reasons dictionary for trimming each SN
-		#SNooPy fit failed, bad Tmax estimate, or not enough points around reference band
-		reasons  = {'snpy_cut':[],'None_Tmax_GP_restframe':[],'None_Tmax_snpy_fitted':[],'Large_Tmax_GP_restframe_std':[],'Points_Before_After_RefBand_Max':[]}
+		#SNooPy fit failed, bad Tmax estimate, has at least one datum per passband in pblist, or not enough points around reference band
+		reasons  = {'snpy_cut':[],'None_Tmax_GP_restframe':[],'None_Tmax_snpy_fitted':[],'Large_Tmax_GP_restframe_std':[],'Points_Before_After_RefBand_Max':[],'Has_pblist':[]}
 		#Not enough points around non-reference passbands
 		reasons2 = {f'{pb}_{ti}':[] for pb in pblist for ti in tilist}
 		#Not enough points around special bands/phases, e.g. B-band 15days
 		reasons3 = {f'Extra_{pb}_{ti}':[] for ti,pbmini in Extra_Features.items() for pb in pbmini}
-
 
 		new_lcs = {} ; trimmed_lcs = {}
 
@@ -256,7 +262,7 @@ class BIRDSNACK:
 				lcobj = LCObj(lc,trim_choices)
 				lcobj.get_Tmax()
 				#With GP Tmax estimated, can perform generic trims
-				trim_bool, reasons = trims_on_SNooPy_fit_and_Tmax(reasons)
+				trim_bool, reasons = trims_on_SNooPy_fit_Tmax_and_data_availability(reasons)
 				#Check to see Points_Before_After_RefBand_Max
 				if lc.meta[trim_choices['Tmaxchoicestr']] is not None:#If Tmax is not estimated, can't compute phase, therefore can't assess availability of points
 					trim = lcobj.test_data_availability(ref_band = trim_choices['ref_band'], tref = trim_choices['tilist'][trim_choices['tref_index']], Nlist = Nlist)
@@ -274,7 +280,7 @@ class BIRDSNACK:
 				lcobj = LCObj(lc,trim_choices)
 				lcobj.get_Tmax()
 				#With GP Tmax estimated, can perform generic trims
-				trim_bool, reasons = trims_on_SNooPy_fit_and_Tmax(reasons)
+				trim_bool, reasons = trims_on_SNooPy_fit_Tmax_and_data_availability(reasons)
 				#Check to see pbtilist points
 				if lc.meta[trim_choices['Tmaxchoicestr']] is not None:#If Tmax is not estimated, can't compute phase, therefore can't assess availability of points
 					for pb in pblist:
@@ -293,7 +299,7 @@ class BIRDSNACK:
 				lcobj = LCObj(lc,trim_choices)
 				lcobj.get_Tmax()
 				#With GP Tmax estimated, can perform generic trims
-				trim_bool, reasons = trims_on_SNooPy_fit_and_Tmax(reasons)
+				trim_bool, reasons = trims_on_SNooPy_fit_Tmax_and_data_availability(reasons)
 				#Check to see Extras points
 				if lc.meta[trim_choices['Tmaxchoicestr']] is not None:
 					for ti,pbmini in Extra_Features.items():
