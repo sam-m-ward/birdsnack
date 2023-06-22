@@ -26,4 +26,5 @@ for HBM_savekey in CYCLE_DICT['RUNS']:
     #Perform additional sample cuts; set cutter=False (so SNe with magerrs>0.3mag are retained, ensures common sample fitted for consistency across analysis variants)
     bs.additional_cuts(cutter=False)
     #Fit HBM to data
-    bs.fit_stan_model()
+    if not os.path.exists(f"{bs.FITSpath}FIT{bs.choices['analysis_parameters']['HBM_savekey']}.pkl"):
+        bs.fit_stan_model()
