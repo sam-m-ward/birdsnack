@@ -98,24 +98,18 @@ class BIRDSNACK:
 		#Load up metadata
 		self.dfmeta = dfmeta
 
-		#If in preprocessing mode, load up the SNSsnpy dictionary, and load/create the snana lcs
-		if self.choices['load_data_parameters']['load_mode']=='preproc':
-			if 'path_file_survey' in loader:
-				path,file,survey = loader['path_file_survey']
-				with open(self.SNSpath+file,'rb') as f:
-					self.SNSsnpy = pickle.load(f)
-				self.survey  = survey
-			elif 'SNSsnpy' in loader:
-				self.SNSsnpy = loader['SNSsnpy']
 
-			#Load up snana lcs and apply SNR cut, error_boost_dict, and trim to interpflts
-			self.load_and_preprocess_snana_lcs()
-		#Else, if in analysis mode, load up analysis LCs with Tmax already estimated
-		elif self.choices['load_data_parameters']['load_mode']=='analysis':
-			if 'SNSsnpy' in loader:
-				self.SNSsnpy = loader['SNSsnpy']
-			#Load up snana lcs and apply SNR cut, error_boost_dict, and trim to interpflts
-			self.load_and_preprocess_snana_lcs()
+		#Load up the SNSsnpy dictionary, and load/create the snana lcs
+		if 'path_file_survey' in loader:
+			path,file,survey = loader['path_file_survey']
+			with open(self.SNSpath+file,'rb') as f:
+				self.SNSsnpy = pickle.load(f)
+			self.survey  = survey
+		elif 'SNSsnpy' in loader:
+			self.SNSsnpy = loader['SNSsnpy']
+
+		#Load up snana lcs and apply SNR cut, error_boost_dict, and trim to interpflts
+		self.load_and_preprocess_snana_lcs()
 
 
 	def load_and_preprocess_snana_lcs(self):
@@ -750,8 +744,9 @@ class BIRDSNACK:
 		#Initialisations
 		DF_M = self.DF_M
 		modelloader = HBM_preprocessor(self.choices, DF_M)
-		l_eff_rest  = modelloader.get_leff_rest()
 		pblist      = self.choices['preproc_parameters']['pblist']
+		try:		l_eff_rest  = modelloader.get_leff_rest()
+		except:		l_eff_rest = np.array([fset[pb].ave_wave for pb in pblist])
 		errstr      = self.choices['preproc_parameters']['errstr']
 		tref        = self.choices['preproc_parameters']['tilist'][self.choices['preproc_parameters']['tref_index']]
 		logMcut     = self.choices['additional_cut_parameters']['logMcut']
@@ -765,6 +760,7 @@ class BIRDSNACK:
 		mags = DF_M[tref][pblist].stack().transpose().values; magerrs = DF_M[tref][[pb+errstr for pb in pblist]].stack().transpose().values
 		Nl = 100 ; RVs = np.array([1.5,2.5,3.5,4.5]) ; lams = np.linspace(l_eff_rest[0],l_eff_rest[-1],Nl) ; NCOL = 4
 		#Plot deviations for each SN
+		Bind = pblist.index('B') ; Vind = pblist.index('V')
 		for s in range(DF_M[tref].shape[0]):
 			sn   = DF_M[tref].index[s] ; mass = self.lcs[sn].meta['Mbest'] ; colour, highmass = get_mass_label(mass,self.choices)
 			DL   = 100-200*(highmass is False)-100*(highmass is None)
@@ -773,7 +769,7 @@ class BIRDSNACK:
 			mean_mag_err = (sum(magerrs[s*Nm:(s+1)*Nm]**2)**0.5)/Nm
 			vec_err      = (np.array([magerrs[s*Nm+_]**2 for _ in range(Nm)])+mean_mag_err**2)**0.5
 			for _ in range(Nm):
-				pl.errorbar(l_eff_rest[_]+DL,vec[_],c=colour,linestyle='None',marker={True:'o',False:'x'}[mags[s*Nm]-mags[s*Nm+1]<0.3],alpha=0.45,capsize=2)
+				pl.errorbar(l_eff_rest[_]+DL,vec[_],c=colour,linestyle='None',marker={True:'o',False:'x'}[mags[s*Nm+Bind]-mags[s*Nm+Vind]<0.3],alpha=0.45,capsize=2)
 				if s==0:	pl.annotate(pblist[_],xy=(l_eff_rest[_]-200,0.79),weight='bold',fontsize=FS+4)
 			pl.plot(l_eff_rest+DL,vec,c='black',linestyle='-',alpha=0.05)
 		#Plot RV lines
@@ -814,8 +810,9 @@ class BIRDSNACK:
 
 		DF_M = self.DF_M
 		modelloader = HBM_preprocessor(self.choices, DF_M)
-		l_eff_rest  = modelloader.get_leff_rest()
 		pblist      = self.choices['preproc_parameters']['pblist']
+		try:		l_eff_rest  = modelloader.get_leff_rest()
+		except:		l_eff_rest = np.array([fset[pb].ave_wave for pb in pblist])
 		tilist      = self.choices['preproc_parameters']['tilist']
 		errstr      = self.choices['preproc_parameters']['errstr']
 		tref        = self.choices['preproc_parameters']['tilist'][self.choices['preproc_parameters']['tref_index']]
