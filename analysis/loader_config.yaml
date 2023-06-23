@@ -16,14 +16,11 @@ load_data_parameters :
                 ['BayeSNLCs/snpytxtfiles/','snpy_SNS_Avelino.pkl','AvelinoM20'],
                 ['Misc/snpytxtfiles/','snpy_SNS_Misc.pkl','Misc']]
 
-
-  #Way in which we load up data for analysis
-  #load_mode : 'preproc'   #Load up dict of snpy files OR snanalcs, useful for determining fiducial sample, this mode doesn't save snana lcs in analysis folder
-  load_mode : 'analysis'   #
-
   #If True, manually overwrite pre-existing snana files
   #rewrite_snana : True
   rewrite_snana : False
+
+  GLOBAL_ANALYSIS_KEY  : ''
 ########################################################
 snpy_parameters:
   #SNooPy Parameters Here
@@ -79,6 +76,7 @@ preproc_parameters:
   DF_savekey  : 'fiducial'
 
   #passband list, used for extracting magnitude measurements
+  #pblist : ['u','B','V','r','i','J','H']
   pblist : ['B','V','r','i','J','H']
   #List of phases to interpolate to
   tilist     : [0]
