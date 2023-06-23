@@ -19,14 +19,13 @@ if not os.path.exists(f'{dataloader.SNSpath}SNSsnpy_fiducial.pkl'):
         SURVEYS = {}
         for path_file_survey in dataloader.choices['load_data_parameters']['load_path_file_survey']:
             print ('###'*3)
-            bs = BIRDSNACK(loader={'path_file_survey':path_file_survey}, configname='loader_config.yaml', edit_dict={'load_data_parameters':{'load_mode':'preproc'}},dfmeta=dataloader.dfmeta)
+            bs = BIRDSNACK(loader={'path_file_survey':path_file_survey}, configname='loader_config.yaml',dfmeta=dataloader.dfmeta)
             bs.trim_sample()
             SURVEYS[path_file_survey[-1]] = {'retained_lcs':bs.lcs,'trimmed_lcs':bs.trimmed_lcs, 'reasons':bs.reasons}
         #Use SURVEYS dictionary to get common sample of SNS, with those SNe appearing in multiple surveys selected according to Pecking order
         SNSsnpy_combined = dataloader.get_SNSsnpy_combined(SURVEYS)#Save SNSsnpy_combined.pkl
 
-
-    bs = BIRDSNACK(loader={'SNSsnpy':SNSsnpy_combined}, configname='loader_config.yaml', edit_dict={'load_data_parameters':{'load_mode':'preproc'}}, dfmeta=dataloader.dfmeta)
+    bs = BIRDSNACK(loader={'SNSsnpy':SNSsnpy_combined}, configname='loader_config.yaml', dfmeta=dataloader.dfmeta)
     bs.trim_sample()
     bs.get_peak_mags(savekey='combined')
     bs.additional_cuts()
