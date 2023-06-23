@@ -49,8 +49,7 @@ Pecking_order_of_reasons = [
 ['Has_pblist'],
 ['snpy_cut'],
 ['Points_Before_After_RefBand_Max','None_Tmax_GP_restframe','Large_Tmax_GP_restframe_std'],
-#['B_0','V_0','r_0','i_0','J_0','H_0'],
-['B_0','V_0','r_0','i_0'],#,'J_0','H_0'],
+['B_0','V_0','r_0','i_0'],
 ['J_0','H_0'],
 ]
 
