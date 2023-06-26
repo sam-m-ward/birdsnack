@@ -122,6 +122,7 @@ class SBC_CLASS:
 			self.b = b
 
 		self.dict = self.__dict__
+		self.TRUTHS_DICT = None
 
 	def simulate_truths(self):
 		"""
@@ -192,7 +193,11 @@ class SBC_CLASS:
 			each row is leff for that simulation
 		"""
 		#Get Truths
-		if TRUTHS_DICT is None:	TRUTHS_DICT = self.get_truths()
+		if TRUTHS_DICT is None:
+			if self.TRUTHS_DICT is None:
+				TRUTHS_DICT = self.get_truths()
+			else:
+				TRUTHS_DICT = self.TRUTHS_DICT
 		#Initialise pandas df
 		df = pd.DataFrame(columns=[s[0] for s in self.flts]) ; ISIM = -1
 		#Loop through simulated datasets
@@ -217,6 +222,42 @@ class SBC_CLASS:
 		self.lameff_df = df
 		return self.lameff_df
 
+	def fit_truths(self, TRUTHS_DICT=None):
+		"""
+		Fit Truths Method
+		"""
+		#Get Truths
+		if TRUTHS_DICT is None:
+			if self.TRUTHS_DICT is None:
+				TRUTHS_DICT = self.get_truths()
+			else:
+				TRUTHS_DICT = self.TRUTHS_DICT
+
+		#Initialise Bird-Snack Model
+		sys.path.append(f"{self.path_to_birdsnack_rootpath}model_files/")
+		from birdsnack_model import BIRDSNACK
+		bs      = BIRDSNACK(configname=f"{self.birdsnack_yaml}.yaml")
+		pblist  = bs.choices['preproc_parameters']['pblist']
+		errstr  = bs.choices['preproc_parameters']['errstr']
+		tref    = bs.choices['preproc_parameters']['tilist'][bs.choices['preproc_parameters']['tref_index']]
+
+		#Loop through truths
+		for ISIM,truths in TRUTHS_DICT.items():
+			save_filename = f"{self.simsavepath}FIT{bs.choices['analysis_parameters']['HBM_savekey']}_Sim{ISIM}.pkl"
+			if not os.path.exists(save_filename):
+				print ("###"*10)
+				print (f"Performing fit to ISIM={ISIM};")
+				print (f"save_filename is {save_filename}")
+				DF_M = get_DF_M_from_truths(truths,pblist,errstr,tref)
+				bs.DF_M = DF_M
+				bs.fit_stan_model(save=False,Rhat_threshold=1.05)
+
+				FIT = bs.FIT
+				FIT['df'] = FIT['df'][['mu_RV','sig_RV','tauA']]
+
+				with open(save_filename,'wb') as f:
+					pickle.dump(FIT,f)
+				err=1/0
 
 
 class SIMULATOR():
@@ -559,3 +600,13 @@ def get_Lint_prior_samples(Nc=6,savefolder='products/Lint_sims/',generator_file=
 			pickle.dump(Lint_eta_samples,f)
 
 	return Lint_eta_samples
+
+
+
+def get_DF_M_from_truths(truths,pblist,errstr,tref):
+	columns   = pblist+[pb+errstr for pb in pblist]
+	data_rows = [np.hstack((mo,eo)) for mo,eo in zip(truths.mobs,truths.errors)]
+	df        = pd.DataFrame(data=data_rows,columns=columns)
+
+	DF_M = {tref:df}
+	return DF_M
