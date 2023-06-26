@@ -1,0 +1,107 @@
+load_parameters:
+  path_to_rootpath : ''
+  path_to_birdsnack_rootpath : '../'
+
+simulate_parameters:
+  #No. of Sets of Simulated Data
+  Nsims : 1000
+  #No. of SNe in Simulation
+  S  : 100
+  ##Choice of simulator
+  #simulator  : 'perfect' #Generated from forward model
+  simulator  : 'BayeSN'   #Generated using BayeSN
+  #If BayeSN is simulator, use these parameters for BayeSN simulations
+  bayesn_parameters :
+    #Model used in BayeSN simulations
+    #bymodel    : 'W22'
+    bymodel    : 'M20'
+    #Either include or exclude theta variations (i.e. light curve shape variations)
+    thetamode  : 0        #set theta=0
+    thetamode  : 'random' #included
+  #Intrinsic variations are either included or excluded (works for both types of simulator)
+  epsmode    : 0         #set epsilon=0
+  epsmode    : 'bymodel' #draws from BayeSN covariance matrix
+  epsmode    : 'random'  #random covariance matrices
+  #Choice for population mean intrinsic mag/deviation
+  FPC0m : 'random'  #random draws
+  FPC0m : 'bymodel' #use BayeSN FPC0m
+
+  #Filters used for simulations
+  flts  : ["B_CSP", "V_CSP", "r_CSP", "i_CSP", "J_RC1", "H_RC"]
+  #Dust Hyperparameters
+  tauA  : 0.5
+  muRV  : 2.5
+  sigRV : 0.5
+  #Population distribution of AVs parameters
+  AVsimdist : 'Gamma'
+  AVsimdist : 'Exp'
+  AV_parameters :
+    nuA : None
+    nuA : 3
+  #Pre-defined Intrinsic Population Hyperparameters, if True, set to posterior medians from some file
+  PredefinedIntrinsicHyps : True
+  PredefinedIntrinsicHyps : False
+  pre_defined_hyps :
+    load_file : 'Fiducial'
+
+
+fit_parameters:
+  n_warmup   : 500
+  n_sampling : 500
+  n_chains   : 4
+
+  SEDmodel : 'mags_fit_colours_anchor'
+  SEDmodel : 'mags_fit_colours_no_anchor'
+  SEDmodel : 'colours'
+  SEDmodel : 'mags_fit_mags'
+
+  ColourChoice : 'B-X'
+  ColourChoice : 'X-H'
+  ColourChoice : 'Adjacent'
+
+  lam_choice : 'effective_thetaOFF'
+  lam_choice : 'effective_thetaOFFepsOFF'
+  lam_choice : 'central'
+  lam_choice : 'effective_thetaON'
+
+  include_LCshape : True
+  include_LCshape : False
+
+  include_residuals : False
+  include_residuals : True
+
+  fitlowBVonly : False
+  fitlowBVonly : True
+
+  CensoredData : False
+  #############################
+  #CensoredData : True
+  #n_warmup   : 1000
+  #n_sampling : 1000
+  #############################
+
+  AVprior : 'ScaledInvChi2_nu_Cauchy'
+  AVprior : 'HalfCauchy'
+  AVprior : 'HalfCauchywMean'
+  AVprior : 'Exp'
+  ########################
+  #Fit sims with Gamma or Cauchy
+  #AVprior : 'Gamma'
+  #AVprior : 'HalfCauchywMean'
+  #n_warmup   : 1000
+  #n_sampling : 3000
+  ########################
+
+  RVprior : 'Norm'
+
+  EBVmode : True
+  EBVmode : False
+
+  lnmuRVmode : True
+  lnmuRVmode : False
+
+  #############################
+  #AVprior : 'HalfCauchywMean'
+  #n_warmup   : 1000
+  #n_sampling : 2000
+  #############################
