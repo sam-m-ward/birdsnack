@@ -11,7 +11,8 @@ SBC_CLASS class
 	Methods are:
 		get_simulations_folder()
 		simulate_truths()
-		get_truths(index=None):
+		get_truths(index=None)
+		get_leffs_df(TRUTHS_DICT=None):
 
 SIMULATOR class
 	inputs : choices
@@ -27,6 +28,10 @@ SIMULATOR class
 
 Functions include:
 	get_Lint_prior_samples(Nc=6,savefolder='products/Lint_sims/',generator_file='generator.stan',n_sampling=10000,n_chains=1,n_warmup=10)
+
+--------------------
+
+Written by Sam M. Ward: smw92@cam.ac.uk
 """
 from snpy import fset
 import matplotlib#Reset matplotlib params
@@ -35,6 +40,7 @@ import numpy as np
 import copy, extinction, os, pickle, sys
 from contextlib import suppress
 from glob import glob
+import pandas as pd
 from scipy.stats import truncnorm, gamma
 
 class SBC_CLASS:
@@ -150,7 +156,7 @@ class SBC_CLASS:
 			if not None, load up Sim{index}
 			otherwise load up all the files
 
-		Return
+		End Product(s)/Return
 		----------
 		TRUTHS_DICT : dict
 			key,value are index,SIMULATOR class object
@@ -168,7 +174,48 @@ class SBC_CLASS:
 						truths = pickle.load(f)
 					TRUTHS_DICT[index] = truths
 					break
-		return TRUTHS_DICT
+		self.TRUTHS_DICT = TRUTHS_DICT
+		return self.TRUTHS_DICT
+
+	def get_leffs_df(self, TRUTHS_DICT = None):
+		"""
+		Get Effective Wavelengths DataFrame
+
+		Method to load up simulated SN datasets,
+		then compute median of leffs for 1 dataset
+		then store df of leffs across datasets
+
+		End Product(s)/Returns
+		----------
+		lameff_df : df
+			each column is passband
+			each row is leff for that simulation
+		"""
+		#Get Truths
+		if TRUTHS_DICT is None:	TRUTHS_DICT = self.get_truths()
+		#Initialise pandas df
+		df = pd.DataFrame(columns=[s[0] for s in self.flts]) ; ISIM = -1
+		#Loop through simulated datasets
+		for key,truths in TRUTHS_DICT.items():
+			ISIM += 1
+			if ISIM%10==0:	print (f'{ISIM} / {len(TRUTHS_DICT)}')
+			#Get lameff entries, 1 for each SN
+			l_effs_list = []
+			for s in range(truths.S):
+				eps_hat = (truths.mexts[s]-truths.mints[s])/truths.AVs[s]
+				l_effs = []
+				for il,eps in enumerate(eps_hat):
+					lams    = np.arange(truths.l_eff_rest[il]-300,truths.l_eff_rest[il]+100+1,0.1)
+					eps_eff = extinction.fitzpatrick99(lams,1,truths.RVs[s])
+					l_effs.append(lams[np.argmin(np.abs(eps_eff-eps))])
+				l_effs_list.append(np.asarray(l_effs))
+			#With all SNe, get median, and append this to global row
+			l_effs_list = np.asarray(l_effs_list)
+			append_dict = dict(zip(df.columns,np.median(l_effs_list,axis=0)))
+			df          = df.append(append_dict,ignore_index=True)
+		#Assign attribute and return
+		self.lameff_df = df
+		return self.lameff_df
 
 
 
