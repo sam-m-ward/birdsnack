@@ -263,16 +263,17 @@ class SBC_CLASS:
 				print ("###"*10)
 				print (f"Performing fit to ISIM={ISIM};")
 				print (f"save_filename is {save_filename}")
+				#Get DF_M for BirdSnack
 				DF_M = get_DF_M_from_truths(truths,pblist,errstr,tref)
 				bs.DF_M = DF_M
+				#Fit HBM
 				bs.fit_stan_model(save=False,Rhat_threshold=1.05)
-
+				#Extract FIT, thin df to x3 dust hyperparameters
 				FIT = bs.FIT
 				FIT['df'] = FIT['df'][['mu_RV','sig_RV','tauA']]
-
+				#Save FIT
 				with open(save_filename,'wb') as f:
 					pickle.dump(FIT,f)
-				err=1/0
 
 
 class SIMULATOR():
