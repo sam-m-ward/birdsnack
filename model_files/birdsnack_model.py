@@ -15,7 +15,7 @@ BIRDSNACK class
 		get_peak_mags(savekey='Default', overwrite=False)
 		plot_lcs(sns=None,**kwargs)
 		additional_cuts(cutter=True)
-		fit_stan_model()
+		fit_stan_model(save=True,Rhat_threshold=1.02,Rhat_check_params=['mu_RV','sig_RV','tauA'])
 		plot_posterior_samples()
 		plot_mag_deviations()
 		plot_colour_corner()
@@ -98,7 +98,6 @@ class BIRDSNACK:
 		#Load up metadata
 		self.dfmeta = dfmeta
 
-
 		#Load up the SNSsnpy dictionary, and load/create the snana lcs
 		if 'path_file_survey' in loader:
 			path,file,survey = loader['path_file_survey']
@@ -108,8 +107,9 @@ class BIRDSNACK:
 		elif 'SNSsnpy' in loader:
 			self.SNSsnpy = loader['SNSsnpy']
 
-		#Load up snana lcs and apply SNR cut, error_boost_dict, and trim to interpflts
-		self.load_and_preprocess_snana_lcs()
+		if 'SNSsnpy' in list(self.__dict__.keys()):
+			#Load up snana lcs and apply SNR cut, error_boost_dict, and trim to interpflts
+			self.load_and_preprocess_snana_lcs()
 
 
 	def load_and_preprocess_snana_lcs(self):
@@ -567,7 +567,7 @@ class BIRDSNACK:
 		self.sns  = list(self.lcs.keys())
 		print ('###'*5)
 
-	def fit_stan_model(self):
+	def fit_stan_model(self,save=True,Rhat_threshold=1.02,Rhat_check_params=['mu_RV','sig_RV','tauA']):
 		"""
 		Fit Stan Model
 
@@ -575,7 +575,15 @@ class BIRDSNACK:
 
 		Parameters
 		----------
+		save : bool (optional; default=True)
+			if save, save the posterior samples
 
+		Rhat_threshold : float (optional; default=1.02)
+			default value of Rhat for Rhat_check_params which cannot be exceeded else fit will be done again with more samples
+
+		Rhat_check_params : list (optional; default=['mu_RV','sig_RV','tauA'])
+			list of strs where strs are parameters for which Rhat will be checked
+			
 		Returns
 		----------
 		"""
@@ -659,24 +667,35 @@ class BIRDSNACK:
 		print (f'Beginning HBM_savekey fit: {savekey}')
 		#Build Stan Model
 		posterior = stan.build(stan_file, data=stan_data, random_seed=random_seed)
-		#Fit Model
-		fit       = posterior.sample(num_chains=n_chains, num_samples=n_sampling, num_warmup = n_warmup,init=stan_init)
-		#Get samples as pandas df
-		df = fit.to_frame()
-		if n_sampling>1000:#Thin samples
-			print (f'Thinning samples down to {n_thin} per chain to save on space complexity')
-			Nthinsize = int(n_thin*n_chains)
-			df = df.iloc[0:df.shape[0]:int(df.shape[0]/Nthinsize)]						#thin to e.g. 1000 samples per chain
-			dfdict = df.to_dict(orient='list')											#change to dictionary so key,value is parameter name and samples
-			fit = {key:np.array_split(value,n_chains) for key,value in dfdict.items()}	#change samples so split into chains
+		for itrial in range(3):
+			BREAK = True
+			#Fit Model
+			fit       = posterior.sample(num_chains=n_chains, num_samples=n_sampling*(1+itrial), num_warmup = n_warmup,init=stan_init)
+			#Get samples as pandas df
+			df = fit.to_frame()
 
-		#Fitsummary including Rhat valuess
-		fitsummary = az.summary(fit)#feed dictionary into arviz to get summary stats of thinned samples
+			if n_sampling>1000:#Thin samples
+				print (f'Thinning samples down to {n_thin} per chain to save on space complexity')
+				Nthinsize = int(n_thin*n_chains)
+				df = df.iloc[0:df.shape[0]:int(df.shape[0]/Nthinsize)]						#thin to e.g. 1000 samples per chain
+				dfdict = df.to_dict(orient='list')											#change to dictionary so key,value is parameter name and samples
+				fit = {key:np.array_split(value,n_chains) for key,value in dfdict.items()}	#change samples so split into chains
+
+			#Fitsummary including Rhat valuess
+			fitsummary = az.summary(fit)#feed dictionary into arviz to get summary stats of thinned samples
+
+			#Check for high Rhat values
+			for par in Rhat_check_params:
+				if fitsummary.loc[par]['r_hat']>Rhat_threshold:
+					BREAK = False
+			if BREAK:	break
+			else:		print ('Repeating fit with more samples because of Rhats:',{par:fitsummary.loc[par]['r_hat'] for par in Rhat_check_params})
 		#Products of HMC fit
 		FIT        = {'df':df,'fitsummary':fitsummary,'stan_data':stan_data,'choices':self.choices}
 		#Save FIT
-		with open(f'{self.FITSpath}FIT{savekey}.pkl','wb') as f:
-			pickle.dump(FIT,f)
+		if save:
+			with open(f'{self.FITSpath}FIT{savekey}.pkl','wb') as f:
+				pickle.dump(FIT,f)
 		#Set attribute
 		self.FIT   = FIT
 
