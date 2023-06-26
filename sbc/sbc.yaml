@@ -22,7 +22,7 @@ simulate_parameters:
   epsmode    : 0         #set epsilon=0
   epsmode    : 'bymodel' #draws from BayeSN covariance matrix
   epsmode    : 'random'  #random covariance matrices
-  #Choice for population mean intrinsic mag/deviation
+  #Choice for population mean intrinsic mag/deviation (only included when simulator=='perfect')
   FPC0m : 'random'  #random draws
   FPC0m : 'bymodel' #use BayeSN FPC0m
 
