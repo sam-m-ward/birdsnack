@@ -4,7 +4,7 @@ load_parameters:
 
 simulate_parameters:
   #No. of Sets of Simulated Data
-  Nsims : 125
+  Nsims : 200
   #No. of SNe in Simulation
   S  : 100
   ##Choice of simulator
