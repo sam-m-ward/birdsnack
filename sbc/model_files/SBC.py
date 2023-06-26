@@ -11,6 +11,7 @@ SBC_CLASS class
 	Methods are:
 		get_simulations_folder()
 		simulate_truths()
+		get_truths(index=None):
 
 SIMULATOR class
 	inputs : choices
@@ -31,10 +32,10 @@ from snpy import fset
 import matplotlib#Reset matplotlib params
 matplotlib.rcParams.update(matplotlib.rcParamsDefault)
 import numpy as np
-import copy, os, pickle, sys
+import copy, extinction, os, pickle, sys
 from contextlib import suppress
+from glob import glob
 from scipy.stats import truncnorm, gamma
-import extinction
 
 class SBC_CLASS:
 	def get_simulations_folder(self):
@@ -136,10 +137,25 @@ class SBC_CLASS:
 		print ('Done')
 		print ('####'*10)
 
-	'''
+
 	def get_truths(self,index=None):
-		from glob import glob
-		files = glob(self.savepath+'*truths.pkl')
+		"""
+		Get Truths
+
+		Used to load up set of simulations
+
+		Parameters
+		----------
+		index : float (optional; default is None)
+			if not None, load up Sim{index}
+			otherwise load up all the files
+
+		Return
+		----------
+		TRUTHS_DICT : dict
+			key,value are index,SIMULATOR class object
+		"""
+		files = glob(self.simsavepath+'*truths.pkl')
 		TRUTHS_DICT = {}
 		for _,file in enumerate(files):
 			if index is None:
@@ -147,13 +163,13 @@ class SBC_CLASS:
 					truths = pickle.load(f)
 				TRUTHS_DICT[_] = truths
 			else:
-				if file == sbc.savepath+f'Sim{index}_truths.pkl':
+				if file == sbc.simsavepath+f'Sim{index}_truths.pkl':
 					with open(file,'rb') as f:
 						truths = pickle.load(f)
 					TRUTHS_DICT[index] = truths
 					break
 		return TRUTHS_DICT
-	'''
+
 
 
 class SIMULATOR():
