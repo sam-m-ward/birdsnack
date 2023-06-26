@@ -15,3 +15,4 @@ analysis/build/
 sbc/BAYESN_GITHUB/bayesn-model-files/
 sbc/BAYESN_GITHUB/bayesn-public/
 sbc/BAYESN_GITHUB/pysynphot_downloads/
+sbc/model_files/__pycache__/
