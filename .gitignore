@@ -12,4 +12,5 @@ plots/
 useful_scripts/
 products/DFs/
 analysis/build/
-sbc/BAYESN_GITHUB/
+sbc/BAYESN_GITHUB/bayesn-model-files/
+sbc/BAYESN_GITHUB/bayesn-public/
