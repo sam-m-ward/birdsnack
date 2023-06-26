@@ -28,6 +28,7 @@ SIMULATOR class
 
 Functions include:
 	get_Lint_prior_samples(Nc=6,savefolder='products/Lint_sims/',generator_file='generator.stan',n_sampling=10000,n_chains=1,n_warmup=10)
+	def get_DF_M_from_truths(truths,pblist,errstr,tref)
 
 --------------------
 
@@ -186,6 +187,11 @@ class SBC_CLASS:
 		then compute median of leffs for 1 dataset
 		then store df of leffs across datasets
 
+		Parameters
+		----------
+		TRUTHS_DICT : dict (optional; default=None)
+			key,value are index,SIMULATOR class object
+
 		End Product(s)/Returns
 		----------
 		lameff_df : df
@@ -225,6 +231,15 @@ class SBC_CLASS:
 	def fit_truths(self, TRUTHS_DICT=None):
 		"""
 		Fit Truths Method
+
+		Parameters
+		----------
+		TRUTHS_DICT : dict (optional; default=None)
+			key,value are index,SIMULATOR class object
+
+		End Product(s)
+		----------
+		FIT.pkl files of HBM fits to simulated data
 		"""
 		#Get Truths
 		if TRUTHS_DICT is None:
@@ -604,6 +619,32 @@ def get_Lint_prior_samples(Nc=6,savefolder='products/Lint_sims/',generator_file=
 
 
 def get_DF_M_from_truths(truths,pblist,errstr,tref):
+	"""
+	Get DF_M from Truths
+
+	Simple function that takes in simulated data,
+	and outputs a DF_M that can be read by BIRDSNACK
+	so as to do HBM fit
+
+	Parameters
+	----------
+	truths : dict
+		simulated data
+
+	pblist : list
+		list of passband strings
+
+	errstr : str
+		appended to each passband string to designate measurement error
+
+	tref : float
+		key in DF_M marking peak time
+
+	Returns
+	----------
+	DF_M : dict
+		{tref:df} where df is pandas df of peak magnitude measurements
+	"""
 	columns   = pblist+[pb+errstr for pb in pblist]
 	data_rows = [np.hstack((mo,eo)) for mo,eo in zip(truths.mobs,truths.errors)]
 	df        = pd.DataFrame(data=data_rows,columns=columns)
