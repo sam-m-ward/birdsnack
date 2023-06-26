@@ -1,0 +1,94 @@
+########################################################
+#Path to root directory relative to where analysis script is executed from
+rootpath : '../'
+
+#Parameters for loading up data from raw snpytxtfiles
+load_data_parameters :
+  GLOBAL_ANALYSIS_KEY  : ''
+
+########################################################
+preproc_parameters:
+  #key for saving/loading peak mags
+  DF_savekey  : 'fiducial'
+
+  #passband list, used for extracting magnitude measurements
+  #pblist : ['u','B','V','r','i','J','H']
+  pblist : ['B','V','r','i','J','H']
+  #List of phases to interpolate to
+  tilist     : [0]
+  #The python index in tclist taken as reference time
+  tref_index : 0
+
+  #Arbitrary choice of string for denoting errors in mags pandas df
+  errstr     : err
+
+analysis_parameters:
+  #key for saving/loading posterior samples
+  HBM_savekey : 'DefaultSBC'
+
+  #Lower and upper bounds on muRV
+  muRVmin   : 1
+  muRVmax   : 5
+  #Lower and upper bounds on individual RVs parameters
+  RVsmin : 1
+  RVsmax : 'inf' #Haven't implemented in public version yet
+  #Dispersion of Half-normal prior on sigmaRV
+  disp_sigmaRV : 2
+  #Dispersion on HalfCauchy prior on intrinsic mags/colours
+  a_sigma_mint : 1
+  a_sigma_cint : 1
+
+  #Data that is fed into model
+  DataTransformation : 'B-X'
+  DataTransformation : 'X-H'
+  DataTransformation : 'Adjacent'
+  DataTransformation : 'mags'
+
+  #Reference frame in which hyperpriors are placed to model intrinsic chromatic variations
+  IntrinsicModel : 'B-X'
+  IntrinsicModel : 'X-H'
+  IntrinsicModel : 'Adjacent'
+  IntrinsicModel : 'Deviations'
+
+  #Population distribution of AVs prior
+  AVprior : 'Gamma'
+  AVprior : 'Exp'
+
+  #Choice of effective wavelengths
+  lam_choice : 'effective_thetaOFF'
+  lam_choice : 'effective_thetaOFFepsOFF'
+  lam_choice : 'central'
+  lam_choice : 'effective_taustar'
+  lam_choice : 'effective_thetaON'
+
+  #Choice of which element in population mean intrinsic deviation vector to set to zero
+  #Note this choice is arbitrary and does not affect inferences...Dirichlet prior is a lot neater cos doesn't require this choice ;)
+  #Note this is a Stan index so BVriJH is 123456
+  zero_index : 1
+
+  #Choice of whether to include dm15B in model or not
+  include_LCshape : True
+  include_LCshape : False
+
+  #Choice of whether to include SN-to-SN intrinsic variations
+  include_residuals : False
+  include_residuals : True
+
+  #Choice of whether to include censored data in the model
+  CensoredData : True
+  CensoredData : False
+
+  #Upper bound on B-V where SNe within 0.3<B-V<CensoredCut will be included as CensoredData, those above CensoredCut are cut from sample entirely.
+  CensoredCut : 1.0
+  CensoredCut : 'inf'
+
+  #Option to make multiple copies of sample to fit
+  copymode : 1
+  copymode : False
+
+  #Stan Samples Here
+  n_warmup    : 500
+  n_sampling  : 500
+  n_chains    : 4
+  n_thin      : 500
+  random_seed : 10000
