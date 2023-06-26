@@ -27,11 +27,11 @@ if __name__ == "__main__":
 	sbc = SBC_CLASS(sbc_choices,edit_dict)
 
 	#Simulate SNe Datasets
-	print ('Simulating SNe Datasets')
+	print ('Simulating SN Datasets')
 	sbc.simulate_truths()
 
 	#Load up the simulated datasets
-	print ('Loading up SNe Datasets')
+	print ('Loading up SN Datasets')
 	TRUTHS_DICT = sbc.get_truths()
 
 	#Compute lam_effs; simply loops through each SN
