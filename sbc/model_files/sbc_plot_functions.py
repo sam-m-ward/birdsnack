@@ -6,7 +6,7 @@ Module contains functions useful for plotting SBC
 Contains
 ----------
 SBC_FITS_PLOTTER class
-	inputs : self,iax,ax,PAR,FITS,analysis_choices,path_to_birdsnack_rootpath,Quantiles=[0,0.025,0.05,0.16,0.5,0.84,0.95,0.975,1],FS=18
+	inputs : self,iax,ax,PAR,FITS,analysis_choices,path_to_birdsnack_rootpath,quantilemode=True,Quantiles=[0,0.025,0.05,0.16,0.5,0.84,0.95,0.975,1],FS=18
 
 	Methods are:
 		get_SAMPS()
@@ -28,7 +28,7 @@ from contextlib import suppress
 
 class SBC_FITS_PLOTTER:
 
-	def __init__(self,iax,ax,PAR,FITS,analysis_choices,path_to_birdsnack_rootpath,Quantiles=[0,0.025,0.05,0.16,0.5,0.84,0.95,0.975,1],FS=18):
+	def __init__(self,iax,ax,PAR,FITS,analysis_choices,path_to_birdsnack_rootpath,quantilemode=True,Quantiles=[0,0.025,0.05,0.16,0.5,0.84,0.95,0.975,1],FS=18):
 		self.iax = iax
 		self.ax  = ax
 		true_par,par,dfpar,parlabel = PAR[:]
@@ -39,7 +39,8 @@ class SBC_FITS_PLOTTER:
 		self.FITS                       = FITS
 		self.analysis_choices           = analysis_choices
 		self.path_to_birdsnack_rootpath = path_to_birdsnack_rootpath
-		self.Quantiles = Quantiles
+		self.quantilemode = quantilemode
+		self.Quantiles    = Quantiles
 		self.FS = 18
 
 
@@ -133,8 +134,10 @@ class SBC_FITS_PLOTTER:
 		ax[iax].annotate(r'True $\mu_{R_V}=%s$'%true_par,xy=(0.95-(0.95-0.0225)*('tau' in loop_par and iax>0),0.5+0.02),xycoords='axes fraction',fontsize=FS,ha='left' if ('tau' in loop_par and iax>0) else 'right')
 
 		#Plot and Annotate Medians
-		line_median  = r'Median-$%s=%s\pm%s$'%(parlabel,QUANTILES[0.5].quantile(0.5).round(2),QUANTILES[0.5].std().round(2))
+		if self.quantilemode:	line_median  = r'Median-$%s=%s^{+%s}_{-%s}$'%(parlabel,QUANTILES[0.5].quantile(0.5).round(2),round(QUANTILES[0.5].quantile(0.84)-QUANTILES[0.5].quantile(0.5),2),round(QUANTILES[0.5].quantile(0.5)-QUANTILES[0.5].quantile(0.16),2))
+		else:					line_median  = r'Median-$%s=%s\pm%s$'%(parlabel,QUANTILES[0.5].quantile(0.5).round(2),QUANTILES[0.5].std().round(2))
 		line_pmedian = r"$p($"+'Median-'+r"$%s<%s ; \,\rm{True}})=%s$"%(parlabel, parlabel.split('}')[0],round(100*QUANTILES[QUANTILES[0.5]<true_par].shape[0]/QUANTILES[0.5].shape[0],1)) + '%'
+
 		ax[iax].plot(QUANTILES[0.5].quantile(0.5)*np.ones(2),[0,KDEmax],c='C1'	,linewidth=2,label='\n'.join([line_median,line_pmedian]),linestyle=':')
 		ax[iax].fill_between([QUANTILES[0.5].quantile(0.16),QUANTILES[0.5].quantile(0.84)],[0,0],[KDEmax,KDEmax],color='C1',alpha=0.2)
 
@@ -145,7 +148,8 @@ class SBC_FITS_PLOTTER:
 		samps.Nsamps /= 10#Otherwise too slow
 		samps.get_xgrid_KDE()
 		line_sap_title   = 'Simulation-Averaged Posterior; '
-		line_sap_summary = r'$%s = %s \pm %s$'%(parlabel,sap_chain.quantile(0.5).round(2),sap_chain.std().round(2))
+		if self.quantilemode:	line_sap_summary = r'$%s = %s ^{+%s}_{-%s}$'%(parlabel,sap_chain.quantile(0.5).round(2),round(sap_chain.quantile(0.84)-sap_chain.quantile(0.5),2),round(sap_chain.quantile(0.5)-sap_chain.quantile(0.16),2))
+		else:					line_sap_summary = r'$%s = %s \pm %s$'%(parlabel,sap_chain.quantile(0.5).round(2),sap_chain.std().round(2))
 		ax[iax].plot(samps.xgrid,samps.KDE,alpha=1,color='C0',linewidth=3,label='\n'.join([line_sap_title,line_sap_summary]))
 		#Fill between with quantiles
 		for qlo,qhi in zip([0.16,0.025],[0.84,0.975]):
