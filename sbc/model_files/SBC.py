@@ -13,7 +13,7 @@ SBC_CLASS class
 		simulate_truths()
 		get_truths(index=None)
 		get_leffs_df(TRUTHS_DICT=None)
-		fit_truths(TRUTHS_DICT=None)
+		fit_truths(edit_dict={}, TRUTHS_DICT=None)
 		get_fits(TRUTHS_DICT=None)
 
 SIMULATOR class
@@ -80,8 +80,8 @@ class SBC_CLASS:
 			if self.AVsimdist in ['Gamma']:
 				folder  += f"_nuA{str(self.AV_parameters['nuA'])}"
 		#Intrinsic Hyps
-		folder    += f"_PredefinedIntrinsicHyps{self.PredefinedIntrinsicHyps}"
-		if self.PredefinedIntrinsicHyps:
+		folder    += f"_PredefinedIntExtHyps{self.PredefinedIntrinsicHyps}{self.PredefinedExtrinsicHyps}"
+		if self.PredefinedIntrinsicHyps or self.PredefinedExtrinsicHyps:
 			folder += f"_loadedfrom{self.pre_defined_hyps['load_file']}"
 		#Final Addition to make it a folder
 		folder += '/'
@@ -231,12 +231,15 @@ class SBC_CLASS:
 		self.lameff_df = df
 		return self.lameff_df
 
-	def fit_truths(self, TRUTHS_DICT=None):
+	def fit_truths(self, edit_dict={}, TRUTHS_DICT=None):
 		"""
 		Fit Truths Method
 
 		Parameters
 		----------
+		edit_dict : dict (optional; default={})
+			used to edit BirdSnack .yaml dictionary for applying HBM
+
 		TRUTHS_DICT : dict (optional; default=None)
 			key,value are index,SIMULATOR class object
 
@@ -254,7 +257,7 @@ class SBC_CLASS:
 		#Initialise Bird-Snack Model
 		sys.path.append(f"{self.path_to_birdsnack_rootpath}model_files/")
 		from birdsnack_model import BIRDSNACK
-		bs      = BIRDSNACK(configname=f"{self.birdsnack_yaml}.yaml")
+		bs      = BIRDSNACK(configname=f"{self.birdsnack_yaml}.yaml",edit_dict=edit_dict)
 		pblist  = bs.choices['preproc_parameters']['pblist']
 		errstr  = bs.choices['preproc_parameters']['errstr']
 		tref    = bs.choices['preproc_parameters']['tilist'][bs.choices['preproc_parameters']['tref_index']]
@@ -273,7 +276,7 @@ class SBC_CLASS:
 				bs.fit_stan_model(save=False,Rhat_threshold=1.05)
 				#Extract FIT, thin df to x3 dust hyperparameters
 				FIT = bs.FIT
-				FIT['df'] = FIT['df'][['mu_RV','sig_RV','tauA']]
+				FIT['df'] = FIT['df'][bs.Rhat_check_params]
 				#Save FIT
 				with open(save_filename,'wb') as f:
 					pickle.dump(FIT,f)
@@ -314,8 +317,6 @@ class SBC_CLASS:
 		self.bs   = bs
 		self.FITS = FITS
 		return self.FITS
-
-
 
 class SIMULATOR():
 
@@ -412,12 +413,19 @@ class SIMULATOR():
 		----------
 		tauA,muRV,sigRV
 		"""
-		if self.tauA is None:
-			self.tauA  = np.random.uniform(self.tauAmin,self.tauAmax)
-		if self.muRV is None:
-			self.muRV  = np.random.uniform(self.muRVmin,self.muRVmax)
-		if self.sigRV is None:
-			self.sigRV = np.random.uniform(self.sigRVmin,self.sigRVmax)
+		if self.PredefinedExtrinsicHyps:
+			with open(f"{self.path_to_birdsnack_rootpath}products/stan_fits/FITS/FIT{self.pre_defined_hyps['load_file']}.pkl",'rb') as f:
+				FIT = pickle.load(f)
+			row  = FIT['df'].median(axis=0)
+			self.tauA,self.muRV,self.sigRV = row[['tauA','mu_RV','sig_RV']].values
+
+		else:
+			if self.tauA is None:
+				self.tauA  = np.random.uniform(self.tauAmin,self.tauAmax)
+			if self.muRV is None:
+				self.muRV  = np.random.uniform(self.muRVmin,self.muRVmax)
+			if self.sigRV is None:
+				self.sigRV = np.random.uniform(self.sigRVmin,self.sigRVmax)
 
 	def get_dust_ind(self):
 		"""
@@ -458,7 +466,10 @@ class SIMULATOR():
 				FIT = pickle.load(f)
 			row    = FIT['df'].median(axis=0)
 			FPC0m  = row[[col for col in row.keys() if 'FPC0m' in col and 'simp' not in col and 'mbar' not in col]].values
-			L_mint = row[[col for col in row.keys() if 'L_mint' in col and 'eta' not in col and 'Cens' not in col]].values.reshape(6,6).T
+			if len(FPC0m)<self.Nm and self.pre_defined_hyps['ppc_IntrinsicModel']=='Deviations':#If using model with reference B-band=0 for example
+				FPC0m = np.insert(FPC0m, self.pre_defined_hyps['ppc_zero_index']-1, 0)#Gaussian with element at zero_index set to 0, zero_index is in Stan which is 1-indexed so subtract 1
+			L_mint = row[[col for col in row.keys() if 'L_mint' in col and 'eta' not in col and 'Cens' not in col]].values.reshape(self.Nm,self.Nm).T
+			sigma_mints = None
 		else:
 			#Get Epsilon Hyperparameters
 			if self.epsmode=='random':
