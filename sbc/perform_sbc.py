@@ -29,8 +29,8 @@ if __name__ == "__main__":
 	with open('sbc.yaml') as f:
 		sbc_choices = yaml.load(f, Loader=yaml.FullLoader)
 
-	#Draw dust hyperparameters from simulation distributions; create 1000 datasets
-	edit_dict   = {'simulate_parameters':{**{'Nsims':200},**dust_hyps}}
+	#Set dust hyperparameters to these values
+	edit_dict   = {'simulate_parameters':{**{'Nsims':20},**dust_hyps}}
 
 	#Get SBC_CLASS
 	sbc = SBC_CLASS(sbc_choices,edit_dict)
