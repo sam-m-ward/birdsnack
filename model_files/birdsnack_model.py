@@ -15,7 +15,7 @@ BIRDSNACK class
 		get_peak_mags(savekey='Default', overwrite=False)
 		plot_lcs(sns=None,**kwargs)
 		additional_cuts(cutter=True)
-		fit_stan_model(save=True,Rhat_threshold=1.02,Rhat_check_params=['mu_RV','sig_RV','tauA'])
+		fit_stan_model(save=True,Rhat_threshold=1.02,Rhat_check_params=['mu_RV','sig_RV','tauA'],Ntrials=3)
 		plot_posterior_samples()
 		plot_mag_deviations()
 		plot_colour_corner()
@@ -567,7 +567,7 @@ class BIRDSNACK:
 		self.sns  = list(self.lcs.keys())
 		print ('###'*5)
 
-	def fit_stan_model(self,save=True,Rhat_threshold=1.02,Rhat_check_params=['mu_RV','sig_RV','tauA']):
+	def fit_stan_model(self,save=True,Rhat_threshold=1.02,Rhat_check_params=['mu_RV','sig_RV','tauA'],Ntrials=3):
 		"""
 		Fit Stan Model
 
@@ -583,7 +583,10 @@ class BIRDSNACK:
 
 		Rhat_check_params : list (optional; default=['mu_RV','sig_RV','tauA'])
 			list of strs where strs are parameters for which Rhat will be checked
-			
+
+		Ntrials : float (optional; default=3)
+			keep doing fit, multiplying up n_sampling, until Rhats<threshold
+
 		Returns
 		----------
 		"""
@@ -595,6 +598,9 @@ class BIRDSNACK:
 		DataTransformation = self.choices['analysis_parameters']['DataTransformation']
 		IntrinsicModel     = self.choices['analysis_parameters']['IntrinsicModel']
 		n_warmup,n_sampling,n_chains,n_thin,random_seed = self.choices['analysis_parameters']['n_warmup'],self.choices['analysis_parameters']['n_sampling'],self.choices['analysis_parameters']['n_chains'],self.choices['analysis_parameters']['n_thin'],self.choices['analysis_parameters']['random_seed']
+		if self.choices['analysis_parameters']['AVprior'] in ['Gamma']:
+			Rhat_check_params += ['nu']
+		self.Rhat_check_params = Rhat_check_params
 
 		#Initialisation of stan_data
 		stan_data = {}
@@ -667,7 +673,7 @@ class BIRDSNACK:
 		print (f'Beginning HBM_savekey fit: {savekey}')
 		#Build Stan Model
 		posterior = stan.build(stan_file, data=stan_data, random_seed=random_seed)
-		for itrial in range(3):
+		for itrial in range(Ntrials):
 			BREAK = True
 			#Fit Model
 			fit       = posterior.sample(num_chains=n_chains, num_samples=n_sampling*(1+itrial), num_warmup = n_warmup,init=stan_init)
@@ -685,11 +691,11 @@ class BIRDSNACK:
 			fitsummary = az.summary(fit)#feed dictionary into arviz to get summary stats of thinned samples
 
 			#Check for high Rhat values
-			for par in Rhat_check_params:
+			for par in self.Rhat_check_params:
 				if fitsummary.loc[par]['r_hat']>Rhat_threshold:
 					BREAK = False
 			if BREAK:	break
-			else:		print ('Repeating fit with more samples because of Rhats:',{par:fitsummary.loc[par]['r_hat'] for par in Rhat_check_params})
+			else:		print (f'Completed {itrial+1}/{Ntrials}; Repeating fit with more samples because of Rhats:',{par:fitsummary.loc[par]['r_hat'] for par in self.Rhat_check_params})
 		#Products of HMC fit
 		FIT        = {'df':df,'fitsummary':fitsummary,'stan_data':stan_data,'choices':self.choices}
 		#Save FIT
@@ -701,11 +707,12 @@ class BIRDSNACK:
 
 		#Print Posterior summaries
 		print ('~~~'*5+f'\n{savekey} FIT summary')
-		for par in ['mu_RV','sig_RV','tauA']:
-			print ('###'*5)
-			print ('Par, median, std, 68%, 95% quantiles')
-			print (par,df[par].median().round(2),df[par].std().round(2), df[par].quantile(0.68).round(2),df[par].quantile(0.95).round(2))
-			print (f"Rhat = {fitsummary.loc[par]['r_hat']}")
+		for par in self.Rhat_check_params:
+			with suppress(KeyError):
+				print ('###'*5)
+				print ('Par, median, std, 68%, 95% quantiles')
+				print (par,df[par].median().round(2),df[par].std().round(2), df[par].quantile(0.68).round(2),df[par].quantile(0.95).round(2))
+				print (f"Rhat = {fitsummary.loc[par]['r_hat']}")
 
 	def plot_posterior_samples(self, returner=False):
 		"""
