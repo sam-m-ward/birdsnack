@@ -41,6 +41,8 @@ simulate_parameters:
   #Pre-defined Intrinsic Population Hyperparameters, if True, set to posterior medians from some file
   PredefinedIntrinsicHyps : True
   PredefinedIntrinsicHyps : False
+  #Pre-defined Dust Population Hyperparameters, if True, set to posterio medians from some file
+  PredefinedExtrinsicHyps : False
   pre_defined_hyps :
     load_file : 'Fiducial'
 
