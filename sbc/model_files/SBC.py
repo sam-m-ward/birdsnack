@@ -12,7 +12,9 @@ SBC_CLASS class
 		get_simulations_folder()
 		simulate_truths()
 		get_truths(index=None)
-		get_leffs_df(TRUTHS_DICT=None):
+		get_leffs_df(TRUTHS_DICT=None)
+		fit_truths(TRUTHS_DICT=None)
+		get_fits(TRUTHS_DICT=None)
 
 SIMULATOR class
 	inputs : choices
@@ -274,6 +276,44 @@ class SBC_CLASS:
 				#Save FIT
 				with open(save_filename,'wb') as f:
 					pickle.dump(FIT,f)
+
+	def get_fits(self,TRUTHS_DICT=None):
+		"""
+		Fit FITS Method
+
+		Parameters
+		----------
+		TRUTHS_DICT : dict (optional; default=None)
+			key,value are index,SIMULATOR class object
+
+		End Product(s)
+		----------
+		FITS : dict
+			{ISIM:FIT} of SBC fits
+		"""
+		#Get Truths
+		if TRUTHS_DICT is None:
+			if self.TRUTHS_DICT is None:
+				TRUTHS_DICT = self.get_truths()
+			else:
+				TRUTHS_DICT = self.TRUTHS_DICT
+
+		#Initialise Bird-Snack Model
+		sys.path.append(f"{self.path_to_birdsnack_rootpath}model_files/")
+		from birdsnack_model import BIRDSNACK
+		bs = BIRDSNACK(configname=f"{self.birdsnack_yaml}.yaml")
+
+		#Load FITS
+		FITS = {}
+		for ISIM,truths in TRUTHS_DICT.items():
+			save_filename = f"{self.simsavepath}FIT{bs.choices['analysis_parameters']['HBM_savekey']}_Sim{ISIM}.pkl"
+			with open(save_filename,'rb') as f:
+				FIT = pickle.load(f)
+			FITS[ISIM] = FIT
+		self.bs   = bs
+		self.FITS = FITS
+		return self.FITS
+
 
 
 class SIMULATOR():
