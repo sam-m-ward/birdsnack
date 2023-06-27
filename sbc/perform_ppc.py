@@ -5,6 +5,9 @@ Simple script that uses SBC class to:
 	simulate a bunch of SN datasets
 	Fit them using Bird-Snack model
 	Assess Recovery of Input (Hyper)parameters
+
+Functions:
+	update_edit_dict_for_ppc(sbc_choices, edit_dict)
 --------------------
 
 Written by Sam M. Ward: smw92@cam.ac.uk
