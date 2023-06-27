@@ -10,8 +10,9 @@ SNSsnpy_fiducial = dataloader.load_SNSsnpy('SNSsnpy_fiducial.pkl')
 dfmeta           = dataloader.dfmeta
 edit_dict        = {}
 #edit_dict = {
-#'preproc_parameters':{'DF_savekey':'uBgVriYJH','pblist':[s for s in 'uBgVriYJH']},
-#'analysis_parameters':{'HBM_savekey':'allbands_CensoredCut1.0','lam_choice':'central','CensoredData':True,'CensoredCut':1.0}}
+#'preproc_parameters':{'DF_savekey':'uBVriJH','pblist':[s for s in 'uBVriJH']},
+#'analysis_parameters':{'HBM_savekey':'uBVriJH_CensoredCut1.0','lam_choice':'central','CensoredData':True,'CensoredCut':1.0}}
+edit_dict = {'analysis_parameters':{'HBM_savekey':'Fiducial_CensoredCut1.0','CensoredData':True,'CensoredCut':1.0}}
 
 #Load into Bird-Snack
 bs = BIRDSNACK(loader={'SNSsnpy':SNSsnpy_fiducial}, configname='loader_config.yaml', dfmeta=dfmeta, edit_dict=edit_dict)
