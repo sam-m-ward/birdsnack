@@ -397,7 +397,7 @@ class PARAMETER:
 		self.xgrid = xgrid
 		self.KDE   = KDE
 
-	def __init__(self,chain,parname,parlabel,lim,bound,Rhat,row,choices,smoothing):
+	def __init__(self,chain,parname,parlabel,lim,bound,Rhat,row,choices,smoothing=2):
 		"""
 		See POSTERIOR_PLOTTER class docstring for input descriptions
 		"""
