@@ -13,7 +13,7 @@ SBC_CLASS class
 		simulate_truths()
 		get_truths(index=None)
 		get_leffs_df(TRUTHS_DICT=None)
-		fit_truths(edit_dict={}, TRUTHS_DICT=None)
+		fit_truths(edit_dict={}, TRUTHS_DICT=None, Rhat_threshold=1.05, periodically_delete=False, outputdir='')
 		get_fits(TRUTHS_DICT=None)
 
 SIMULATOR class
@@ -40,7 +40,7 @@ from snpy import fset
 import matplotlib#Reset matplotlib params
 matplotlib.rcParams.update(matplotlib.rcParamsDefault)
 import numpy as np
-import copy, extinction, os, pickle, sys
+import copy, extinction, os, pickle, shutil, sys
 from contextlib import suppress
 from glob import glob
 import pandas as pd
@@ -231,7 +231,7 @@ class SBC_CLASS:
 		self.lameff_df = df
 		return self.lameff_df
 
-	def fit_truths(self, edit_dict={}, TRUTHS_DICT=None):
+	def fit_truths(self, edit_dict={}, TRUTHS_DICT=None, Rhat_threshold=1.05, periodically_delete=False, outputdir=''):
 		"""
 		Fit Truths Method
 
@@ -242,6 +242,15 @@ class SBC_CLASS:
 
 		TRUTHS_DICT : dict (optional; default=None)
 			key,value are index,SIMULATOR class object
+
+		Rhat_threshold : float (optional; default=1.05)
+			maximum allowed Rhat
+
+		periodically_delete : float (optional; default=False)
+			if True, delete stan build every completed fits defined by this variable
+
+		outputdir : str
+			path/to/stan/build
 
 		End Product(s)
 		----------
@@ -273,13 +282,19 @@ class SBC_CLASS:
 				DF_M = get_DF_M_from_truths(truths,pblist,errstr,tref)
 				bs.DF_M = DF_M
 				#Fit HBM
-				bs.fit_stan_model(save=False,Rhat_threshold=1.05)
-				#Extract FIT, thin df to x3 dust hyperparameters
+				bs.fit_stan_model(save=False,Rhat_threshold=Rhat_threshold)
+				#Extract FIT, thin df to dust hyperparameters
 				FIT = bs.FIT
 				FIT['df'] = FIT['df'][bs.Rhat_check_params]
 				#Save FIT
 				with open(save_filename,'wb') as f:
 					pickle.dump(FIT,f)
+
+				if periodically_delete:
+					if ISIM%periodically_delete==0:
+						delete_tmp_files = glob(f'{outputdir}*')#Need to do this manually otherwise files stack up in tmp/ and for loop dies
+						for file in delete_tmp_files:
+							shutil.rmtree(file)
 
 	def get_fits(self,TRUTHS_DICT=None):
 		"""

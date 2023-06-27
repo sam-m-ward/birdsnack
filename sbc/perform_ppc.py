@@ -59,6 +59,10 @@ BIRDSNACK_EDIT_DICT = {'analysis_parameters':
 #Choices for simulating data based on previous stan fit with BirdSnack
 edit_dict = {'simulate_parameters':{'Nsims':20,'pre_defined_hyps':{'load_file':'Fiducial_CensoredCut1.0'}}}
 
+#Directory to periodically_delete stan build, conserve memory
+stan_build_dir      = '/Users/samward/Library/Caches/httpstan/'
+periodically_delete = 2
+
 if __name__ == "__main__":
 	with open('ppc.yaml') as f:
 		sbc_choices = yaml.load(f, Loader=yaml.FullLoader)
@@ -81,4 +85,4 @@ if __name__ == "__main__":
 	#Loop through Simulated Datasets and fit BirdSnack HBM
 	#BIRDSNACK_EDIT_DICT implements e.g. fit with AVprior='Gamma'
 	print ('Begin Fitting SN Datasets')
-	sbc.fit_truths(edit_dict=BIRDSNACK_EDIT_DICT)
+	sbc.fit_truths(edit_dict=BIRDSNACK_EDIT_DICT,periodically_delete=periodically_delete,outputdir=stan_build_dir)

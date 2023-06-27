@@ -32,7 +32,7 @@ simulate_parameters:
   pre_defined_hyps :
     load_file : 'None'
     ppc_zero_index : 'None'
-    ppc_IntrinsicModel : 'None' 
+    ppc_IntrinsicModel : 'None'
 
 fit_parameters:
   #Load up f"{birdsnack_yaml}.yaml" for birdsnack fitting choices
