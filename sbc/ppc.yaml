@@ -1,0 +1,39 @@
+load_parameters:
+  path_to_rootpath : ''
+  path_to_birdsnack_rootpath : '../'
+
+simulate_parameters:
+  #No. of Sets of Simulated Data
+  Nsims : 100
+  ############
+  #Use PPC to get these numbers
+  #No. of SNe in Simulation
+  S  : -1
+  #Dust Hyperparameters
+  tauA  : -1
+  muRV  : -1
+  sigRV : -1
+  #Dummy Variable Don't do anything here
+  epsmode : 'ppc'  #ppc covariance matrix
+  FPC0m   : 'ppc'  #ppc FPC0m
+  ############
+  ##Choice of simulator
+  simulator  : 'perfect' #Generated from forward model
+  #Filters used for simulations
+  flts  : ["B_CSP", "V_CSP", "r_CSP", "i_CSP", "J_RC1", "H_RC"]
+  #Population distribution of AVs parameters
+  AVsimdist : 'Gamma'
+  AVsimdist : 'Exp'
+  AV_parameters :
+    nuA : None
+  #Pre-defined Intrinsic Population Hyperparameters, if True, set to posterior medians from some file
+  PredefinedIntrinsicHyps : True
+  PredefinedExtrinsicHyps : True
+  pre_defined_hyps :
+    load_file : 'None'
+    ppc_zero_index : 'None'
+    ppc_IntrinsicModel : 'None' 
+
+fit_parameters:
+  #Load up f"{birdsnack_yaml}.yaml" for birdsnack fitting choices
+  birdsnack_yaml : 'birdsnack_sbc'
