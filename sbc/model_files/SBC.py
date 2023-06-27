@@ -106,6 +106,7 @@ class SBC_CLASS:
 
 		#Initialise SBC Paths
 		self.rootpath     = self.path_to_rootpath
+		self.plotpath     = f"{self.rootpath}plots/"
 		self.productpath  = f"{self.rootpath}products/"
 		self.BayeSNpath   = f"{self.rootpath}BAYESN_GITHUB/"
 		self.simspath     = f"{self.productpath}sbc_sims/"
