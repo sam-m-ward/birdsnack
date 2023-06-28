@@ -11,11 +11,12 @@ SBC_FITS_PLOTTER class
 	Methods are:
 		get_SAMPS()
 		get_QUANTILES()
-		plot_sbc_panel()
+		plot_sbc_panel(Ncred=True,Parcred=False,annotate_true=True,real_data_samps=False)
 
 Functions are:
 	get_KEEPERS(GLOB_FITS,Nsim_keep,Rhat_threshold,loop_par,dfpar)
 	trim_to_KEEPERS(GLOB_FITS,KEEPERS)
+	update_edit_dict_for_ppc(sbc_choices, edit_dict)
 
 --------------------
 
@@ -25,6 +26,7 @@ Written by Sam M. Ward: smw92@cam.ac.uk
 import pandas as pd
 import numpy as np
 from contextlib import suppress
+import pickle
 
 class SBC_FITS_PLOTTER:
 
@@ -72,11 +74,22 @@ class SBC_FITS_PLOTTER:
 		QUANTILES = pd.DataFrame(data={q:[self.FITS[ISIM]['df'][self.dfpar].quantile(q) for ISIM in self.FITS] for q in self.Quantiles})
 		return QUANTILES
 
-	def plot_sbc_panel(self):
+	def plot_sbc_panel(self,Ncred=True,Parcred=False,annotate_true=True,real_data_samps=False):
 		"""
 		Plot SBC Panel
 
 		Method to plot a single panel of hyperparameter recovery
+
+		Parameters
+		----------
+		Ncred : bool (optional; default=True)
+			if True, plot N68, N95
+		Parcred : bool (optional; default=False)
+			if True, plot 68 and 95 quantiles of parameter
+		annotate_true : bool (optional; default=True)
+			if True, plot 'True par = value'
+		real_data_samps : array (optional; default is None)
+			if True, plot up samples from real-data fit
 
 		End Product(s)
 		----------
@@ -114,12 +127,26 @@ class SBC_FITS_PLOTTER:
 		lims      = {loop_par:[SAMPS.min().min(),SAMPS.max().max()]}
 
 		#Plot N68, N95
-		N68   = abs(SAMPS.median()-true_par)/(SAMPS.quantile(0.84)-SAMPS.quantile(0.16)) < 1 ; N95   = abs(SAMPS.median()-true_par)/(SAMPS.quantile(0.975)-SAMPS.quantile(0.025)) < 1
-		N68   = SAMPS.transpose()[N68.values].shape[0] 										 ; N95   = SAMPS.transpose()[N95.values].shape[0]
-		line68 = r'$N_{68} = %s$'%round(100*(N68/SAMPS.shape[1]),1)+'%' 						 ;
-		line95 = r'$N_{95} = %s$'%round(100*(N95/SAMPS.shape[1]),1)+'%'
-		ax[iax].annotate(line68,xy=(0.95,0.425),xycoords='axes fraction',fontsize=FS,ha='right')
-		ax[iax].annotate(line95,xy=(0.95,0.375),xycoords='axes fraction',fontsize=FS,ha='right')
+		if Ncred:
+			N68   = abs(SAMPS.median()-true_par)/(SAMPS.quantile(0.84)-SAMPS.quantile(0.16)) < 1 ; N95   = abs(SAMPS.median()-true_par)/(SAMPS.quantile(0.975)-SAMPS.quantile(0.025)) < 1
+			N68   = SAMPS.transpose()[N68.values].shape[0] 										 ; N95   = SAMPS.transpose()[N95.values].shape[0]
+			line68 = r'$N_{68} = %s$'%round(100*(N68/SAMPS.shape[1]),1)+'%' 						 ;
+			line95 = r'$N_{95} = %s$'%round(100*(N95/SAMPS.shape[1]),1)+'%'
+		elif Parcred:
+			line68 = r'$%s;\,68}=%s ^{+%s}_{-%s}$'%(parlabel.split('}')[0],SAMPS.quantile(0.68).median().round(2), round(SAMPS.quantile(0.68).quantile(0.84)-SAMPS.quantile(0.68).quantile(0.5),2),round(SAMPS.quantile(0.68).quantile(0.5)-SAMPS.quantile(0.68).quantile(0.16),2))
+			line95 = r'$%s;\,95}=%s ^{+%s}_{-%s}$'%(parlabel.split('}')[0],SAMPS.quantile(0.95).median().round(2), round(SAMPS.quantile(0.95).quantile(0.84)-SAMPS.quantile(0.95).quantile(0.5),2),round(SAMPS.quantile(0.95).quantile(0.5)-SAMPS.quantile(0.95).quantile(0.16),2))
+		else:
+			line68,line95='',''
+		ax[iax].annotate(line68,xy=(0.95,0.425-0.08*Parcred),xycoords='axes fraction',fontsize=FS,ha='right')
+		ax[iax].annotate(line95,xy=(0.95,0.375-Parcred*(0.13-0.025*(iax==0))),xycoords='axes fraction',fontsize=FS,ha='right')
+
+		#Real-Data Posterior Fit
+		if real_data_samps is not False:
+			samps = PARAMETER(real_data_samps,dfpar,parlabel,lims[loop_par],bounds[loop_par],-1,iax,{})
+			samps.get_xgrid_KDE()
+			ax[iax].plot(samps.xgrid,samps.KDE,alpha=1,linewidth=3,color='C3',label=f"Real Data Posterior w/ Gamma \n"+r'$%s = %s ^{+%s}_{-%s}$'%(parlabel,real_data_samps.quantile(0.5).round(2),round(real_data_samps.quantile(0.84)-real_data_samps.quantile(0.5),2),round(real_data_samps.quantile(0.5)-real_data_samps.quantile(0.16),2)))
+			simavheight = samps.KDE[np.argmin(np.abs(real_data_samps.quantile(0.5)-samps.xgrid))]
+			ax[iax].plot(real_data_samps.quantile(0.5)*np.ones(2),[0,simavheight],c='C3',linewidth=2)
 
 		#Plot per-Sim faint posteriors
 		KDEmax = 0
@@ -131,15 +158,9 @@ class SBC_FITS_PLOTTER:
 
 		#Plot True Parameter Value, and Annotate
 		ax[iax].plot(true_par*np.ones(2),[0,KDEmax],c='black',linewidth=2,linestyle='--')
-		ax[iax].annotate(r'True $\mu_{R_V}=%s$'%true_par,xy=(0.95-(0.95-0.0225)*('tau' in loop_par and iax>0),0.5+0.02),xycoords='axes fraction',fontsize=FS,ha='left' if ('tau' in loop_par and iax>0) else 'right')
+		if annotate_true:
+			ax[iax].annotate(r'True $%s=%s$'%(parlabel,true_par),xy=(0.95-(0.95-0.0225)*('tau' in loop_par and iax>0),0.5+0.02),xycoords='axes fraction',fontsize=FS,ha='left' if ('tau' in loop_par and iax>0) else 'right')
 
-		#Plot and Annotate Medians
-		if self.quantilemode:	line_median  = r'Median-$%s=%s^{+%s}_{-%s}$'%(parlabel,QUANTILES[0.5].quantile(0.5).round(2),round(QUANTILES[0.5].quantile(0.84)-QUANTILES[0.5].quantile(0.5),2),round(QUANTILES[0.5].quantile(0.5)-QUANTILES[0.5].quantile(0.16),2))
-		else:					line_median  = r'Median-$%s=%s\pm%s$'%(parlabel,QUANTILES[0.5].quantile(0.5).round(2),QUANTILES[0.5].std().round(2))
-		line_pmedian = r"$p($"+'Median-'+r"$%s<%s ; \,\rm{True}})=%s$"%(parlabel, parlabel.split('}')[0],round(100*QUANTILES[QUANTILES[0.5]<true_par].shape[0]/QUANTILES[0.5].shape[0],1)) + '%'
-
-		ax[iax].plot(QUANTILES[0.5].quantile(0.5)*np.ones(2),[0,KDEmax],c='C1'	,linewidth=2,label='\n'.join([line_median,line_pmedian]),linestyle=':')
-		ax[iax].fill_between([QUANTILES[0.5].quantile(0.16),QUANTILES[0.5].quantile(0.84)],[0,0],[KDEmax,KDEmax],color='C1',alpha=0.2)
 
 		###Plot and Simulation Averaged Posterior
 		samps = PARAMETER(SAMPS.stack(),dfpar,parlabel,lims[loop_par],bounds[loop_par],None,iax,{})
@@ -158,6 +179,13 @@ class SBC_FITS_PLOTTER:
 			ax[iax].fill_between(samps.xgrid[siglo:sigup],np.zeros(sigup-siglo),samps.KDE[siglo:sigup],color='C0',alpha=0.2)
 		simavheight = samps.KDE[np.argmin(np.abs(sap_chain.quantile(0.5)-samps.xgrid))]
 		ax[iax].plot(sap_chain.quantile(0.5)*np.ones(2),[0,simavheight],c='C0',linewidth=2)
+
+		#Plot and Annotate Medians
+		if self.quantilemode:	line_median  = r'Median-$%s=%s^{+%s}_{-%s}$'%(parlabel,QUANTILES[0.5].quantile(0.5).round(2),round(QUANTILES[0.5].quantile(0.84)-QUANTILES[0.5].quantile(0.5),2),round(QUANTILES[0.5].quantile(0.5)-QUANTILES[0.5].quantile(0.16),2))
+		else:					line_median  = r'Median-$%s=%s\pm%s$'%(parlabel,QUANTILES[0.5].quantile(0.5).round(2),QUANTILES[0.5].std().round(2))
+		line_pmedian = r"$p($"+'Median-'+r"$%s<%s ; \,\rm{True}})=%s$"%(parlabel, parlabel.split('}')[0],round(100*QUANTILES[QUANTILES[0.5]<true_par].shape[0]/QUANTILES[0.5].shape[0],1)) + '%'
+		ax[iax].plot(QUANTILES[0.5].quantile(0.5)*np.ones(2),[0,KDEmax],c='C1'	,linewidth=2,label='\n'.join([line_median,line_pmedian]),linestyle=':')
+		ax[iax].fill_between([QUANTILES[0.5].quantile(0.16),QUANTILES[0.5].quantile(0.84)],[0,0],[KDEmax,KDEmax],color='C1',alpha=0.2)
 
 		#Set ticks and legend
 		ax[iax].set_ylim([0,max(KDEmax,simavheight)])
@@ -238,3 +266,43 @@ def trim_to_KEEPERS(GLOB_FITS,KEEPERS):
 	for key in GLOB_FITS:
 		GLOB_FITS[key] = {ISIM:GLOB_FITS[key][ISIM] for ISIM in KEEPERS}
 	return GLOB_FITS
+
+def update_edit_dict_for_ppc(sbc_choices, edit_dict):
+	"""
+	Update edit_dictionary for Posterior Predictive Checks
+
+	Parameters
+	----------
+	sbc_choices : dict
+		dicionary of choices from .yaml regarding how datasets are simulated
+	edit_dict : dict
+		edits to above .yaml choices, suited for ppc
+
+	Returns
+	----------
+	edit_dict : dict
+		edited to have all important data to perform ppc
+	"""
+	#Candidates are ppc values, additional is the stuff that actually gets used
+	candidates={} ; additional = {}
+	#Open original BirdSnack fit to real data
+	with open(f"{sbc_choices['load_parameters']['path_to_birdsnack_rootpath']}products/stan_fits/FITS/FIT{edit_dict['simulate_parameters']['pre_defined_hyps']['load_file']}.pkl",'rb') as f:
+		FIT = pickle.load(f)
+	#Get number of SNe (including censored SNe)
+	candidates['S'] = FIT['stan_data']['S']
+	#Assign folder name using these values of dust hyps
+	dust_hyps = dict(zip(['tauA','muRV','sigRV'],list(FIT['df'].median(axis=0).round(4)[['tauA','mu_RV','sig_RV']].values)))
+	candidates= {**candidates,**dust_hyps}
+	#Update changes
+	for key,value in candidates.items():
+		if key not in edit_dict['simulate_parameters']:
+			if sbc_choices['simulate_parameters'][key]=='ppc':
+				additional[key] = value
+	#Upload additional to edit_dict
+	edit_dict['simulate_parameters'] = {**edit_dict['simulate_parameters'],**additional}
+	#Get reference band (for building full vector mu_int where ref-band has element entry=0)
+	zero_index      = FIT['choices']['analysis_parameters']['zero_index']
+	#Whether using model for colours or deviations
+	IntrinsicModel  = FIT['choices']['analysis_parameters']['IntrinsicModel']
+	edit_dict['simulate_parameters']['pre_defined_hyps'] = {**edit_dict['simulate_parameters']['pre_defined_hyps'],**{'ppc_zero_index':zero_index,'ppc_IntrinsicModel':IntrinsicModel}}
+	return edit_dict
