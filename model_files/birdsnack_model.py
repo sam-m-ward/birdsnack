@@ -680,7 +680,7 @@ class BIRDSNACK:
 			#Get samples as pandas df
 			df = fit.to_frame()
 
-			if n_sampling>1000:#Thin samples
+			if df.shape[0]>n_thin*n_chains:#Thin samples
 				print (f'Thinning samples down to {n_thin} per chain to save on space complexity')
 				Nthinsize = int(n_thin*n_chains)
 				df = df.iloc[0:df.shape[0]:int(df.shape[0]/Nthinsize)]						#thin to e.g. 1000 samples per chain
