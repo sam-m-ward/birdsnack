@@ -12,52 +12,21 @@ Functions:
 
 Written by Sam M. Ward: smw92@cam.ac.uk
 """
-def update_edit_dict_for_ppc(sbc_choices, edit_dict):
-	"""
-	Update edit_dictionary for Posterior Predictive Checks
-
-	Parameters
-	----------
-	sbc_choices : dict
-		dicionary of choices from .yaml regarding how datasets are simulated
-	edit_dict : dict
-		edits to above .yaml choices, suited for ppc
-
-	Returns
-	----------
-	edit_dict : dict
-		edited to have all important data to perform ppc
-	"""
-	#Open original BirdSnack fit to real data
-	with open(f"{sbc_choices['load_parameters']['path_to_birdsnack_rootpath']}products/stan_fits/FITS/FIT{edit_dict['simulate_parameters']['pre_defined_hyps']['load_file']}.pkl",'rb') as f:
-		FIT = pickle.load(f)
-	#Get number of SNe (including censored SNe)
-	S = FIT['stan_data']['S']
-	#Get reference band (for building full vector mu_int where ref-band has element entry=0)
-	zero_index      = FIT['choices']['analysis_parameters']['zero_index']
-	#Whether using model for colours or deviations
-	IntrinsicModel  = FIT['choices']['analysis_parameters']['IntrinsicModel']
-	#Assign folder name using these values
-	tauA,muRV,sigRV = FIT['df'].median(axis=0).round(4)[['tauA','mu_RV','sig_RV']].values
-	dust_hyps = dict(zip(['tauA','muRV','sigRV'],[tauA,muRV,sigRV]))
-	#Upload above to edit_dict
-	edit_dict['simulate_parameters'] = {**edit_dict['simulate_parameters'],**dust_hyps,**{'S':S}}
-	edit_dict['simulate_parameters']['pre_defined_hyps'] = {**edit_dict['simulate_parameters']['pre_defined_hyps'],**{'ppc_zero_index':zero_index,'ppc_IntrinsicModel':IntrinsicModel}}
-	return edit_dict
 
 import sys
 sys.path.append('model_files/')
 from SBC import *
 import yaml
+from sbc_plot_functions import update_edit_dict_for_ppc
 
 #Choices for applying HBM to simulated data
 BIRDSNACK_EDIT_DICT = {'analysis_parameters':
 						{'HBM_savekey':'PPC_CensoredCut1.0_ExpFitGamma',
 						'CensoredData':True,'CensoredCut':1.0,
-						'AVprior':'Gamma','n_warmup':1000,'n_sampling':1000}}
+						'AVprior':'Gamma','n_warmup':1000,'n_sampling':3000,'n_thin':1000}}
 
 #Choices for simulating data based on previous stan fit with BirdSnack
-edit_dict = {'simulate_parameters':{'Nsims':20,'pre_defined_hyps':{'load_file':'Fiducial_CensoredCut1.0'}}}
+edit_dict = {'simulate_parameters':{'Nsims':20,'S':250,'pre_defined_hyps':{'load_file':'Fiducial_CensoredCut1.0'}}}
 
 #Directory to periodically_delete stan build, conserve memory
 stan_build_dir      = '/Users/samward/Library/Caches/httpstan/'

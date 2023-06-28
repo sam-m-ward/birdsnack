@@ -8,11 +8,11 @@ simulate_parameters:
   ############
   #Use PPC to get these numbers
   #No. of SNe in Simulation
-  S  : -1
+  S  : 'ppc'
   #Dust Hyperparameters
-  tauA  : -1
-  muRV  : -1
-  sigRV : -1
+  tauA  : 'ppc'
+  muRV  : 'ppc'
+  sigRV : 'ppc'
   #Dummy Variable Don't do anything here
   epsmode : 'ppc'  #ppc covariance matrix
   FPC0m   : 'ppc'  #ppc FPC0m
