@@ -315,7 +315,7 @@ class LOAD_DATA:
         """
         #Save SURVEYS dictionarys
         if overwrite or not os.path.exists(f'{self.SNSpath}SURVEYS_{savekey}.pkl'):
-            with open(f'{self.SNSpath}SURVEYS.pkl','wb') as f:
+            with open(f'{self.SNSpath}SURVEYS_{savekey}.pkl','wb') as f:
                 pickle.dump(SURVEYS,f)
 
         #Create/load/save retained_sns dict
