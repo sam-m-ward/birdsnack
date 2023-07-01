@@ -188,6 +188,10 @@ additional_cut_parameters:
   #spectype  : 'all'
   spectype  : 'normal'
 
+  ##Phase window about tref requiring 1 data point per passband
+  #phase_max : 4
+  phase_max : False
+
   #Extra SNe to intentionally drop
   extra_drop_SNe : {'2008gb':'Removing 2008gb because (only sometimes) 2DGP-mag returns large mag. measurement error. Also Tmax is not obvious on visual inspection.'}
 ########################################################
