@@ -10,6 +10,7 @@ BIRDSNACK class
 
 	Methods are:
 		load_and_preprocess_snana_lcs()
+		inspect_data_availability()
 		trim_sample(apply_trims=True, return_trimmed=False)
 		load_empty_DF_M()
 		get_peak_mags(savekey='Default', overwrite=False)
@@ -159,6 +160,47 @@ class BIRDSNACK:
 			#Append lcs and snpy_products to dictionary
 			self.lcs[sn]           = lc
 			self.snpy_products[sn] = snpy_product
+
+	def inspect_data_availability(self):
+		"""
+		Inspect Data Availability
+
+		Method to identify phase of data point closest to peak time in each band
+
+		Returns
+		----------
+		POINTS : dict
+			{sn:{pb:t_pb for pb in pblist}}
+
+		pbs : dict
+			{pb:{t_pb:sn for sne in sns}}
+		"""
+		POINTS = {} ; trim_choices = self.choices['preproc_parameters']
+		pblist = trim_choices['pblist'] ; tilist = trim_choices['tilist']
+		#For each sn
+		for sn,lc in self.lcs.items():
+			lcobj = LCObj(lc,trim_choices)
+			lcobj.get_Tmax()
+			points = {}
+			#Find phase of data point closest to peak time
+			if lc.meta[trim_choices['Tmaxchoicestr']] is not None:#If Tmax is not estimated, can't compute phase, therefore can't assess availability of points
+				for pb in pblist:
+					for ti in tilist:
+						t_pb = lcobj.get_closest_data_point(ref_band = pb, tref = ti)
+						points[f"{pb}_{ti}"] = t_pb
+			#Store dictionary
+			POINTS[sn] = points
+
+		#Transform Dictionary for Plotting
+		pbs = {}
+		for sn in POINTS:
+			for pb in POINTS[sn]:
+				if pb in pbs.keys():
+					pbs[pb] = {**pbs[pb],**{POINTS[sn][pb]:sn}}
+				else:
+					pbs[pb] = {POINTS[sn][pb]:sn}
+		return POINTS, pbs
+
 
 	def trim_sample(self, apply_trims=True, return_trimmed=False):
 		"""
@@ -538,7 +580,7 @@ class BIRDSNACK:
 			for sn,reason in choices['extra_drop_SNe'].items():
 				with suppress(KeyError):
 					DF_M[tref].drop([sn], axis=0, inplace=True)
-					print (reason)
+					print (f"{sn}:{reason}")
 			DF_M = trim_to_common_SNS(DF_M)
 
 		#Apply B-V<0.3 mag cosmology cut
@@ -710,8 +752,8 @@ class BIRDSNACK:
 		for par in self.Rhat_check_params:
 			with suppress(KeyError):
 				print ('###'*5)
-				print ('Par, median, std, 68%, 95% quantiles')
-				print (par,df[par].median().round(2),df[par].std().round(2), df[par].quantile(0.68).round(2),df[par].quantile(0.95).round(2))
+				print ('Par, median, std, 5%, 68%, 95% quantiles')
+				print (par,df[par].median().round(2),df[par].std().round(2), df[par].quantile(0.05).round(2), df[par].quantile(0.68).round(2),df[par].quantile(0.95).round(2))
 				print (f"Rhat = {fitsummary.loc[par]['r_hat']}")
 
 	def plot_posterior_samples(self, returner=False):
@@ -984,7 +1026,7 @@ def get_edit_dict(choices,CYCLE_DICT,HBM_savekey):
 	CYCLE_DICT :dict
 		{'COMMON_CHANGES':{'newdict':{key,value pairs}, 'HBMappender':str },
 		 'RUNS' : {
-		 	'HBM_savekey' : {'newdict' : {key,value pairs},
+			'HBM_savekey' : {'newdict' : {key,value pairs},
 									'label': str}
 		 }}
 	HBM_savekey : str
