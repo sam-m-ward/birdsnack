@@ -82,7 +82,7 @@ class BIRDSNACK:
 		for glob_key in edit_dict:
 			for key,value in edit_dict[glob_key].items():
 				if type(self.choices[glob_key][key])==dict:
-					self.choices[glob_key][key] = {**self.choices[glob_key][key],**value} 
+					self.choices[glob_key][key] = {**self.choices[glob_key][key],**value}
 				else:
 					self.choices[glob_key][key] = value
 
@@ -507,7 +507,11 @@ class BIRDSNACK:
 			for glob_key in DF_M['choices']:
 				for key,previous_choice in DF_M['choices'][glob_key].items():
 					if previous_choice!=self.choices[glob_key][key]:
-						disagreements[key] = [self.choices[glob_key][key],previous_choice]
+						#If differeing choices is pblist, and pblist is a subset of original, then all is OK
+						if glob_key=='preproc_parameters' and key=='pblist' and len([pb for pb in self.choices[glob_key][key] if pb in previous_choice])==len(self.choices[glob_key][key]):
+							pass
+						else:#Otherwise, there is a disgreement
+							disagreements[key] = [self.choices[glob_key][key],previous_choice]
 			if disagreements!={}:
 				print (('###!!!'*3+'###')*5)
 				for choice in disagreements:
