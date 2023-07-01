@@ -1,29 +1,29 @@
 CYCLE_DICT_Science = {
-                'COMMON_CHANGES' : {'newdict':{},'HBMappender':''},
+				'COMMON_CHANGES' : {'newdict':{},'HBMappender':''},
 
-                'RUNS' : {
+				'RUNS' : {
 
 				'AVexp_Full'                 :       {    'newdict': {'AVprior':'Exp'},
 													 'label':'$A^s_V \sim \\rm{Exp}(\\tau_A)$'},
 				'AVGamma_Full'               :       {    'newdict': {'AVprior':'Gamma','n_sampling':5000},
 													 'label':'$A_V^s \sim $ Gamma$(\\nu_A,\\tau_A)$\\tnote{b}'},
-                'AVexp_lowBV'           :       {    'newdict': {'AVprior':'Exp','BVcut':True},
+				'AVexp_lowBV'           :       {    'newdict': {'AVprior':'Exp','BVcut':True},
 													 'label':'$A^s_V \sim \\rm{Exp}(\\tau_A)$'},
 				'AVGamma_lowBV'         :       {    'newdict': {'AVprior':'Gamma','n_sampling':5000,'BVcut':True},
 													 'label':'$A_V^s \sim $ Gamma$(\\nu_A,\\tau_A)$\\tnote{b}'},
 				}
-            }
+			}
 
 CYCLE_DICT_CensoredData = {
-                'COMMON_CHANGES' : {'newdict':{'CensoredData':True,'CensoredCut':1.0},'HBMappender':'Cens1.0'},
+				'COMMON_CHANGES' : {'newdict':{'CensoredData':True,'CensoredCut':1.0},'HBMappender':'Cens1.0'},
 
-                'RUNS' : {
+				'RUNS' : {
 
 				'AVexp'                 :       {    'newdict': {'AVprior':'Exp'},
 													 'label':'$A^s_V \sim \\rm{Exp}(\\tau_A)$'},
 				'AVGamma'               :       {    'newdict': {'AVprior':'Gamma','n_warmup':2000,'n_sampling':8000},
 													 'label':'$A_V^s \sim $ Gamma$(\\nu_A,\\tau_A)$\\tnote{e}'},
-                ###############
+				###############
 				'Central_Lam'				:       {   'newdict': {'lam_choice':'central','n_sampling':3000},
 											'label':'Central-$\\lambda$'},
 				'PreProc_Interpflts_BVriJH'			:       {   'newdict': {'interpflts':'BVriJH','n_sampling':3000,'DF_savekey':'interpfltsBVriJH'},
@@ -43,19 +43,19 @@ CYCLE_DICT_CensoredData = {
 											'label':'1DGP Mag Interp.'},
 				'PreProc_1Dfl'          :       {   'newdict': {'method' : '1DGP', 'bright_mode':'flux','n_sampling':3000,'DF_savekey':'1DGPfluxinterp'},
 											'label':'1DGP Flux Interp.'},
-                ###############
+				###############
 				'HighMass'   			:		{   'newdict': {'mass_mode':'high_masses','n_sampling':3000},
 											'label':'High-Mass'},
 				'LowMass'    			:		{   'newdict': {'mass_mode':'low_masses','n_sampling':3000},
 											'label':'Low-Mass'},
-                ###############
-                'Phasemax4'             :       {   'newdict': {'phase_max':4},
-                                            'label':'4 days'},
-                'Phasemax3'             :       {   'newdict': {'phase_max':3},
-                                            'label':'4 days'},
-                'Phasemax2'             :       {   'newdict': {'phase_max':2},
-                                            'label':'4 days'},
-                ###############
+				###############
+				'Phasemax4'             :       {   'newdict': {'phase_max':4},
+											'label':'4 days'},
+				'Phasemax3'             :       {   'newdict': {'phase_max':3},
+											'label':'4 days'},
+				'Phasemax2'             :       {   'newdict': {'phase_max':2},
+											'label':'4 days'},
+				###############
 				'AdjCols'      :       {    'newdict': {'DataTransformation':'Adjacent','IntrinsicModel':'Adjacent',
 															'n_sampling':2000,'n_warmup':2000},
 											'label':'Adjacent Colours'},
@@ -65,9 +65,9 @@ CYCLE_DICT_CensoredData = {
 				'XHCols'          :       {    'newdict': {'DataTransformation':'X-H','IntrinsicModel':'X-H',
 													'n_sampling':2000,'n_warmup':2000},
 											'label':'$X-H$'},
-                ###############
-                'LCShapeInc'         	:       {   'newdict': {'include_LCshape': True,'trim_on_extras':True,'DF_savekey':'IncLCShape',
-                                                            'n_sampling':3000},
+				###############
+				'LCShapeInc'         	:       {   'newdict': {'include_LCshape': True,'trim_on_extras':True,'DF_savekey':'IncLCShape',
+															'n_sampling':3000},
 													'label':'With LC Shape'},
 
 				'AdjCols_wLCshape'      :       {    'newdict': {'include_LCshape': True,'DataTransformation':'Adjacent','IntrinsicModel':'Adjacent','trim_on_extras':True,'DF_savekey':'IncLCShape',
@@ -79,7 +79,7 @@ CYCLE_DICT_CensoredData = {
 				'XHCols_wLCshape'          :       {    'newdict': {'include_LCshape': True,'DataTransformation':'X-H','IntrinsicModel':'X-H','trim_on_extras':True,'DF_savekey':'IncLCShape',
 													'n_sampling':2000,'n_warmup':2000},
 											'label':'$X-H$'},
-                ###############
+				###############
 				'Deviations_NoIntVar'   :		 {    'newdict': {
 															'n_sampling':1000,'n_warmup':1000,'include_residuals':False},
 											'label':'Deviations'},
@@ -93,5 +93,5 @@ CYCLE_DICT_CensoredData = {
 															'n_sampling':1000,'n_warmup':1000, 'include_residuals':False},
 											'label':'$X-H$'},
 
-                }
-            }
+				}
+			}
