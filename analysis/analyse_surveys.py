@@ -4,8 +4,11 @@ sys.path.append('../model_files/')
 from load_raw_data import *
 dataloader = LOAD_DATA()
 
+precut_name  = 'combined'
+postcut_name = 'fiducial'
+
 #'''Get Sample Split of Surveys
-with open(f'{dataloader.SNSpath}SNSsnpy_fiducial.pkl','rb') as f:
+with open(f'{dataloader.SNSpath}SNSsnpy_{postcut_name}.pkl','rb') as f:
     SNSsnpy_fiducial = pickle.load(f)
 
 surveys = {}
@@ -32,7 +35,7 @@ def get_sn_reasons(sn,reasons):
     return sn_reasons
 
 
-with open(f'{dataloader.SNSpath}SURVEYS.pkl','rb') as f:
+with open(f'{dataloader.SNSpath}SURVEYS_{precut_name}.pkl','rb') as f:
     SURVEYS = pickle.load(f)
 
 Unique_sne = []
@@ -112,10 +115,10 @@ bs.plot_lcs()
 
 
 '''#Show final trims to fiducial sample
-with open(f"{dataloader.SNSpath}SNSsnpy_combined.pkl",'rb') as f:
+with open(f"{dataloader.SNSpath}SNSsnpy_{precut_name}.pkl",'rb') as f:
         SNSsnpy_combined = pickle.load(f)
 from birdsnack_model import BIRDSNACK
 bs = BIRDSNACK(loader={'SNSsnpy':SNSsnpy_combined}, configname='loader_config.yaml', edit_dict={'load_data_parameters':{'load_mode':'preproc'}}, dfmeta=dataloader.dfmeta)
-bs.get_peak_mags(savekey='combined')
+bs.get_peak_mags(savekey=precut_name)
 bs.additional_cuts()
 #'''
