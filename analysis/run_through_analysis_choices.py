@@ -23,7 +23,7 @@ for HBM_savekey in CYCLE_DICT['RUNS']:
     bs = BIRDSNACK(loader={'SNSsnpy':SNSsnpy_fiducial}, configname='loader_config.yaml', dfmeta=dfmeta, edit_dict=edit_dict)
     #Get peak magnitudes
     bs.get_peak_mags()
-    #Perform additional sample cuts; set cutter=False (so SNe with magerrs>0.3mag are retained, ensures common sample fitted for consistency across analysis variants)
+    #Perform additional sample cuts; set cutter=False (so SNe with magerrs>0.3mag are retained, ensures common sample fitted for consistency across pre-proc analysis variants)
     bs.additional_cuts(cutter=False)
     #Fit HBM to data
     if not os.path.exists(f"{bs.FITSpath}FIT{bs.choices['analysis_parameters']['HBM_savekey']}.pkl"):
