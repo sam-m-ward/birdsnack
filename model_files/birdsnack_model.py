@@ -698,9 +698,9 @@ class BIRDSNACK:
 		DataTransformation = self.choices['analysis_parameters']['DataTransformation']
 		IntrinsicModel     = self.choices['analysis_parameters']['IntrinsicModel']
 		n_warmup,n_sampling,n_chains,n_thin,random_seed = self.choices['analysis_parameters']['n_warmup'],self.choices['analysis_parameters']['n_sampling'],self.choices['analysis_parameters']['n_chains'],self.choices['analysis_parameters']['n_thin'],self.choices['analysis_parameters']['random_seed']
-		if self.choices['analysis_parameters']['AVprior'] in ['Gamma'] and 'nu' not in Rhat_check_params:
-			Rhat_check_params += ['nu']
-		self.Rhat_check_params = Rhat_check_params
+		self.Rhat_check_params = copy.deepcopy(Rhat_check_params)
+		if self.choices['analysis_parameters']['AVprior'] in ['Gamma'] and 'nu' not in self.Rhat_check_params:
+			self.Rhat_check_params += ['nu']
 
 		#Initialisation of stan_data
 		stan_data = {}
