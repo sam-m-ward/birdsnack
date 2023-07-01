@@ -7,11 +7,14 @@ dataloader = LOAD_DATA(load_all_SNSsnpy=True)
 
 from birdsnack_model import BIRDSNACK
 
+precut_name  = 'combined'
+postcut_name = 'fiducial'
+
 #Try loading fiducial sample of SNSsnpy; fiducial dictionary of snpy files from multiple literature surveys
-if not os.path.exists(f'{dataloader.SNSpath}SNSsnpy_fiducial.pkl'):
+if not os.path.exists(f'{dataloader.SNSpath}SNSsnpy_{postcut_name}.pkl'):
     #Try loading up SNS retained over multiple surveys, highest in pecking order
-    if os.path.exists(f'{dataloader.SNSpath}SNSsnpy_combined.pkl'):
-        with open(f'{dataloader.SNSpath}SNSsnpy_combined.pkl','rb') as f:
+    if os.path.exists(f'{dataloader.SNSpath}SNSsnpy_{precut_name}.pkl'):
+        with open(f'{dataloader.SNSpath}SNSsnpy_{precut_name}.pkl','rb') as f:
             SNSsnpy_combined = pickle.load(f)
     #If not available, compute this dictionary
     else:
@@ -23,17 +26,18 @@ if not os.path.exists(f'{dataloader.SNSpath}SNSsnpy_fiducial.pkl'):
             bs.trim_sample()
             SURVEYS[path_file_survey[-1]] = {'retained_lcs':bs.lcs,'trimmed_lcs':bs.trimmed_lcs, 'reasons':bs.reasons}
         #Use SURVEYS dictionary to get common sample of SNS, with those SNe appearing in multiple surveys selected according to Pecking order
-        SNSsnpy_combined = dataloader.get_SNSsnpy_combined(SURVEYS)#Save SNSsnpy_combined.pkl
+        SNSsnpy_combined = dataloader.get_SNSsnpy_combined(SURVEYS, savekey=precut_name)#Save SNSsnpy_combined.pkl
 
     bs = BIRDSNACK(loader={'SNSsnpy':SNSsnpy_combined}, configname='loader_config.yaml', dfmeta=dataloader.dfmeta)
+
     bs.trim_sample()
-    bs.get_peak_mags(savekey='combined')
+    bs.get_peak_mags(savekey=precut_name)
     bs.additional_cuts()
 
     #Remaining SNe are fiducial sample
     fiducial_sns     = [sn for sn in list(bs.DF_M[0].index)]
     SNSsnpy_fiducial = {sn:SNSsnpy_combined[sn] for sn in fiducial_sns}
-    with open(f'{dataloader.SNSpath}SNSsnpy_fiducial.pkl','wb') as f:
+    with open(f'{dataloader.SNSpath}SNSsnpy_{postcut_name}.pkl','wb') as f:
         pickle.dump(SNSsnpy_fiducial,f)
 
 print ('Fiducial dictionary of SNe from multiple literature surveys compiled')
