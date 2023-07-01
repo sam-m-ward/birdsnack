@@ -533,7 +533,7 @@ class PARAMETER:
 
 		#If typical Gaussian-like posterior, plot median, 16 and 84th percentiles
 		if condition1 and condition2:
-			print (f"{parname}: {round(self.samp_median,2)} +/- {round(self.samp_std,2)}; 16th and 84th intervals: +{round(self.dfchain.par.quantile(0.5)-self.dfchain.par.quantile(0.16),2)} -{round(self.dfchain.par.quantile(0.84)-self.dfchain.par.quantile(0.5),2)}")
+			print (f"{parname}: {round(self.samp_median,2)} +/- {round(self.samp_std,2)}; 16th and 84th intervals: -{round(self.dfchain.par.quantile(0.5)-self.dfchain.par.quantile(0.16),2)}+{round(self.dfchain.par.quantile(0.84)-self.dfchain.par.quantile(0.5),2)}")
 			print (f"5%, 68%, 95% quantiles: {round(self.dfchain.par.quantile(0.05),2)}, {round(self.dfchain.par.quantile(0.68),2)},{round(self.dfchain.par.quantile(0.95),2)}")
 			#Plot median and 16th 84th quantiles
 			i_med, x_med, KDE_med = self.get_KDE_values(value=self.samp_median)
