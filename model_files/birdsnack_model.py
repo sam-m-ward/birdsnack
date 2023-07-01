@@ -776,9 +776,9 @@ class BIRDSNACK:
 		for itrial in range(Ntrials):
 			BREAK = True
 			#Fit Model
-			fit       = posterior.sample(num_chains=n_chains, num_samples=n_sampling*(1+itrial), num_warmup = n_warmup,init=stan_init)
+			fit = posterior.sample(num_chains=n_chains, num_samples=n_sampling*(1+itrial), num_warmup = n_warmup,init=stan_init)
 			#Get samples as pandas df
-			df = fit.to_frame()
+			df  = fit.to_frame()
 
 			if df.shape[0]>n_thin*n_chains:#Thin samples
 				print (f'Thinning samples down to {n_thin} per chain to save on space complexity')
@@ -850,6 +850,7 @@ class BIRDSNACK:
 		#Corner Plot
 		postplot = POSTERIOR_PLOTTER(samples, parnames, parlabels, bounds, Rhats, self.choices['plotting_parameters'])
 		Summary_Strs = postplot.corner_plot()#Table Summary
+		Summary_Strs['NSNe(NCens)'] = f"{NSNe-NCens}({NCens})"
 
 		plotpath        =  self.plotpath+'Corner_Plot/'
 		save,quick,show = [self.choices['plotting_parameters'][x] for x in ['save','quick','show']][:]
@@ -1101,12 +1102,22 @@ def get_edit_dict(choices,CYCLE_DICT,HBM_savekey):
 	COMMON_CHANGES       = CYCLE_DICT['COMMON_CHANGES']['newdict']
 	HBM_savekey_appender = CYCLE_DICT['COMMON_CHANGES']['HBMappender']
 	RUNS                 = CYCLE_DICT['RUNS']
-	newdict              = {**RUNS[HBM_savekey]['newdict'],**COMMON_CHANGES}
-	#Implement changes
+	newdict              = RUNS[HBM_savekey]['newdict']
+	#Firstly Implement Common Changes
+	for key in COMMON_CHANGES:
+		for glob_key in edit_dict:
+			for kkey,vvalue in choices[glob_key].items():
+				if kkey==key:
+					edit_dict[glob_key][key] = COMMON_CHANGES[key]
+	#Then Implement Specific Changes; where adding to dictionary make sure both common and specific are retained
 	for key in newdict:
 		for glob_key in edit_dict:
 			for kkey,vvalue in choices[glob_key].items():
-				if kkey==key:   edit_dict[glob_key][key] = newdict[key]
+				if kkey==key:
+					if type(newdict[key])==dict and key in edit_dict[glob_key]:
+						edit_dict[glob_key][key] = {**edit_dict[glob_key][key],**newdict[key]}
+					else:
+						edit_dict[glob_key][key] = newdict[key]
 	edit_dict['analysis_parameters']['HBM_savekey'] = f"{HBM_savekey}_{HBM_savekey_appender}"
 	#Return changes
 	return edit_dict
