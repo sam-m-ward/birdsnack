@@ -49,6 +49,13 @@ CYCLE_DICT_CensoredData = {
 				'LowMass'    			:		{   'newdict': {'mass_mode':'low_masses','n_sampling':3000},
 											'label':'Low-Mass'},
                 ###############
+                'Phasemax4'             :       {   'newdict': {'phase_max':4},
+                                            'label':'4 days'},
+                'Phasemax3'             :       {   'newdict': {'phase_max':3},
+                                            'label':'4 days'},
+                'Phasemax2'             :       {   'newdict': {'phase_max':2},
+                                            'label':'4 days'},
+                ###############
 				'AdjCols'      :       {    'newdict': {'DataTransformation':'Adjacent','IntrinsicModel':'Adjacent',
 															'n_sampling':2000,'n_warmup':2000},
 											'label':'Adjacent Colours'},
