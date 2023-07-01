@@ -12,6 +12,7 @@ LCObj class:
 
 	Methods are:
 		get_Tmax(return_samps=False)
+		get_closest_data_point(ref_band = 'B', tref = 0, tcol='phase')
 		test_data_availability(ref_band='B', tref=0, Nlist=[2,10,2,40], tcol='phase', local=False)
 		get_phase(returner=False)
 		get_GP_interpolation()
@@ -173,6 +174,33 @@ class LCObj:
 
 		if return_samps: return tmax_grid,f_samps,tmaxs
 
+	def get_closest_data_point(self, ref_band = 'B', tref = 0, tcol='phase'):
+		"""
+		Get Closest Data Point
+
+		Method to identify phase of data point closest to tref phase. Applied to single passband
+
+		Parameters
+		----------
+		ref_band : str (optional; default='B')
+			reference band of lc
+
+		tref : float (optional; default=0)
+			reference time
+
+		tcol : str (optional; default='phase')
+			time column of lc
+
+		Returns
+		----------
+		closest_time : float
+			phase of data point closest to tref in ref_band passband
+		"""
+		#Get Phase Column
+		phase = get_lcf(self.get_phase(returner=True), ref_band)[tcol]
+		#Closest Phase to tref
+		closest_time = phase[np.argmin(np.abs(phase-tref))]
+		return closest_time
 
 	def test_data_availability(self, ref_band = 'B', tref = 0, Nlist = [2,10,2,40], tcol='phase', local=False):
 		"""
