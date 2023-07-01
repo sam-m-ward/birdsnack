@@ -10,7 +10,7 @@ BIRDSNACK class
 
 	Methods are:
 		load_and_preprocess_snana_lcs()
-		inspect_data_availability()
+		inspect_data_availability(plot=False, get_outside_range=True, return_others=False)
 		trim_sample(apply_trims=True, return_trimmed=False)
 		load_empty_DF_M()
 		get_peak_mags(savekey='Default', overwrite=False)
@@ -81,7 +81,10 @@ class BIRDSNACK:
 		#Make edits to config.yaml choices
 		for glob_key in edit_dict:
 			for key,value in edit_dict[glob_key].items():
-				self.choices[glob_key][key] = value
+				if type(self.choices[glob_key][key])==dict:
+					self.choices[glob_key][key] = {**self.choices[glob_key][key],**value} 
+				else:
+					self.choices[glob_key][key] = value
 
 		#Set Pathnames
 		self.rootpath     = self.choices['rootpath']
@@ -161,18 +164,29 @@ class BIRDSNACK:
 			self.lcs[sn]           = lc
 			self.snpy_products[sn] = snpy_product
 
-	def inspect_data_availability(self):
+	def inspect_data_availability(self, plot=False, get_outside_range=True, return_others=False):
 		"""
 		Inspect Data Availability
 
 		Method to identify phase of data point closest to peak time in each band
+
+		Parameters
+		----------
+		plot : bool (optional; default=False)
+			if True, plot histogram of data availability
+
+		get_outside_range : bool (optional; default=True)
+			if True, return dictionary of {sn:t_pb} which should be cut as a result of not having data point within phase window
+
+		return_others : bool (optional; default=False)
+			if True, return other dicionaries with more details
 
 		Returns
 		----------
 		POINTS : dict
 			{sn:{pb:t_pb for pb in pblist}}
 
-		pbs : dict
+		Npbs : dict
 			{pb:{t_pb:sn for sne in sns}}
 		"""
 		POINTS = {} ; trim_choices = self.choices['preproc_parameters']
@@ -180,7 +194,8 @@ class BIRDSNACK:
 		#For each sn
 		for sn,lc in self.lcs.items():
 			lcobj = LCObj(lc,trim_choices)
-			lcobj.get_Tmax()
+			try:	lcobj.lc.meta[trim_choices['Tmaxchoicestr']] = self.DF_M['Tmax'][trim_choices['Tmaxchoicestr']].loc[sn]
+			except:	lcobj.get_Tmax()
 			points = {}
 			#Find phase of data point closest to peak time
 			if lc.meta[trim_choices['Tmaxchoicestr']] is not None:#If Tmax is not estimated, can't compute phase, therefore can't assess availability of points
@@ -192,14 +207,47 @@ class BIRDSNACK:
 			POINTS[sn] = points
 
 		#Transform Dictionary for Plotting
-		pbs = {}
+		Npbs = {}
 		for sn in POINTS:
 			for pb in POINTS[sn]:
-				if pb in pbs.keys():
-					pbs[pb] = {**pbs[pb],**{POINTS[sn][pb]:sn}}
+				if pb in Npbs.keys():
+					Npbs[pb] = {**Npbs[pb],**{POINTS[sn][pb]:sn}}
 				else:
-					pbs[pb] = {POINTS[sn][pb]:sn}
-		return POINTS, pbs
+					Npbs[pb] = {POINTS[sn][pb]:sn}
+		if plot:#Plot histograms of closest phases of data to tref
+			print ('Plotting Data Availability; Set up for N=6 passbands')
+			phase_max = self.choices['additional_cut_parameters']['phase_max'] ; FS=14
+			fig,ax = pl.subplots(3,2,figsize=(8,10))
+			for ipb,pb in enumerate(Npbs):
+			    iy,ix = int(ipb//3),int(ipb%3)
+			    ts    = list(Npbs[pb].keys())
+			    ax[ix,iy].hist(ts,label=pb[0],color=f'C{ipb}')
+			    ax[ix,iy].annotate(f"Median:{np.median(ts):.2}\nStd:{np.std(ts):.2}\nMin:{min(ts):.2}\nMax:{max(ts):.2}",xy=(0.05,0.35),fontsize=FS,xycoords='axes fraction',ha='left')
+			    ax[ix,iy].legend(fontsize=FS)
+			    ax[ix,iy].tick_params(labelsize=FS)
+			fig.subplots_adjust(wspace=0.15,hspace=0.15)
+			fig.text(0.5, 0.05, 'Phase of Closest Data Point (days)', rotation='horizontal',fontsize=FS,ha='center')
+			fig.text(0.5, 0.9, f'Data Near Peak in Fiducial Sample of {int(len(POINTS))} SNe', rotation='horizontal',fontsize=FS,ha='center')
+			pl.savefig(self.plotpath+'Ncuts.pdf',bbox_inches='tight')
+			#pl.show()
+
+		if get_outside_range:#Return SNe outside phase window
+			outside_range = {} ; phase_max = self.choices['additional_cut_parameters']['phase_max']
+			for sn in POINTS:
+			    for pb in POINTS[sn]:
+			        if np.abs(POINTS[sn][pb])>phase_max:
+			            if sn not in list(outside_range.keys()):
+			                outside_range[sn] = {pb:POINTS[sn][pb]}
+			            else:
+			                outside_range[sn] = {**outside_range[sn],**{pb:POINTS[sn][pb]}}
+			print (f'Remove SNe given phase window=={phase_max}:',list(outside_range.keys()))
+			if return_others:
+				return POINTS, Npbs, outside_range
+			else:
+				return outside_range
+		else:
+			if return_others:
+				return POINTS, Npbs
 
 
 	def trim_sample(self, apply_trims=True, return_trimmed=False):
@@ -573,6 +621,12 @@ class BIRDSNACK:
 					for col in errcols:
 						DF_M['extra'][ti] = DF_M['extra'][ti][DF_M['extra'][ti][col]<choices['magerrcut']]
 			DF_M = trim_to_common_SNS(DF_M)
+
+		#Trim based on phase window
+		if choices['phase_max'] is not False:
+			outside_range = self.inspect_data_availability()
+			print (f"Removing {list(outside_range.keys())} for not having data within phase window {choices['phase_max']}days")
+			DF_M = trim_to_common_SNS(DF_M, drop_sns=list(outside_range.keys()))
 
 		#Trim pre-selected SNe and quote reason why
 		if choices['extra_drop_SNe']!={}:
