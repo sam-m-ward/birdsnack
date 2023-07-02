@@ -10,9 +10,11 @@ parser.add_argument("--mode",default='Science',help='Options are Science,Censore
 MODE   = parser.parse_args().mode
 CYCLE_DICT = dict(zip(['Science','CensoredData'],[CYCLE_DICT_Science,CYCLE_DICT_CensoredData]))[MODE]
 
-#FOR LOW RVs
+###############
+#FOR LOW RVs Analysis
 CYCLE_DICT['COMMON_CHANGES']['newdict'] = {**CYCLE_DICT['COMMON_CHANGES']['newdict'],**{'extra_drop_SNe':{sn:'Low RVs' for sn in ['2009ds','16abc']}}}
 CYCLE_DICT['COMMON_CHANGES']['HBMappender'] = 'LowRVs_Cens1.0'
+###############
 
 #Load up light curves of fiducial sample of SNe, and metadata
 dataloader = LOAD_DATA()
