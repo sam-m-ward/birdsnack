@@ -9,11 +9,16 @@ dataloader = LOAD_DATA()
 SNSsnpy_fiducial = dataloader.load_SNSsnpy('SNSsnpy_fiducial.pkl')
 dfmeta           = dataloader.dfmeta
 edit_dict        = {}
+###################
+##u-band Analysis
 #edit_dict = {  'preproc_parameters'    :   {'DF_savekey':'uBVriJH','pblist':[s for s in 'uBVriJH']},
 #                'analysis_parameters'   :   {'HBM_savekey':'uBVriJH_CensoredCut1.0','lam_choice':'central','CensoredData':True,'CensoredCut':1.0}}
-#edit_dict = {'analysis_parameters':{'HBM_savekey':'Fiducial_AVGamma_CensoredCut1.0','CensoredData':True,'CensoredCut':1.0,'AVprior':'Gamma','n_sampling':10000}}
-#edit_dict = {'analysis_parameters'      :   {'HBM_savekey':'LowRVs_CensoredCut1.0','CensoredData':True,'CensoredCut':1.0},
-#            'additional_cut_parameters' :   {'extra_drop_SNe':{sn:'Low RVs' for sn in ['2009ds','16abc']}}}
+###################
+##CSP-Only Analysis
+#SNSsnpy_fiducial = dataloader.load_SNSsnpy('snpy_SNS_CSP.pkl')
+#edit_dict = {  'preproc_parameters'    :   {'DF_savekey':'CSPOnly'},
+#                'analysis_parameters'   :   {'HBM_savekey':'CSPOnly_Cens1.0','CensoredData':True,'CensoredCut':1.0}}
+###################
 
 #Load into Bird-Snack
 bs = BIRDSNACK(loader={'SNSsnpy':SNSsnpy_fiducial}, configname='loader_config.yaml', dfmeta=dfmeta, edit_dict=edit_dict)
@@ -30,6 +35,7 @@ bs.additional_cuts()
 #Plot Colours
 #bs.plot_colour_corner()
 
+#Plot LCs
 #bs.plot_lcs()
 
 #Fit HBM to data
