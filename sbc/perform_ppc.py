@@ -30,7 +30,7 @@ BIRDSNACK_EDIT_DICT = {'analysis_parameters':
 edit_dict = {'simulate_parameters':{'Nsims':20,'S':250,'pre_defined_hyps':{'load_file':'Fiducial_CensoredCut1.0'}}}
 #'''
 ##########################################################################################
-#'''
+'''
 #For CensoredData Simulations
 #BIRDSNACK_EDIT_DICT = {'analysis_parameters':
 #						{'HBM_savekey':'PPC_muRV2.5sigRV2.5tauA0.5_LowBVNoCens',
@@ -44,8 +44,16 @@ edit_dict = {'simulate_parameters':{'Nsims':100,'S':100,'tauA':0.5,'muRV':2.5,'s
 			'pre_defined_hyps':{'load_file':'Fiducial_CensoredCut1.0'}}}
 #'''
 ##########################################################################################
-'''
+#'''
 #For X-H Sims (X-H model applied to Deviations-simulated SNe)
+BIRDSNACK_EDIT_DICT = {'analysis_parameters':
+						{'HBM_savekey':'PPC_CensoredCut1.0_DevFitXH',
+						'CensoredData':True,'CensoredCut':1.0,
+						'IntrinsicModel':'X-H','DataTransformation' : 'X-H','n_warmup':1000,'n_sampling':2000,'n_thin':1000}}
+
+#Choices for simulating data based on previous stan fit with BirdSnack
+edit_dict = {'simulate_parameters':{'Nsims':20,'pre_defined_hyps':{'load_file':'Fiducial_CensoredCut1.0'}}}
+#edit_dict = {'simulate_parameters':{'Nsims':20,'S':250,'pre_defined_hyps':{'load_file':'Fiducial_CensoredCut1.0'}}}
 #'''
 ##########################################################################################
 #Directory to periodically_delete stan build, conserve memory
