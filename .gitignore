@@ -19,3 +19,4 @@ sbc/model_files/__pycache__/
 sbc/build/
 sbc/products/
 sbc/DLAMS/DLAM_NEW.txt
+model_files/stan_files/deviations_model_fit_mags_Gaussianmuintref_Full.stan
