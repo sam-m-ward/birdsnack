@@ -20,7 +20,6 @@ load_data_parameters :
   #rewrite_snana : True
   rewrite_snana : False
 
-  GLOBAL_ANALYSIS_KEY  : ''
 ########################################################
 snpy_parameters:
   #SNooPy Parameters Here
@@ -254,6 +253,20 @@ analysis_parameters:
   #Upper bound on B-V where SNe within 0.3<B-V<CensoredCut will be included as CensoredData, those above CensoredCut are cut from sample entirely.
   CensoredCut : 1.0
   CensoredCut : 'inf'
+
+  #Skewness in Gaussian RV pop. dist.
+  skew_RV : True
+  skew_RV : False
+  #Dispersion of Normal prior on alpha_skew_RV
+  skew_RV_disp_prior : 2
+  #Norm or StudentT RV dist
+  RVprior : 'StudentT'
+  RVprior : 'Norm'
+  #Skewed Intrinsic Deviations
+  skew_int : True
+  skew_int : False
+  #Dispersion of Normal prior on alpha_skew_int
+  skew_int_disp_prior : 2
 
   #Option to make multiple copies of sample to fit
   copymode : 1
