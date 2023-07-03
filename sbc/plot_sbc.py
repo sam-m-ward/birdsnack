@@ -67,6 +67,7 @@ if __name__ == "__main__":
 	title_tuples = [l for key,value in non_loop_pars.items() for l in [parlabels[key],value]]
 	fig.axes[0].set_title('Fits to SED-Integrated Simulated Data;\nTrue Simulation Parameters: '+r'$%s = %s ; %s = %s\,$mag'%(title_tuples[0],title_tuples[1],title_tuples[2],title_tuples[3]),fontsize=plotter.FS)
 	fig.axes[-1].set_xlabel(r'$%s$'%parlabels[loop_par],fontsize=plotter.FS)
+	fig.axes[0].set_ylabel('Posterior Densities',fontsize=plotter.FS,color='white')#For spacing
 	fig.text(0.01, 0.5, 'Posterior Densities', ha='center', va='center', rotation='vertical',fontsize=plotter.FS)
 	pl.tight_layout()
 	if args['save']:
