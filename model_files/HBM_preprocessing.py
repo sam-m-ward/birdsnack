@@ -386,6 +386,9 @@ class HBM_preprocessor:
 		assert(len(stan_data['dm15B_errs'])==stan_data['S'])
 		assert(len(stan_data['BVerrs_Cens'])==stan_data['SC'])
 
+		if self.choices['analysis_parameters']['skew_RV']:
+			assert(self.choices['analysis_parameters']['RVprior']=='Norm')
+
 		DataTransformation = self.choices['analysis_parameters']['DataTransformation']
 		IntrinsicModel     = self.choices['analysis_parameters']['IntrinsicModel']
 		stan_data.pop('RVsmax')
@@ -414,11 +417,21 @@ class HBM_preprocessor:
 		----------
 		self.stan_file
 		"""
+		#Check whether to use more complicated stan file for more analysis variants, harder for human to parse
+		use_full_stan_file = False
+		if self.choices['analysis_parameters']['skew_RV']: 			use_full_stan_file = True
+		if self.choices['analysis_parameters']['RVprior']!='Norm': 	use_full_stan_file = True
+		if self.choices['analysis_parameters']['skew_int']: 	   	use_full_stan_file = True
+		#This more complicated file is only valud for Devations model fitted to magnitudes data
+		if use_full_stan_file:
+			assert(self.choices['analysis_parameters']['IntrinsicModel']=='Deviations')
+			assert(self.choices['analysis_parameters']['DataTransformation']=='mags')
+		#Get stan file
 		if self.choices['analysis_parameters']['IntrinsicModel']=='Deviations':
 			if self.choices['analysis_parameters']['DataTransformation']=='mags':
-				print ("Applying Intrinsic Deviations Model to fit Apparent Magnitudes Data")
-				stan_file = f"{stanpath}deviations_model_fit_mags_Gaussianmuintref.stan"
-				#stan_file = f"{stanpath}deviations_model_fit_mags_Dirichletmuint.stan"
+				print ("Applying Intrinsic Deviations Model to fit Apparent Magnitudes Data") #stan_file = f"{stanpath}deviations_model_fit_mags_Dirichletmuint.stan"
+				if use_full_stan_file:	stan_file = f"{stanpath}deviations_model_fit_mags_Gaussianmuintref_Full.stan"
+				else:					stan_file = f"{stanpath}deviations_model_fit_mags_Gaussianmuintref.stan"
 			else:
 				print (f"Applying Intrinsic Deviations Model to fit {self.choices['analysis_parameters']['DataTransformation']} Colours Data")
 				stan_file = f"{stanpath}deviations_model_fit_colours_Gaussianmuintref.stan"
@@ -427,6 +440,7 @@ class HBM_preprocessor:
 			stan_file = f"{stanpath}colours_model.stan"
 
 		self.stan_file = stan_file
+		self.use_full_stan_file = use_full_stan_file
 
 	def modify_stan_file(self):
 		"""
@@ -442,34 +456,112 @@ class HBM_preprocessor:
 
 		stan_file = copy.deepcopy(self.stan_file)
 		AVprior   = self.choices['analysis_parameters']['AVprior']
+		RVprior   = self.choices['analysis_parameters']['RVprior']
+		skew_RV   = self.choices['analysis_parameters']['skew_RV']
+		skew_int  = self.choices['analysis_parameters']['skew_int']
 
+		edit_file = False
 		if AVprior!='Exp':#If AV prior is not exponential on tau
+			edit_file = True
+		if RVprior!='Norm':#If RV prior is not Normal
+			edit_file = True
+		if skew_RV:#If RVs distribution is skewed
+			edit_file = True
+		if skew_int:#If Intrinsic Deviations are skewed
+			edit_file = True
+		if edit_file:
 			with open(stan_file,'r') as f:
 				stan_file = f.read().splitlines()
 			for il,line in enumerate(stan_file):
 				###Model Block
 				#Get rid of exponential prior
-				if bool(re.match(r'\s*AVs\s*~\s*exponential\(inv\(tauA\)\)',line)):
-					stan_file[il] = line.replace('AVs','//AVs')
+				if AVprior!='Exp':
+					if bool(re.match(r'\s*AVs\s*~\s*exponential\(inv\(tauA\)\)',line)):
+						stan_file[il] = line.replace('AVs','//AVs')
 				#Introduce gamma prior
 				if AVprior == 'Gamma':
 					if bool(re.match(r'\s*//\s*AVs\s*~\s*gamma\(nu,1/tauA\)',line)):
 						stan_file[il] = line.replace('//','')
 
-				###Parameters and Prior Blocks
-				#Introduce parameter nu in parameters block and prior on nu
-				if AVprior in ['Gamma']:
-					#Prior
+				if AVprior in ['Gamma']:#Introduce parameter nu in parameters block and prior on nu
+					###Prior Block
 					if bool(re.match(r'\s*//\s*nu_tform\s*~\s*uniform\(0,pi\(\)/2\)',line)):
 						stan_file[il] = line.replace('//','')
-					#Parameters Block
+					###Parameters Block
 					if bool(re.match(r'\s*//\s*real<lower=0,upper=pi\(\)/2>\s*nu_tform',line)):
 						stan_file[il] = line.replace('//','')
-					#Transformed Parameters Block
+					###Transformed Parameters Block
 					if bool(re.match(r'\s*//\s*real<lower=0>\s*nu;',line)):
 						stan_file[il] = line.replace('//','')
 					if bool(re.match(r'\s*//\s*nu\s*=\s*tan\(nu_tform\)',line)):
 						stan_file[il] = line.replace('//','')
+
+				if skew_RV or RVprior in ['StudentT']:
+					###Data Block
+					if skew_RV:
+						if bool(re.match(r'\s*//real\s*skew_RV_disp_prior',line)):
+							stan_file[il] = line.replace('//real','real')
+					###Parameters Block
+					#Remove this
+					if bool(re.match(r'\s*vector<lower=0,upper=1>\[S\]\s*nuRVs',line)):
+						stan_file[il] = line.replace('vector','//vector')
+					#Add these
+					if bool(re.match(r'\s*//vector<lower=RVsmin>\[S\]\s*RVs',line)) and 'Rescaled Parameters' not in stan_file[il-1]:
+						stan_file[il] = line.replace('//vector','vector')
+					if skew_RV:
+						if bool(re.match(r'\s*//real\s*alpha_skew_RV',line)):
+							stan_file[il] = line.replace('//real','real')
+					if RVprior=='StudentT':
+						if bool(re.match(r'\s*//real<lower=0>\s*nuR',line)):
+							stan_file[il] = line.replace('//real','real')
+					###Transformed Parameters Block
+					#Remove these
+					if bool(re.match(r'\s*vector<lower=RVsmin>\[S\]\s*RVs',line)) and 'Rescaled Parameters' in stan_file[il-1]:
+						stan_file[il] = line.replace('vector','//vector')
+					if bool(re.match(r'\s*real<upper=0>\s*alpha',line)):
+						stan_file[il] = line.replace('real','//real')
+					if bool(re.match(r'\s*alpha\s*=\s*\(RVsmin\s*-\s*mu_RV\s*\)/sig_RV',line)):
+						stan_file[il] = line.replace('alpha','//alpha')
+					if bool(re.match(r'\s*RVs\s*=\s*mu_RV\s*-\s*sig_RV\s*\*\s*\(\s*inv_Phi\s*\(\s*nuRVs\s*\*\s*Phi\s*\(-alpha\)\s*\)\s*\)',line)):
+						stan_file[il] = line.replace('RVs','//RVs')
+					###Model Block
+					#Remove this
+					if bool(re.match(r'\s*nuRVs\s*~\s*uniform\(0,1\)',line)):
+						stan_file[il] = line.replace('nuRVs','//nuRVs')
+					#Add these
+					if skew_RV:
+						if bool(re.match(r'\s*//RVs\s*~\s*skew_normal\(mu_RV,\s*sig_RV,\s*alpha_skew_RV\s*\)',line)):
+							stan_file[il] = line.replace('//RVs','RVs')
+						if bool(re.match(r'\s*//alpha_skew_RV\s*~\s*normal\(0,skew_RV_disp_prior\)',line)):
+							stan_file[il] = line.replace('//alpha_skew','alpha_skew')
+					if RVprior=='StudentT':
+						if bool(re.match(r'\s*//RVs\s*~\s*student_t\(nuR,\s*mu_RV,\s*sig_RV\s*\)',line)):
+							stan_file[il] = line.replace('//RVs','RVs')
+						if bool(re.match(r'\s*//nuR\s*~\s*gamma\(2,0.1\)',line)):
+								stan_file[il] = line.replace('//nuR','nuR')
+				if skew_int:
+					###Data Block
+					if bool(re.match(r'\s*//real\s*skew_int_disp_prior',line)):
+						stan_file[il] = line.replace('//real','real')
+					###Parameters Block
+					if bool(re.match(r'\s*//real\s*alpha_skew_int',line)):
+						stan_file[il] = line.replace('//real','real')
+					###Model Block
+					#Remove These
+					if bool(re.match(r'\s*eta_mint\s*~\s*std_normal\(\)',line)):
+						stan_file[il] = line.replace('eta_mint','//eta_mint')
+					if bool(re.match(r'\s*eta_mint_Cens\s*~\s*std_normal\(\)',line)):
+						stan_file[il] = line.replace('eta_mint_Cens','//eta_mint_Cens')
+					if bool(re.match(r'\s*//alpha_skew_int\s*~\s*normal\(0,skew_int_disp_prior\)',line)):#Introduce skewness
+						stan_file[il] = line.replace('//alpha_skew','alpha_skew')
+					#Add these
+					if bool(re.match(r'\s*//eta_mint\s*~\s*skew_normal\(0,1,alpha_skew_int\)',line)):
+						stan_file[il] = line.replace('//eta_mint','eta_mint')
+					if bool(re.match(r'\s*//eta_mint_Cens\s*~\s*skew_normal\(0,1,alpha_skew_int\)',line)):
+						stan_file[il] = line.replace('//eta_mint_Cens','eta_mint_Cens')
+
+
+
 
 			#Stan Reads \n delimited text
 			stan_file = '\n'.join(stan_file)
