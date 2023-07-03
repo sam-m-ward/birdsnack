@@ -73,6 +73,7 @@ if __name__ == "__main__":
 		fig.axes[iax].annotate(f'No. of Simulated SNe = {true_loop_par}',	xy=(0.95,0.475+0.02-0.05),xycoords='axes fraction',fontsize=plotter.FS,ha='right',weight='bold')
 
 	fig.axes[-1].set_xlabel(r'$%s$'%parlabels[plot_par],fontsize=plotter.FS)
+	fig.axes[0].set_ylabel('Posterior Densities',fontsize=plotter.FS,color='white')#For spacing
 	fig.text(0.01, 0.5, 'Posterior Densities', ha='center', va='center', rotation='vertical',fontsize=plotter.FS)
 	fig.axes[0].set_title(r'Free-$\nu_A$ Fits to Data Simulated with $\nu_A=1$'+'\n'+r'True Simulation Parameters: $\mu_{R_V}=%s$ ; $\sigma_{R_V} = %s$ ; $\tau_A = %s\,$mag'%(round(sbc.muRV,2),round(sbc.sigRV,2),round(sbc.tauA,2)),fontsize=plotter.FS)
 	pl.tight_layout()
