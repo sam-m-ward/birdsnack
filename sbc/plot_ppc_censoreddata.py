@@ -24,8 +24,7 @@ parser.add_argument("--show",	default=False,		      help='Show plot')
 
 args = parser.parse_args().__dict__
 plot_par  = args['plot_par']
-parlabels = {'muRV':'\\mu_{R_V}','tauA':'\\tau_{A}'}
-dfpars    = {'muRV':'mu_RV','tauA':'tauA'}
+parnames,dfpars,parlabels = get_pars()
 
 Nsim_keep = 100
 Rhat_threshold = 1.1

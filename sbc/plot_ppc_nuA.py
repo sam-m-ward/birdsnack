@@ -28,8 +28,7 @@ plot_par = args['plot_par']
 true_plot_par = 1
 loop_par = args['loop_par']
 loop_par_dict = {loop_par:[int(s) for s in args["loop_S"].split(',')]}
-parlabels = {'nu':'\\nu_{A}'}
-dfpars    = {'nu':'nu'}
+parnames,dfpars,parlabels = get_pars()
 
 Nsim_keep = 5
 Rhat_threshold = 1.1

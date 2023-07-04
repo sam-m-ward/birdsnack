@@ -23,9 +23,7 @@ parser.add_argument("--show",	default=False,		      help='Show plot')
 
 args = parser.parse_args().__dict__
 loop_pars = [s for s in args["loop_pars"].split(',')]
-parnames  = ['muRV','sigRV','tauA','nu']
-parlabels = dict(zip(parnames,['\\mu_{R_V}','\\sigma_{R_V}','\\tau_{A}','\\nu_{A}']))
-dfpars    = dict(zip(parnames,['mu_RV','sig_RV','tauA','nu']))
+parnames,dfpars,parlabels = get_pars()
 
 Nsim_keep = 5
 Rhat_threshold = 1.05
