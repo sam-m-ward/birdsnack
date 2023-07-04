@@ -14,7 +14,7 @@ PLOTTER class:
 		finish_plot(,xlab,ylab,savename=None,legend=False,invert=False)
 
 Functions include:
-	get_parlabels(choices)
+	get_parlabels(choices,default=False,return_parnames_only=False)
 	get_Lines(choices)
 	finish_corner_plot(fig,ax,Lines,save,quick,show,plotpath,savekey)
 	get_mass_label(mass,choices,nocol='black',hicol='blue',locol='magenta')
@@ -77,7 +77,7 @@ class PLOTTER:
 			pl.show()
 
 
-def get_parlabels(choices):
+def get_parlabels(choices,default=False,return_parnames_only=False):
 	'''
 	Get Parameter Labels
 
@@ -88,43 +88,62 @@ def get_parlabels(choices):
 	choices : dict
 		analysis choices
 
+	default : bool (optional; default=False)
+		if default, ignore any analysis choices and just return standard labels
+
+	return_parnames_only : bool (optional; default=False)
+		if True, return only parnames
+
 	Returns
 	----------
-	parnames,parlabels,bounds : lists
-		respectively, the parameter names in MCMC chains, the parameter labels used in plots, and the prior bounds on parameters
+	pars,parnames,parlabels,bounds : lists
+		respectively, parameter names for user, the parameter names in MCMC chains, the parameter labels used in plots, and the prior bounds on parameters
 	'''
-	AVprior  = choices['analysis_parameters']['AVprior']
-	muRVmin  = choices['analysis_parameters']['muRVmin']
-	muRVmax  = choices['analysis_parameters']['muRVmax']
-	#Old Files fail because options didn't yet exist
-	try:		RVprior = choices['analysis_parameters']['RVprior']
-	except:		RVprior = 'Norm'
-	try:		skew_RV  = choices['analysis_parameters']['skew_RV']
-	except:		skew_RV = False
-	try:		skew_int = choices['analysis_parameters']['skew_int']
-	except:		skew_int = False
 	#Get parnames,labels,bounds
+	pars       = ['tauA','muRV','sigRV']
 	parnames   = ['tauA','mu_RV','sig_RV']
 	parlabels  = ['$\\tau_A$','$\\mu_{R_V}$','$\\sigma_{R_V}$']
-	bounds     = [ [0,None]  , [muRVmin,muRVmax], [0,None]]
-	if AVprior in ['Gamma']:
-		parnames.append('nu')
-		parlabels.append('$\\nu_A$')
-		bounds.append([0,None])
-	if RVprior=='StudentT':
-		parnames.append('nuR')
-		parlabels.append('$\\nu_{R_V}$')
-		bounds.append([0,None])
-	if skew_RV:
-		parnames.append('alpha_skew_RV')
-		parlabels.append('$\\alpha^{\\rm{skew}}_{R_V}$')
-		bounds.append([None,None])
-	if skew_int:
-		parnames.append('alpha_skew_int')
-		parlabels.append('$\\alpha^{\\rm{skew}}_{\\rm{int}}$')
-		bounds.append([None,None])
+	bounds     = [ [0,None]  , [1,5], 			[0,None]]
 
-	return parnames,parlabels,bounds
+	if not default and choices!={}:
+		AVprior  = choices['analysis_parameters']['AVprior']
+		muRVmin  = choices['analysis_parameters']['muRVmin']
+		muRVmax  = choices['analysis_parameters']['muRVmax']
+		#Update bounds with muRVmin,muRVmax
+		bounds     = [ [0,None]  , [muRVmin,muRVmax], [0,None]]
+		#Old Files fail because options didn't yet exist
+		try:		RVprior = choices['analysis_parameters']['RVprior']
+		except:		RVprior = 'Norm'
+		try:		skew_RV  = choices['analysis_parameters']['skew_RV']
+		except:		skew_RV = False
+		try:		skew_int = choices['analysis_parameters']['skew_int']
+		except:		skew_int = False
+
+		if AVprior in ['Gamma']:
+			pars.append('nu')
+			parnames.append('nu')
+			parlabels.append('$\\nu_A$')
+			bounds.append([0,None])
+		if RVprior=='StudentT':
+			pars.append('nuR')
+			parnames.append('nuR')
+			parlabels.append('$\\nu_{R_V}$')
+			bounds.append([0,None])
+		if skew_RV:
+			pars.append('askewRV')
+			parnames.append('alpha_skew_RV')
+			parlabels.append('$\\alpha^{\\rm{skew}}_{R_V}$')
+			bounds.append([None,None])
+		if skew_int:
+			pars.append('askewint')
+			parnames.append('alpha_skew_int')
+			parlabels.append('$\\alpha^{\\rm{skew}}_{\\rm{int}}$')
+			bounds.append([None,None])
+	if return_parnames_only:
+		return parnames
+	else:
+		return pars,parnames,parlabels,bounds
+
 
 def get_Lines(choices, NSNe, NCens, posterior=True):
 	"""
