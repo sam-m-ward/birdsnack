@@ -143,12 +143,12 @@ class SBC_FITS_PLOTTER:
 		HA = {True:'left',False:'right'}[Lside]
 
 		#Get Parameter Bounds
-		dfparnames,none,bounds  = get_parlabels({'analysis_parameters':dict(zip(['AVprior','muRVmin','muRVmax'],[analysis_choices['AVprior'],analysis_choices['muRVmin'],analysis_choices['muRVmax']]))})
+		pars,dfparnames,parlabels,bounds  = get_parlabels({'analysis_parameters':analysis_choices})
 		bounds = {loop_par:bounds[dfparnames.index(dfpar)]}
 
 		#Get SAMPS, QUANTILES
-		SAMPS     = self.get_SAMPS()#pd.DataFrame(data={ISIM: FITS[ISIM]['df'][dfpar].values      for ISIM in FITS                    })
-		QUANTILES = self.get_QUANTILES()#pd.DataFrame(data={   q:[FITS[ISIM]['df'][dfpar].quantile(q) for ISIM in FITS] for q in Quantiles})
+		SAMPS     = self.get_SAMPS()
+		QUANTILES = self.get_QUANTILES()
 		lims      = {loop_par:[SAMPS.min().min(),SAMPS.max().max()]}
 		self.lims   = lims
 		self.bounds = bounds
