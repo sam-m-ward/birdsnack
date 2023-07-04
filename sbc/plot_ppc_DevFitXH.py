@@ -27,8 +27,8 @@ plot_par  = args['plot_par']
 parlabels = {'muRV':'\\mu_{R_V}'}
 dfpars    = {'muRV':'mu_RV'}
 
-Nsim_keep = 10
-Rhat_threshold = 1.1
+Nsim_keep = 10#0
+Rhat_threshold = 1.05
 
 #For X-H Sims (X-H model applied to Deviations-simulated SNe)
 BIRDSNACK_EDIT_DICT = {'analysis_parameters':
@@ -37,9 +37,9 @@ BIRDSNACK_EDIT_DICT = {'analysis_parameters':
 						'IntrinsicModel':'X-H','DataTransformation' : 'X-H'}}
 
 #Choices for simulating data based on previous stan fit with BirdSnack
-edit_dict1 = {'simulate_parameters':{'Nsims':20,'S':250,'pre_defined_hyps':{'load_file':'Fiducial_CensoredCut1.0'}}}
-edit_dict2 = {'simulate_parameters':{'Nsims':20,        'pre_defined_hyps':{'load_file':'Fiducial_CensoredCut1.0'}}}
-editdicts = dict(zip([65,250],[edit_dict1,edit_dict2]))
+edit_dict1 = {'simulate_parameters':{'Nsims':20,'S':250,'pre_defined_hyps':{'load_file':'AVExp_Cens1.0'}}}
+edit_dict2 = {'simulate_parameters':{'Nsims':20,        'pre_defined_hyps':{'load_file':'AVExp_Cens1.0'}}}
+editdicts = dict(zip([250,65],[edit_dict1,edit_dict2]))
 
 if __name__ == "__main__":
 	print (f"Plotting PPC of X-H Model applied to Deviations-Simulated Data for {plot_par};")
@@ -76,16 +76,16 @@ if __name__ == "__main__":
 	with open(sbc.bs.FITSpath+f"FIT{XH_wLCfile}.pkl",'rb') as f:	XH_wLC  = pickle.load(f)['df'][dfpars[plot_par]]
 	#Plot real data fits
 	import sys
-	sys.path.append(self.path_to_birdsnack_rootpath+'model_files/')
+	sys.path.append(sbc.path_to_birdsnack_rootpath+'model_files/')
 	from posterior_plotter import PARAMETER
 	samps = PARAMETER(XH_noLC,dfpars[plot_par],parlabels[plot_par],plotter.lims[plot_par],plotter.bounds[plot_par],0,0,{})
 	samps.get_xgrid_KDE()
 	pl.plot(samps.xgrid,samps.KDE,alpha=0.5,linewidth=3,color='C0',linestyle='-.',
-				label=r"Real Posterior"+'\n'+r"(w/ $\Delta m_{15}(B)$ term)"+'\n'+r'$%s = %s \pm %s$'%(parlabels[par],XH_wLC.quantile(0.5).round(2),XH_wLC.std().round(2)))
+				label=r"Real Posterior"+'\n'+r"(w/ $\Delta m_{15}(B)$ term)"+'\n'+r'$%s = %s \pm %s$'%(parlabels[plot_par],XH_wLC.quantile(0.5).round(2),XH_wLC.std().round(2)))
 	samps = PARAMETER(XH_wLC,dfpars[plot_par],parlabels[plot_par],plotter.lims[plot_par],plotter.bounds[plot_par],0,0,{})
 	samps.get_xgrid_KDE()
 	pl.plot(samps.xgrid,samps.KDE,alpha=0.5,linewidth=3,color='C0',linestyle=':',
-				label=r"Real Posterior"+ '\n'+r'$%s = %s \pm %s$'%(parlabels[par],XH_noLC.quantile(0.5).round(2),XH_noLC.std().round(2)))
+				label=r"Real Posterior"+ '\n'+r'$%s = %s \pm %s$'%(parlabels[plot_par],XH_noLC.quantile(0.5).round(2),XH_noLC.std().round(2)))
 
 	#Finish figure
 	for iim,S in enumerate(editdicts):
