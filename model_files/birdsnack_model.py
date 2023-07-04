@@ -703,6 +703,10 @@ class BIRDSNACK:
 			self.Rhat_check_params += ['nu']
 		if self.choices['analysis_parameters']['skew_RV'] and 'alpha_skew_RV' not in self.Rhat_check_params:
 			self.Rhat_check_params += ['alpha_skew_RV']
+		if self.choices['analysis_parameters']['RVprior']=='StudentT' and 'nuR' not in self.Rhat_check_params:
+			self.Rhat_check_params += ['nuR']
+		if self.choices['analysis_parameters']['skew_int'] and 'alpha_skew_int' not in self.Rhat_check_params:
+			self.Rhat_check_params += ['alpha_skew_int']
 
 		#Initialisation of stan_data
 		stan_data = {}
@@ -1079,6 +1083,55 @@ class BIRDSNACK:
 				if self.choices['plotting_parameters']['show']:
 					pl.show()
 
+	def plot_colour_int_posteriors(self,BVcut=True,par='mu_RV',paperstyle=True,save=True,show=True):
+		FITS = {
+		'FITAVexp_Cens1.0.pkl':{'label':'Deviations'},
+		'FITAdjCols_Cens1.0.pkl':{'label':'Adjacent Colours'},
+		'FITBXCols_Cens1.0.pkl':{'label':'$B-X$ Colours'},
+		'FITXHCols_Cens1.0.pkl':{'label':'$X-H$ Colours'},
+		}
+
+		from posterior_plotting_functions import kde#, get_conf_interval, find_conf_interval_samples_count
+		#fig.text(0.1, 0.5, 'Posterior Densities', ha='center', va='center', rotation='vertical',fontsize=FS)
+		pl.figure(figsize=(8,6))
+		pl.title('Choice of Intrinsic SN Model',fontsize=FS)
+		pl.ylabel('Posterior Densities',fontsize=FS)
+		Nsteps  = {True:100,False:20}[paperstyle]
+		for counter,fFIT in enumerate(FITS):#
+			colour  = ['C0','C1','C2','C3'][counter]
+			ls      = ['-','--',':','-.'][counter]
+
+			filename = f'products/stan_fits/FITS/{fFIT}'
+			with open(filename,'rb') as f:
+				FIT = pickle.load(f)
+			if 'skewed_intrinsic' not in FIT['choices']: FIT['choices']['skewed_intrinsic'] = False
+			if 'RVprior' not in FIT['choices']: FIT['choices']['RVprior'] = 'Norm'
+			parnames,parlabels,bounds    = get_parlabels(FIT['choices']['RVdist'],FIT['choices']['AVprior'],FIT['choices']['skewed_intrinsic'],FIT['choices']['RVprior'],FIT['choices']['RVmin'],FIT['choices']['RVmax'])
+			df  = FIT['df'] ; fitsummary = FIT['fitsummary']
+
+			samps     = df[par]
+			bounds    = dict(zip(parnames,[[FIT['choices']['RVmin'],FIT['choices']['RVmax']],[0,None],[0,None]]))
+			lims      = {par:[samps.min(),samps.max()]}
+			if par=='mu_RV':
+				lims      = {par:[1.5,5]}
+			pyrange   = np.linspace(lims[par][0] - (bounds[par][0] is not None)*(lims[par][1]-lims[par][0]), lims[par][1] + (bounds[par][1] is not None)*(lims[par][1]-lims[par][0]), Nsteps*int(1 + (bounds[par][0] is not None) + (bounds[par][1] is not None)))
+			xtest,KDE = pyrange, kde(samps.values, pyrange, x_bounds=bounds[par], smoothing=2)
+			KDEmax    = KDE[np.argmin(np.abs(xtest-samps.quantile(0.5)))]
+			pl.plot(samps.quantile(0.5)*np.ones(2),[0,KDEmax],c=colour	,linewidth=2)
+			pl.plot(xtest,KDE,alpha=1,color=colour,linestyle=ls,linewidth=3,label=FITS[fFIT]['label']+'\n'+f'${round(samps.quantile(0.5),2)}\pm{round(samps.std(),2)}$')#*(iax==0))
+			pl.xlim(lims[par])
+			pl.yticks([])
+			pl.tick_params(labelsize=FS)
+
+		pl.legend(fontsize=FS-2,framealpha=0.8,loc='upper right',title = r'$\mu_{R_V}$ Inference'+False*'Reference frame for modelling intrinsic chromatic variations',title_fontsize=FS-2,ncol=1,columnspacing=0.7)
+		pl.gca().set_ylim([0,1*pl.gca().get_ylim()[1]])
+		pl.xlabel(parlabels[parnames.index(par)],fontsize=FS)
+		pl.tight_layout()
+		#if save:
+		#	pl.savefig('plots/CompareModelData2.pdf',bbox_inches='tight')
+		#if show:
+		pl.show()
+
 def get_edit_dict(choices,CYCLE_DICT,HBM_savekey):
 	"""
 	Get Edit Dictionary
@@ -1128,6 +1181,7 @@ def get_edit_dict(choices,CYCLE_DICT,HBM_savekey):
 						edit_dict[glob_key][key] = {**edit_dict[glob_key][key],**newdict[key]}
 					else:
 						edit_dict[glob_key][key] = newdict[key]
-	edit_dict['analysis_parameters']['HBM_savekey'] = f"{HBM_savekey}_{HBM_savekey_appender}"
+	if HBM_savekey_appender!='':	edit_dict['analysis_parameters']['HBM_savekey'] = f"{HBM_savekey}_{HBM_savekey_appender}"
+	else:							edit_dict['analysis_parameters']['HBM_savekey'] =    HBM_savekey
 	#Return changes
 	return edit_dict
