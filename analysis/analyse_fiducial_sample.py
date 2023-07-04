@@ -66,6 +66,9 @@ bs.additional_cuts()
 #Plot LCs
 #bs.plot_lcs()
 
+bs.plot_int_model_posteriors()
+err=1/0
+
 #Fit HBM to data
 bs.fit_stan_model()#Rhat_threshold=1.05)
 

@@ -16,11 +16,12 @@ CYCLE_DICT = dict(zip(['Science','CensoredData'],[CYCLE_DICT_Science,CYCLE_DICT_
 #CYCLE_DICT['COMMON_CHANGES']['HBMappender'] = 'LowRVs_Cens1.0'
 ###############
 #FOR Cens_inf Analysis
-#CYCLE_DICT['COMMON_CHANGES']['newdict'] = {**CYCLE_DICT['COMMON_CHANGES']['newdict'],**{'CensoredCut':'inf'}}
-#CYCLE_DICT['COMMON_CHANGES']['HBMappender'] = 'CensInf'
+CYCLE_DICT['COMMON_CHANGES']['newdict'] = {**CYCLE_DICT['COMMON_CHANGES']['newdict'],**{'CensoredCut':'inf'}}
+CYCLE_DICT['COMMON_CHANGES']['HBMappender'] = 'CensInf'
 ###############
 #CYCLE_DICT['RUNS'] = {key:value for key,value in CYCLE_DICT['RUNS'].items() if key in ['AdjCols','BXCols','XHCols']}
 #CYCLE_DICT['RUNS'] = {key:value for key,value in CYCLE_DICT['RUNS'].items() if key in ['AVExp','AVGamma']}
+CYCLE_DICT['RUNS'] = {key:value for key,value in CYCLE_DICT['RUNS'].items() if key in ['AVGamma']}
 
 #Load up light curves of fiducial sample of SNe, and metadata
 dataloader = LOAD_DATA()
