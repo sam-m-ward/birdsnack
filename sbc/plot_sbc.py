@@ -28,9 +28,7 @@ parser.add_argument("--show",	default=False,		      help='Show plot')
 parser.add_argument("--quantilemode",	default=True,	  help='If True, annotate with 16,84, False, use sample std.')
 
 args = parser.parse_args().__dict__
-parnames      = ['muRV','sigRV','tauA']
-parlabels     = dict(zip(parnames,['\mu_{R_V}','\sigma_{R_V}','\\tau_A']))
-dfpars        = dict(zip(parnames,['mu_RV','sig_RV','tauA']))
+parnames,dfpars,parlabels = get_pars()
 loop_par      = args['loop_par']
 loop_par_dict = {loop_par:[float(s) for s in args[f"loop_{args['loop_par']}"].split(',')]}
 non_loop_pars = {par:args[par] for par in parnames if par!=args['loop_par']}
