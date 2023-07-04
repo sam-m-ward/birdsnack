@@ -58,6 +58,15 @@ edit_dict = {'simulate_parameters':{'Nsims':20,'pre_defined_hyps':{'load_file':'
 #edit_dict = {'simulate_parameters':{'Nsims':20,'S':250,'pre_defined_hyps':{'load_file':'AVExp_Cens1.0'}}}
 #'''
 ##########################################################################################
+'''
+#For N=250 Simulations muRV sigRV recovery
+
+BIRDSNACK_EDIT_DICT = {'analysis_parameters':
+						{'HBM_savekey':'PPC_LowBVwCens_DevFitDev',
+						'CensoredData':True,'n_warmup':1000,'n_sampling':2000,'n_thin':1000}}
+edit_dict = {'simulate_parameters':{'Nsims':100,'S':250,'pre_defined_hyps':{'load_file':'AVExp_Cens1.0'}}}
+'''
+##########################################################################################
 #Directory to periodically_delete stan build, conserve memory
 stan_build_dir      = '/Users/samward/Library/Caches/httpstan/'
 periodically_delete = 3
