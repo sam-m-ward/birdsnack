@@ -20,6 +20,7 @@ BIRDSNACK class
 		plot_posterior_samples()
 		plot_mag_deviations()
 		plot_colour_corner()
+		plot_int_model_posteriors(PAR='muRV',FITS=None)
 
 Functions include:
 	get_edit_dict(choices,CYCLE_DICT,HBM_savekey)
@@ -698,15 +699,7 @@ class BIRDSNACK:
 		DataTransformation = self.choices['analysis_parameters']['DataTransformation']
 		IntrinsicModel     = self.choices['analysis_parameters']['IntrinsicModel']
 		n_warmup,n_sampling,n_chains,n_thin,random_seed = self.choices['analysis_parameters']['n_warmup'],self.choices['analysis_parameters']['n_sampling'],self.choices['analysis_parameters']['n_chains'],self.choices['analysis_parameters']['n_thin'],self.choices['analysis_parameters']['random_seed']
-		self.Rhat_check_params = copy.deepcopy(Rhat_check_params)
-		if self.choices['analysis_parameters']['AVprior'] in ['Gamma'] and 'nu' not in self.Rhat_check_params:
-			self.Rhat_check_params += ['nu']
-		if self.choices['analysis_parameters']['skew_RV'] and 'alpha_skew_RV' not in self.Rhat_check_params:
-			self.Rhat_check_params += ['alpha_skew_RV']
-		if self.choices['analysis_parameters']['RVprior']=='StudentT' and 'nuR' not in self.Rhat_check_params:
-			self.Rhat_check_params += ['nuR']
-		if self.choices['analysis_parameters']['skew_int'] and 'alpha_skew_int' not in self.Rhat_check_params:
-			self.Rhat_check_params += ['alpha_skew_int']
+		self.Rhat_check_params = get_parlabels(self.choices,return_parnames_only=True)
 
 		#Initialisation of stan_data
 		stan_data = {}
@@ -855,7 +848,7 @@ class BIRDSNACK:
 		NSNe       = FIT['stan_data']['S']
 		NCens      = FIT['stan_data']['SC']
 
-		parnames,parlabels,bounds = get_parlabels(FIT['choices'])
+		pars,parnames,parlabels,bounds = get_parlabels(FIT['choices'])
 
 		Rhats      = {par:fitsummary.loc[par]['r_hat'] for par in parnames}
 		samples    = {par:np.asarray(df[par].values)   for par in parnames}
@@ -1083,53 +1076,59 @@ class BIRDSNACK:
 				if self.choices['plotting_parameters']['show']:
 					pl.show()
 
-	def plot_colour_int_posteriors(self,BVcut=True,par='mu_RV',paperstyle=True,save=True,show=True):
-		FITS = {
-		'FITAVexp_Cens1.0.pkl':{'label':'Deviations'},
-		'FITAdjCols_Cens1.0.pkl':{'label':'Adjacent Colours'},
-		'FITBXCols_Cens1.0.pkl':{'label':'$B-X$ Colours'},
-		'FITXHCols_Cens1.0.pkl':{'label':'$X-H$ Colours'},
-		}
+	def plot_int_model_posteriors(self,PAR='muRV',FITS=None):
+		"""
+		Plot Intrinsic Model Posteriors
 
-		from posterior_plotting_functions import kde#, get_conf_interval, find_conf_interval_samples_count
-		#fig.text(0.1, 0.5, 'Posterior Densities', ha='center', va='center', rotation='vertical',fontsize=FS)
+		Plotting function to show different Hyperparameter Posteriors under different Intrinsic Models
+
+		Parameters
+		----------
+		par : str
+			Name of parameter to plot
+		FITS : dict (optional; default is None)
+			posteriors to loop over
+			{key:value} pairs are 'filename':{'label':label}
+			if None, defaults to x4 models Deviations,Adj,BX,XH
+
+		End Product(s)
+		----------
+		Plot of muRV posteriors
+		"""
+		if FITS is None:
+			FITS = {
+			'AVexp_Cens1.0':{'label':'Deviations'},
+			'AdjCols_Cens1.0':{'label':'Adjacent Colours'},
+			'BXCols_Cens1.0':{'label':'$B-X$ Colours'},
+			'XHCols_Cens1.0':{'label':'$X-H$ Colours'},
+			}
+		FS = self.choices['plotting_parameters']['FS']
 		pl.figure(figsize=(8,6))
 		pl.title('Choice of Intrinsic SN Model',fontsize=FS)
 		pl.ylabel('Posterior Densities',fontsize=FS)
-		Nsteps  = {True:100,False:20}[paperstyle]
-		for counter,fFIT in enumerate(FITS):#
+		for counter,file in enumerate(FITS):
 			colour  = ['C0','C1','C2','C3'][counter]
 			ls      = ['-','--',':','-.'][counter]
-
-			filename = f'products/stan_fits/FITS/{fFIT}'
-			with open(filename,'rb') as f:
+			with open(f"{self.FITSpath}FIT{file}.pkl",'rb') as f:
 				FIT = pickle.load(f)
-			if 'skewed_intrinsic' not in FIT['choices']: FIT['choices']['skewed_intrinsic'] = False
-			if 'RVprior' not in FIT['choices']: FIT['choices']['RVprior'] = 'Norm'
-			parnames,parlabels,bounds    = get_parlabels(FIT['choices']['RVdist'],FIT['choices']['AVprior'],FIT['choices']['skewed_intrinsic'],FIT['choices']['RVprior'],FIT['choices']['RVmin'],FIT['choices']['RVmax'])
-			df  = FIT['df'] ; fitsummary = FIT['fitsummary']
-
-			samps     = df[par]
-			bounds    = dict(zip(parnames,[[FIT['choices']['RVmin'],FIT['choices']['RVmax']],[0,None],[0,None]]))
-			lims      = {par:[samps.min(),samps.max()]}
-			if par=='mu_RV':
-				lims      = {par:[1.5,5]}
-			pyrange   = np.linspace(lims[par][0] - (bounds[par][0] is not None)*(lims[par][1]-lims[par][0]), lims[par][1] + (bounds[par][1] is not None)*(lims[par][1]-lims[par][0]), Nsteps*int(1 + (bounds[par][0] is not None) + (bounds[par][1] is not None)))
-			xtest,KDE = pyrange, kde(samps.values, pyrange, x_bounds=bounds[par], smoothing=2)
-			KDEmax    = KDE[np.argmin(np.abs(xtest-samps.quantile(0.5)))]
-			pl.plot(samps.quantile(0.5)*np.ones(2),[0,KDEmax],c=colour	,linewidth=2)
-			pl.plot(xtest,KDE,alpha=1,color=colour,linestyle=ls,linewidth=3,label=FITS[fFIT]['label']+'\n'+f'${round(samps.quantile(0.5),2)}\pm{round(samps.std(),2)}$')#*(iax==0))
-			pl.xlim(lims[par])
-			pl.yticks([])
-			pl.tick_params(labelsize=FS)
-
-		pl.legend(fontsize=FS-2,framealpha=0.8,loc='upper right',title = r'$\mu_{R_V}$ Inference'+False*'Reference frame for modelling intrinsic chromatic variations',title_fontsize=FS-2,ncol=1,columnspacing=0.7)
+			df  = FIT['df']
+			pars,parnames,parlabels,bounds = get_parlabels(FIT['choices'])
+			ipar = pars.index(PAR)
+			par  = parnames[ipar]
+			lims = [df[par].min(),df[par].max()]
+			if par=='mu_RV': lims = [1.5,5]
+			samps = PARAMETER(df[par],par,parlabels[ipar],lims,bounds[ipar],0,0,{},2)
+			samps.get_xgrid_KDE()
+			pl.plot(samps.dfchain.quantile(0.5).values[0]*np.ones(2),[0,np.amax(samps.KDE)],c=colour	,linewidth=2)
+			pl.plot(samps.xgrid,samps.KDE,alpha=1,color=colour,linestyle=ls,linewidth=3,label=FITS[file]['label']+'\n'+r'$%s\pm%s$'%(round(samps.dfchain.quantile(0.5).values[0],2),round(samps.dfchain.std().values[0],2)))
+			pl.xlim(lims)
+		pl.tick_params(labelsize=FS)
+		pl.yticks([])
+		pl.legend(fontsize=FS-2,framealpha=0.8,loc='upper right',title = r'%s Inference'%(parlabels[ipar])+False*'Reference frame for modelling intrinsic chromatic variations',title_fontsize=FS-2,ncol=1,columnspacing=0.7)
 		pl.gca().set_ylim([0,1*pl.gca().get_ylim()[1]])
-		pl.xlabel(parlabels[parnames.index(par)],fontsize=FS)
+		pl.xlabel(parlabels[ipar],fontsize=FS)
 		pl.tight_layout()
-		#if save:
-		#	pl.savefig('plots/CompareModelData2.pdf',bbox_inches='tight')
-		#if show:
+		pl.savefig(f"{self.plotpath}SensitivityToIntrinsicModel.pdf",bbox_inches='tight')
 		pl.show()
 
 def get_edit_dict(choices,CYCLE_DICT,HBM_savekey):

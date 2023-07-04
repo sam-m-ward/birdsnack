@@ -39,8 +39,8 @@ edit_dict        = {}
 ###################
 #Skewed Intrinsic
 #edit_dict = { 'analysis_parameters'   :   {'HBM_savekey':'SkewInt_Cens1.0','CensoredData':True,'CensoredCut':1.0,'skew_int':True,'n_sampling':12000}}
-#edit_dict = { 'analysis_parameters'   :   {'HBM_savekey':'SkewInt_LowRVs_Cens1.0','CensoredData':True,'CensoredCut':1.0,'skew_int':True,'n_sampling':12000},
-#              'additional_cut_parameters' : {'extra_drop_SNe':{sn:'Low RVs' for sn in ['2009ds','16abc']}}}
+edit_dict = { 'analysis_parameters'   :   {'HBM_savekey':'SkewInt_LowRVs_Cens1.0','CensoredData':True,'CensoredCut':1.0,'skew_int':True,'n_sampling':12000},
+              'additional_cut_parameters' : {'extra_drop_SNe':{sn:'Low RVs' for sn in ['2009ds','16abc']}}}
 ###################
 #Skewed RV and Intrinsic
 #edit_dict = { 'analysis_parameters'   :   {'HBM_savekey':'SkewRV_SkewInt_Cens1.0','CensoredData':True,'CensoredCut':1.0,'skew_RV':True,'skew_int':True,'n_sampling':12000}}
@@ -65,9 +65,6 @@ bs.additional_cuts()
 
 #Plot LCs
 #bs.plot_lcs()
-
-bs.plot_int_model_posteriors()
-err=1/0
 
 #Fit HBM to data
 bs.fit_stan_model()#Rhat_threshold=1.05)
