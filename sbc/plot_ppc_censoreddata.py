@@ -31,14 +31,16 @@ Nsim_keep = 100
 Rhat_threshold = 1.1
 #Choices for applying HBM to simulated data
 BIRDSNACK_EDIT_DICT1 = {'analysis_parameters':
-						{'HBM_savekey':'PPC_muRV2.5sigRV2.5tauA0.5_LowBVNoCens',
+						{'HBM_savekey':'PPC_muRV2.5sigRV0.1tauA0.5_LowBVNoCens',
 						'CensoredData':True,'CensoredCut':0.3}}
 BIRDSNACK_EDIT_DICT2 = {'analysis_parameters':
-						{'HBM_savekey':'PPC_muRV2.5sigRV2.5tauA0.5_WithCensoredData',
+						{'HBM_savekey':'PPC_muRV2.5sigRV0.1tauA0.5_WithCensoredData',
 						'CensoredData':True,'CensoredCut':'inf'}}
 
-edit_dict = {'simulate_parameters':{'S':100,'tauA':0.5,'muRV':2.5,'sigRV':0.5,'PredefinedExtrinsicHyps':False,
-			'pre_defined_hyps':{'load_file':'Fiducial_CensoredCut1.0'}}}
+#edit_dict = {'simulate_parameters':{'S':100,'tauA':0.5,'muRV':2.5,'sigRV':0.5,'PredefinedExtrinsicHyps':False,
+#			'pre_defined_hyps':{'load_file':'AVExp_Cens1.0'}}}
+edit_dict = {'simulate_parameters':{'S':100,'tauA':0.5,'muRV':2.5,'sigRV':0.1,'PredefinedExtrinsicHyps':False,
+			'pre_defined_hyps':{'load_file':'AVExp_Cens1.0'}}}
 
 BS_editdicts = dict(zip([False,True],[BIRDSNACK_EDIT_DICT1,BIRDSNACK_EDIT_DICT2]))
 

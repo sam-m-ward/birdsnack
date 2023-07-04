@@ -33,8 +33,8 @@ dfpars    = {'nu':'nu'}
 
 Nsim_keep = 5
 Rhat_threshold = 1.1
-load_file = 'Fiducial_CensoredCut1.0'#FILE USED FOR SIMULATING; FIT TO REAL DATA
-rec_file  = 'Fiducial_AVGamma_CensoredCut1.0'#FILE USED FOR RECOVERY; FIT TO REAL DATA
+load_file = 'AVExp_Cens1.0'#FILE USED FOR SIMULATING; FIT TO REAL DATA
+rec_file  = 'AVGamma_Cens1.0'#FILE USED FOR RECOVERY; FIT TO REAL DATA
 #Choices for applying HBM to simulated data
 BIRDSNACK_EDIT_DICT = {'analysis_parameters':
 						{'HBM_savekey':'PPC_CensoredCut1.0_ExpFitGamma',
