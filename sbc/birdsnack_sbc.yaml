@@ -82,6 +82,20 @@ analysis_parameters:
   CensoredCut : 1.0
   CensoredCut : 'inf'
 
+  #Skewness in Gaussian RV pop. dist.
+  skew_RV : True
+  skew_RV : False
+  #Dispersion of Normal prior on alpha_skew_RV
+  skew_RV_disp_prior : 2
+  #Norm or StudentT RV dist
+  RVprior : 'StudentT'
+  RVprior : 'Norm'
+  #Skewed Intrinsic Deviations
+  skew_int : True
+  skew_int : False
+  #Dispersion of Normal prior on alpha_skew_int
+  skew_int_disp_prior : 2
+
   #Option to make multiple copies of sample to fit
   copymode : 1
   copymode : False
