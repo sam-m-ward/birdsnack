@@ -69,7 +69,7 @@ if __name__ == "__main__":
 	for iax,true_loop_par in enumerate(GLOB_FITS):
 		FITS    = GLOB_FITS[true_loop_par]
 		plotter = SBC_FITS_PLOTTER(iax,fig.axes,[true_plot_par,plot_par,dfpars[plot_par],parlabels[plot_par]],FITS,sbc.bs.choices['analysis_parameters'],sbc.path_to_birdsnack_rootpath,quantilemode=args['quantilemode'])
-		plotter.plot_sbc_panel(Ncred=False,Parcred=True,annotate_true=False,real_data_samps=rec_samps if iax==0 else False)
+		plotter.plot_sbc_panel(Ncred=False,Parcred=True,annotate_true=False,real_data_samps=rec_samps if iax==0 else False,line_rec_title='Real Data Posterior w/ Gamma')
 		fig.axes[iax].annotate(f'No. of Simulated SNe = {true_loop_par}',	xy=(0.95,0.475+0.02-0.05),xycoords='axes fraction',fontsize=plotter.FS,ha='right',weight='bold')
 
 	fig.axes[-1].set_xlabel(r'$%s$'%parlabels[plot_par],fontsize=plotter.FS)
