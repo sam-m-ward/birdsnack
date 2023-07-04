@@ -31,7 +31,7 @@ SIMULATOR class
 Functions include:
 	get_Lint_prior_samples(Nc=6,savefolder='products/Lint_sims/',generator_file='generator.stan',n_sampling=10000,n_chains=1,n_warmup=10)
 	def get_DF_M_from_truths(truths,pblist,errstr,tref)
-
+	def get_pars()
 --------------------
 
 Written by Sam M. Ward: smw92@cam.ac.uk
@@ -723,3 +723,18 @@ def get_DF_M_from_truths(truths,pblist,errstr,tref):
 
 	DF_M = {tref:df}
 	return DF_M
+
+def get_pars():
+	"""
+	Get Parameters
+
+	Simple function to get parameter names, names as they appear in MCMC chains, and labels for plots
+
+	Returns
+	----------
+	parnames,dfpars,parlabels : list, dict, dict
+	"""
+	parnames      = ['muRV','sigRV','tauA','nu','nuR','askewRV','askewint']
+	dfpars        = dict(zip(parnames,['mu_RV','sig_RV','tauA','nu','nuR','alpha_skew_RV','alpha_skew_int']))
+	parlabels     = dict(zip(parnames,['\mu_{R_V}','\sigma_{R_V}','\\tau_A','\\nu_{A}','\\nu_{R_V}','\\alpha^{\\rm{skew}}_{R_V}','\\alpha^{\\rm{skew}}_{\\rm{int}}']))
+	return parnames,dfpars,parlabels
