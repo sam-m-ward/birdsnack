@@ -8,8 +8,10 @@ Simple script that uses SBC fits to:
 Written by Sam M. Ward: smw92@cam.ac.uk
 """
 
+path_to_rootpath = '../'
+path_to_birdsnack_rootpath = '../../'
 import sys
-sys.path.append('model_files/')
+sys.path.append(path_to_birdsnack_rootpath+'sbc/model_files/')
 from SBC import *
 from sbc_plot_functions import *
 
@@ -41,11 +43,13 @@ BIRDSNACK_EDIT_DICT2 = {'analysis_parameters':
 edit_dict = {'simulate_parameters':{'S':100,'tauA':0.5,'muRV':2.5,'sigRV':0.1,'PredefinedExtrinsicHyps':False,
 			'pre_defined_hyps':{'load_file':'AVExp_Cens1.0'}}}
 
+edit_dict['load_parameters'] = {'path_to_rootpath':path_to_rootpath,'path_to_birdsnack_rootpath':path_to_birdsnack_rootpath}
+
 BS_editdicts = dict(zip([False,True],[BIRDSNACK_EDIT_DICT1,BIRDSNACK_EDIT_DICT2]))
 
 if __name__ == "__main__":
 	print (f"Plotting PPC of Censored Data for {plot_par};")
-	with open('ppc.yaml') as f:
+	with open(f"{path_to_rootpath}ppc.yaml") as f:
 		sbc_choices = yaml.load(f, Loader=yaml.FullLoader)
 
 	GLOB_FITS = {}
