@@ -759,12 +759,14 @@ class BIRDSNACK:
 			stan_data['capps_errs'] = modelloader.capps_errs
 
 		#If skew_RV=True, update stan_data with skew_RV_disp_prior
-		if modelloader.choices['analysis_parameters']['skew_RV']:
-			stan_data['skew_RV_disp_prior'] = modelloader.choices['analysis_parameters']['skew_RV_disp_prior']
+		with suppress(KeyError):
+			if modelloader.choices['analysis_parameters']['skew_RV']:
+				stan_data['skew_RV_disp_prior'] = modelloader.choices['analysis_parameters']['skew_RV_disp_prior']
 
 		#If skew_int=True, update stan_data with skew_int_disp_prior
-		if modelloader.choices['analysis_parameters']['skew_int']:
-			stan_data['skew_int_disp_prior'] = modelloader.choices['analysis_parameters']['skew_int_disp_prior']
+		with suppress(KeyError):
+			if modelloader.choices['analysis_parameters']['skew_int']:
+				stan_data['skew_int_disp_prior'] = modelloader.choices['analysis_parameters']['skew_int_disp_prior']
 
 		#Make replica copies of data and fit multiplied sample
 		stan_data = modelloader.multiply_dataset(stan_data)

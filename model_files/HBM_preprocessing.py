@@ -33,6 +33,7 @@ from snpy import fset
 import pandas as pd
 import spline_utils
 import re
+from contextlib import suppress
 
 class HBM_preprocessor:
 
@@ -386,8 +387,9 @@ class HBM_preprocessor:
 		assert(len(stan_data['dm15B_errs'])==stan_data['S'])
 		assert(len(stan_data['BVerrs_Cens'])==stan_data['SC'])
 
-		if self.choices['analysis_parameters']['skew_RV']:
-			assert(self.choices['analysis_parameters']['RVprior']=='Norm')
+		with suppress(KeyError):
+			if self.choices['analysis_parameters']['skew_RV']:
+				assert(self.choices['analysis_parameters']['RVprior']=='Norm')
 
 		DataTransformation = self.choices['analysis_parameters']['DataTransformation']
 		IntrinsicModel     = self.choices['analysis_parameters']['IntrinsicModel']
@@ -419,9 +421,12 @@ class HBM_preprocessor:
 		"""
 		#Check whether to use more complicated stan file for more analysis variants, harder for human to parse
 		use_full_stan_file = False
-		if self.choices['analysis_parameters']['skew_RV']: 			use_full_stan_file = True
-		if self.choices['analysis_parameters']['RVprior']!='Norm': 	use_full_stan_file = True
-		if self.choices['analysis_parameters']['skew_int']: 	   	use_full_stan_file = True
+		with suppress(KeyError):
+			if self.choices['analysis_parameters']['RVprior']!='Norm': 	use_full_stan_file = True
+		with suppress(KeyError):
+			if self.choices['analysis_parameters']['skew_RV']: 			use_full_stan_file = True
+		with suppress(KeyError):
+			if self.choices['analysis_parameters']['skew_int']: 	   	use_full_stan_file = True
 		#This more complicated file is only valud for Devations model fitted to magnitudes data
 		if use_full_stan_file:
 			assert(self.choices['analysis_parameters']['IntrinsicModel']=='Deviations')
@@ -455,20 +460,21 @@ class HBM_preprocessor:
 		"""
 
 		stan_file = copy.deepcopy(self.stan_file)
-		AVprior   = self.choices['analysis_parameters']['AVprior']
-		RVprior   = self.choices['analysis_parameters']['RVprior']
-		skew_RV   = self.choices['analysis_parameters']['skew_RV']
-		skew_int  = self.choices['analysis_parameters']['skew_int']
-
+		AVprior,RVprior,skew_RV,skew_int='Exp','Norm',False,False
 		edit_file = False
+		AVprior   = self.choices['analysis_parameters']['AVprior']
 		if AVprior!='Exp':#If AV prior is not exponential on tau
 			edit_file = True
-		if RVprior!='Norm':#If RV prior is not Normal
-			edit_file = True
-		if skew_RV:#If RVs distribution is skewed
-			edit_file = True
-		if skew_int:#If Intrinsic Deviations are skewed
-			edit_file = True
+		with suppress(KeyError):#If RV prior is not Normal
+			RVprior   = self.choices['analysis_parameters']['RVprior']
+			if RVprior!='Norm':	edit_file = True
+		with suppress(KeyError):#If RVs distribution is skewed
+			skew_RV   = self.choices['analysis_parameters']['skew_RV']
+			if skew_RV:			edit_file = True
+		with suppress(KeyError):#If Intrinsic Deviations are skewed
+			skew_int  = self.choices['analysis_parameters']['skew_int']
+			if skew_int:		edit_file = True
+
 		if edit_file:
 			with open(stan_file,'r') as f:
 				stan_file = f.read().splitlines()
