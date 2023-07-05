@@ -8,8 +8,10 @@ Simple script that uses SBC fits to:
 Written by Sam M. Ward: smw92@cam.ac.uk
 """
 
+path_to_rootpath = '../'
+path_to_birdsnack_rootpath = '../../'
 import sys
-sys.path.append('model_files/')
+sys.path.append(path_to_birdsnack_rootpath+'sbc/model_files/')
 from SBC import *
 from sbc_plot_functions import *
 import argparse,yaml
@@ -31,13 +33,16 @@ rec_file = 'AVExp_Cens1.0'#FILE USED FOR SIMULATING; FIT TO REAL DATA
 #Choices for applying HBM to simulated data
 BIRDSNACK_EDIT_DICT = {'analysis_parameters':
 						{'HBM_savekey':'PPC_LowBVwCens_DevFitDev',
+						'HBM_savekey':'PPC_CensoredCut1.0_DevFitXH',
 						'CensoredData':True}}
 
 edit_dict = {'simulate_parameters':{'S':250,'pre_defined_hyps':{'load_file':'AVExp_Cens1.0'}}}
+path_dict = {'load_parameters':{'path_to_rootpath':path_to_rootpath,'path_to_birdsnack_rootpath':path_to_birdsnack_rootpath}}
+edit_dict = {**edit_dict,**path_dict}
 
 if __name__ == "__main__":
 	print (f"Plotting PPC of {loop_pars};")
-	with open('ppc.yaml') as f:
+	with open(f"{path_to_rootpath}ppc.yaml") as f:
 		sbc_choices = yaml.load(f, Loader=yaml.FullLoader)
 
 	#Upload these fits
@@ -51,7 +56,7 @@ if __name__ == "__main__":
 		FITS = trim_to_KEEPERS({'dummy':FITS},get_KEEPERS({'dummy':FITS},Nsim_keep,Rhat_threshold,par,dfpars[par]))['dummy']
 
 	#Real Data Fit Samples
-	with open(sbc.bs.FITSpath+f"FIT{rec_file}.pkl",'rb') as f:
+	with open(sbc.rootpath+sbc.bs.FITSpath+f"FIT{rec_file}.pkl",'rb') as f:
 		rec_samps = pickle.load(f)['df']
 
 	#Plot SBC

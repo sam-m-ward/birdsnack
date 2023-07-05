@@ -1,10 +1,10 @@
 import matplotlib.pyplot as pl
 import numpy as np
-import sys, yaml
+import yaml
 
-path_to_rootpath = './'
-path_to_birdsnack_rootpath = '../'
-
+path_to_rootpath = '../'
+path_to_birdsnack_rootpath = '../../'
+import sys
 sys.path.append(path_to_birdsnack_rootpath+'sbc/model_files/')
 from SBC import *
 from sbc_plot_functions import update_edit_dict_for_ppc
@@ -35,7 +35,7 @@ if __name__ == "__main__":
 		#Get Posterior Median Hyperparameters from this file
 		edit_dict = {   'load_parameters':{'path_to_rootpath':path_to_rootpath,'path_to_birdsnack_rootpath':path_to_birdsnack_rootpath},
 						'simulate_parameters':{'Nsims':100,'pre_defined_hyps':{'load_file':file}}}
-		with open('ppc.yaml') as f:
+		with open(f"{path_to_rootpath}ppc.yaml") as f:
 			sbc_choices = yaml.load(f, Loader=yaml.FullLoader)
 
 		#Get Edit Dictionary for Posterior Predictive Simulations
