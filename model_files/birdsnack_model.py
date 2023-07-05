@@ -81,11 +81,14 @@ class BIRDSNACK:
 
 		#Make edits to config.yaml choices
 		for glob_key in edit_dict:
-			for key,value in edit_dict[glob_key].items():
-				if type(self.choices[glob_key][key])==dict:
-					self.choices[glob_key][key] = {**self.choices[glob_key][key],**value}
-				else:
-					self.choices[glob_key][key] = value
+			if glob_key=='rootpath':
+				self.choices[glob_key] = edit_dict[glob_key]
+			else:
+				for key,value in edit_dict[glob_key].items():
+					if type(self.choices[glob_key][key])==dict:
+						self.choices[glob_key][key] = {**self.choices[glob_key][key],**value}
+					else:
+						self.choices[glob_key][key] = value
 
 		#Set Pathnames
 		self.rootpath     = self.choices['rootpath']
