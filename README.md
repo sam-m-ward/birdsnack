@@ -9,6 +9,6 @@ This pipeline uses:
 2) A 2D Gaussian process to interpolate rest-frame photometry to peak time
 3) A hierarchial Bayesian model to constrain population distributions in intrinsic and extrinsic components.
 
-Checkout out **demo_notebook.ipynb** for a quick introduction to how Bird-Snack works.
+Checkout out [**demo_notebook.ipynb**](https://github.com/sam-m-ward/birdsnack/blob/dev/demo_notebook.ipynb) for a quick introduction to how Bird-Snack works.
 
-See also **demo_sbc_ppc.ipynb** for introduction to simulating and fitting fake datasets with Bird-Snack.
+See also [**demo_sbc_ppc.ipynb**](https://github.com/sam-m-ward/birdsnack/blob/dev/demo_sbc_ppc.ipynb) for introduction to simulating and fitting fake datasets with Bird-Snack.
