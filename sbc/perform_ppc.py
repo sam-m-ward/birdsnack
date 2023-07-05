@@ -18,8 +18,7 @@ sys.path.append('model_files/')
 from SBC import *
 import yaml
 from sbc_plot_functions import update_edit_dict_for_ppc
-##########################################################################################
-'''
+
 #PPC Recovery of nuA=1; Applying Gamma dist. to fit Exp-simulated Data
 BIRDSNACK_EDIT_DICT = {'analysis_parameters':
 						{'HBM_savekey':'PPC_CensoredCut1.0_ExpFitGamma',
@@ -28,45 +27,8 @@ BIRDSNACK_EDIT_DICT = {'analysis_parameters':
 
 #Choices for simulating data based on previous stan fit with BirdSnack
 edit_dict = {'simulate_parameters':{'Nsims':20,'S':250,'pre_defined_hyps':{'load_file':'AVExp_Cens1.0'}}}
-#'''
-##########################################################################################
-#'''
-#For CensoredData Simulations
-BIRDSNACK_EDIT_DICT = {'analysis_parameters':
-						{'HBM_savekey':'PPC_muRV2.5sigRV0.1tauA0.5_LowBVNoCens',
-						'CensoredData':True,'CensoredCut':0.3,
-						'AVprior':'Exp','n_warmup':1000,'n_sampling':2000,'n_thin':1000}}
-#BIRDSNACK_EDIT_DICT = {'analysis_parameters':
-#						{'HBM_savekey':'PPC_muRV2.5sigRV0.1tauA0.5_WithCensoredData',
-#						'CensoredData':True,'CensoredCut':'inf',
-#						'AVprior':'Exp','n_warmup':1000,'n_sampling':2000,'n_thin':1000}}
-#edit_dict = {'simulate_parameters':{'Nsims':100,'S':100,'tauA':0.5,'muRV':2.5,'sigRV':0.5,'PredefinedExtrinsicHyps':False,
-#			'pre_defined_hyps':{'load_file':'AVExp_Cens1.0'}}}
-edit_dict = {'simulate_parameters':{'Nsims':100,'S':100,'tauA':0.5,'muRV':2.5,'sigRV':0.1,'PredefinedExtrinsicHyps':False,
-			'pre_defined_hyps':{'load_file':'AVExp_Cens1.0'}}}
-#'''
-##########################################################################################
-'''
-#For X-H Sims (X-H model applied to Deviations-simulated SNe)
-BIRDSNACK_EDIT_DICT = {'analysis_parameters':
-						{'HBM_savekey':'PPC_CensoredCut1.0_DevFitXH',
-						'CensoredData':True,'CensoredCut':1.0,
-						'IntrinsicModel':'X-H','DataTransformation' : 'X-H','n_warmup':1000,'n_sampling':2000,'n_thin':1000}}
 
-#Choices for simulating data based on previous stan fit with BirdSnack
-edit_dict = {'simulate_parameters':{'Nsims':20,'pre_defined_hyps':{'load_file':'AVExp_Cens1.0'}}}
-#edit_dict = {'simulate_parameters':{'Nsims':20,'S':250,'pre_defined_hyps':{'load_file':'AVExp_Cens1.0'}}}
-#'''
-##########################################################################################
-'''
-#For N=250 Simulations muRV sigRV recovery
 
-BIRDSNACK_EDIT_DICT = {'analysis_parameters':
-						{'HBM_savekey':'PPC_LowBVwCens_DevFitDev',
-						'CensoredData':True,'n_warmup':1000,'n_sampling':2000,'n_thin':1000}}
-edit_dict = {'simulate_parameters':{'Nsims':100,'S':250,'pre_defined_hyps':{'load_file':'AVExp_Cens1.0'}}}
-'''
-##########################################################################################
 #Directory to periodically_delete stan build, conserve memory
 stan_build_dir      = '/Users/samward/Library/Caches/httpstan/'
 periodically_delete = 3
