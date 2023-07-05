@@ -8,8 +8,10 @@ Simple script that uses SBC fits to:
 Written by Sam M. Ward: smw92@cam.ac.uk
 """
 
+path_to_rootpath = '../'
+path_to_birdsnack_rootpath = '../../'
 import sys
-sys.path.append('model_files/')
+sys.path.append(path_to_birdsnack_rootpath+'sbc/model_files/')
 from SBC import *
 from sbc_plot_functions import *
 
@@ -35,14 +37,16 @@ BIRDSNACK_EDIT_DICT = {'analysis_parameters':
 						'CensoredData':True,'CensoredCut':1.0,
 						'IntrinsicModel':'X-H','DataTransformation' : 'X-H'}}
 
+path_dict = {'load_parameters':{'path_to_rootpath':path_to_rootpath,'path_to_birdsnack_rootpath':path_to_birdsnack_rootpath}}
 #Choices for simulating data based on previous stan fit with BirdSnack
-edit_dict1 = {'simulate_parameters':{'Nsims':20,'S':250,'pre_defined_hyps':{'load_file':'AVExp_Cens1.0'}}}
-edit_dict2 = {'simulate_parameters':{'Nsims':20,        'pre_defined_hyps':{'load_file':'AVExp_Cens1.0'}}}
+edit_dict1 = {**{'simulate_parameters':{'Nsims':20,'S':250,'pre_defined_hyps':{'load_file':'AVExp_Cens1.0'}}},**path_dict}
+edit_dict2 = {**{'simulate_parameters':{'Nsims':20,        'pre_defined_hyps':{'load_file':'AVExp_Cens1.0'}}},**path_dict}
 editdicts = dict(zip([250,65],[edit_dict1,edit_dict2]))
+
 
 if __name__ == "__main__":
 	print (f"Plotting PPC of X-H Model applied to Deviations-Simulated Data for {plot_par};")
-	with open('ppc.yaml') as f:
+	with open(f"{path_to_rootpath}ppc.yaml") as f:
 		sbc_choices = yaml.load(f, Loader=yaml.FullLoader)
 
 	GLOB_FITS = {}
@@ -71,8 +75,8 @@ if __name__ == "__main__":
 	#Real Data Fit Samples
 	XH_noLCfile = f"XHCols_Cens1.0"
 	XH_wLCfile  = f"XHCols_wLCshape_Cens1.0"
-	with open(sbc.bs.FITSpath+f"FIT{XH_noLCfile}.pkl",'rb') as f:	XH_noLC = pickle.load(f)['df'][dfpars[plot_par]]
-	with open(sbc.bs.FITSpath+f"FIT{XH_wLCfile}.pkl",'rb') as f:	XH_wLC  = pickle.load(f)['df'][dfpars[plot_par]]
+	with open(sbc.rootpath+sbc.bs.FITSpath+f"FIT{XH_noLCfile}.pkl",'rb') as f:	XH_noLC = pickle.load(f)['df'][dfpars[plot_par]]
+	with open(sbc.rootpath+sbc.bs.FITSpath+f"FIT{XH_wLCfile}.pkl",'rb') as f:	XH_wLC  = pickle.load(f)['df'][dfpars[plot_par]]
 	#Plot real data fits
 	import sys
 	sys.path.append(sbc.path_to_birdsnack_rootpath+'model_files/')
