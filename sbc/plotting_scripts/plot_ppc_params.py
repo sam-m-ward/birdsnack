@@ -33,7 +33,7 @@ rec_file = 'AVExp_Cens1.0'#FILE USED FOR SIMULATING; FIT TO REAL DATA
 #Choices for applying HBM to simulated data
 BIRDSNACK_EDIT_DICT = {'analysis_parameters':
 						{'HBM_savekey':'PPC_LowBVwCens_DevFitDev',
-						'HBM_savekey':'PPC_CensoredCut1.0_DevFitXH',
+						#'HBM_savekey':'PPC_CensoredCut1.0_DevFitXH',
 						'CensoredData':True}}
 
 edit_dict = {'simulate_parameters':{'S':250,'pre_defined_hyps':{'load_file':'AVExp_Cens1.0'}}}
