@@ -23,7 +23,7 @@ CYCLE_DICT_CensoredData = {
 
 				'AVExp'                 :       {    'newdict': {'AVprior':'Exp'},
 													 'label':'$A^s_V \sim \\rm{Exp}(\\tau_A)$'},
-				'AVGamma'               :       {    'newdict': {'AVprior':'Gamma','n_sampling':15000,'n_warmup':2000},
+				'AVGamma'               :       {    'newdict': {'AVprior':'Gamma','n_sampling':12000},
 													 'label':'$A_V^s \sim $ Gamma$(\\nu_A,\\tau_A)$'},
 				###############
 				#'uBVriJH'				:		{	 'newdict':{'DF_savekey':'uBVriJH','pblist':[s for s in 'uBVriJH'],'lam_choice':'central'},
