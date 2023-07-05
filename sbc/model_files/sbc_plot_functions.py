@@ -321,6 +321,11 @@ def update_edit_dict_for_ppc(sbc_choices, edit_dict):
 	edit_dict : dict
 		edited to have all important data to perform ppc
 	"""
+	#Firstly Update Paths
+	if 'load_parameters' in edit_dict:
+		for key,value in edit_dict['load_parameters'].items():
+			sbc_choices['load_parameters'][key] = value
+
 	#Candidates are ppc values, additional is the stuff that actually gets used
 	candidates={} ; additional = {}
 	#Open original BirdSnack fit to real data
