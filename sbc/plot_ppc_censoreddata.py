@@ -26,7 +26,7 @@ args = parser.parse_args().__dict__
 plot_par  = args['plot_par']
 parnames,dfpars,parlabels = get_pars()
 
-Nsim_keep = 100
+Nsim_keep = 10#0
 Rhat_threshold = 1.1
 #Choices for applying HBM to simulated data
 BIRDSNACK_EDIT_DICT1 = {'analysis_parameters':
@@ -70,10 +70,10 @@ if __name__ == "__main__":
 		Lside   = False#True if include_cens and plot_par=='tauA' else False
 		FITS    = GLOB_FITS[include_cens]
 		plotter = SBC_FITS_PLOTTER(iax,fig.axes,[true_plot_par,plot_par,dfpars[plot_par],parlabels[plot_par]],FITS,sbc.bs.choices['analysis_parameters'],sbc.path_to_birdsnack_rootpath,quantilemode=args['quantilemode'])
-		plotter.plot_sbc_panel(annotate_true=False,color={0:'C0',1:'indigo'}[iax],Lside=Lside,FAC=int(Nsim_keep/8))
+		plotter.plot_sbc_panel(annotate_true=False,color={0:'C0',1:'indigo'}[iax],Lside=Lside,FAC=100)
 		if include_cens:
-			fig.axes[iax].annotate(f'Include Censored Data',xy=(0.95-(0.95-0.0225)*Lside,0.5+0.02),xycoords='axes fraction',fontsize=plotter.FS,ha={True:'left',False:'right'}[Lside],weight='bold')
-
+			fig.axes[iax].annotate(f'Include Censored Data',xy=(0.95-(0.95-0.0225)*Lside,0.52-0.13/2+0.13/3*(iax==1)),xycoords='axes fraction',fontsize=plotter.FS,ha={True:'left',False:'right'}[Lside],weight='bold')
+		fig.axes[iax].annotate(r'$A_V^s \sim\,$Exp$(\tau_A)$'+'\n'+r'$|B-V|<0.3\,$mag',xy=(0.95-(0.95-0.0225)*Lside,0.52+0.13/3*(iax==1)),xycoords='axes fraction',fontsize=plotter.FS,ha={True:'left',False:'right'}[Lside])
 
 	fig.axes[-1].set_xlabel(r'$%s$'%parlabels[plot_par]+' (mag)'*(plot_par=='tauA'),fontsize=plotter.FS)
 	fig.axes[0].set_ylabel('Posterior Densities',fontsize=plotter.FS,color='white')#For spacing
