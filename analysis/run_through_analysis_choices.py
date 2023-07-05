@@ -9,19 +9,11 @@ parser = argparse.ArgumentParser(description="BirdSnack Analysis Cycle Script")
 parser.add_argument("--mode",default='Science',help='Options are Science,CensoredData')
 MODE   = parser.parse_args().mode
 CYCLE_DICT = dict(zip(['Science','CensoredData'],[CYCLE_DICT_Science,CYCLE_DICT_CensoredData]))[MODE]
-
-###############
-#FOR LOW RVs Analysis
-#CYCLE_DICT['COMMON_CHANGES']['newdict'] = {**CYCLE_DICT['COMMON_CHANGES']['newdict'],**{'extra_drop_SNe':{sn:'Low RVs' for sn in ['2009ds','16abc']}}}
-#CYCLE_DICT['COMMON_CHANGES']['HBMappender'] = 'LowRVs_Cens1.0'
 ###############
 #FOR Cens_inf Analysis
-CYCLE_DICT['COMMON_CHANGES']['newdict'] = {**CYCLE_DICT['COMMON_CHANGES']['newdict'],**{'CensoredCut':'inf'}}
-CYCLE_DICT['COMMON_CHANGES']['HBMappender'] = 'CensInf'
+#CYCLE_DICT['COMMON_CHANGES']['newdict'] = {**CYCLE_DICT['COMMON_CHANGES']['newdict'],**{'CensoredCut':'inf'}}
+#CYCLE_DICT['COMMON_CHANGES']['HBMappender'] = 'CensInf'
 ###############
-#CYCLE_DICT['RUNS'] = {key:value for key,value in CYCLE_DICT['RUNS'].items() if key in ['AdjCols','BXCols','XHCols']}
-#CYCLE_DICT['RUNS'] = {key:value for key,value in CYCLE_DICT['RUNS'].items() if key in ['AVExp','AVGamma']}
-CYCLE_DICT['RUNS'] = {key:value for key,value in CYCLE_DICT['RUNS'].items() if key in ['AVGamma']}
 
 #Load up light curves of fiducial sample of SNe, and metadata
 dataloader = LOAD_DATA()
