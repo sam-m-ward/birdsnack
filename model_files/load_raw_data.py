@@ -84,7 +84,7 @@ class LOAD_DATA:
         if 'rootpath' in self.__dict__:
             self.rootpath += self.choices['rootpath']
         else:
-            self.rootpath += self.choices['rootpath']
+            self.rootpath = self.choices['rootpath']
         self.analysispath = self.rootpath+'analysis/'
         self.datapath     = self.rootpath+'data/'
         self.productpath  = self.rootpath+'products/'
