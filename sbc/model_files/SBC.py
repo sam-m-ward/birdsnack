@@ -266,7 +266,7 @@ class SBC_CLASS:
 		#Initialise Bird-Snack Model
 		sys.path.append(f"{self.path_to_birdsnack_rootpath}model_files/")
 		from birdsnack_model import BIRDSNACK
-		bs      = BIRDSNACK(configname=f"{self.birdsnack_yaml}.yaml",edit_dict=edit_dict)
+		bs      = BIRDSNACK(configname=f"{self.rootpath}{self.birdsnack_yaml}.yaml",edit_dict=edit_dict)
 		pblist  = bs.choices['preproc_parameters']['pblist']
 		errstr  = bs.choices['preproc_parameters']['errstr']
 		tref    = bs.choices['preproc_parameters']['tilist'][bs.choices['preproc_parameters']['tref_index']]
@@ -323,8 +323,7 @@ class SBC_CLASS:
 		#Initialise Bird-Snack Model
 		sys.path.append(f"{self.path_to_birdsnack_rootpath}model_files/")
 		from birdsnack_model import BIRDSNACK
-		bs = BIRDSNACK(configname=f"{self.birdsnack_yaml}.yaml",edit_dict=edit_dict)
-
+		bs = BIRDSNACK(configname=f"{self.rootpath}{self.birdsnack_yaml}.yaml",edit_dict=edit_dict)
 		#Load FITS
 		FITS = {}
 		for ISIM,truths in TRUTHS_DICT.items():
