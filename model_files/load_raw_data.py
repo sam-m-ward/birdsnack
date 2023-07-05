@@ -51,7 +51,7 @@ class LOAD_DATA:
     	loads up SN metadata, such as eg host masses, spectroscopic classification, using data compiled from literature
 	"""
 
-    def __init__(self,configname='loader_config.yaml',load_all_SNSsnpy=False):
+    def __init__(self,configname='loader_config.yaml',load_all_SNSsnpy=False,rootpath=None):
         """
         Initialisation
 
@@ -69,15 +69,22 @@ class LOAD_DATA:
         load_all_SNSsnpy : bool (optional; default=True)
             if True, automatically loads up txt files into snpy when class is called (saves on time complexity as this only needs to be done once)
         """
-        #Set Configname
-        self.configname   = configname
+        #Set Configname (plus rootpath if pre-defined)
+        if rootpath is not None:
+            self.rootpath     = rootpath
+            self.configname   = self.rootpath+configname
+        else:
+            self.configname   = configname
 
         #Load up config.yaml choices
         with open(self.configname) as f:
             self.choices = yaml.load(f, Loader=yaml.FullLoader)
 
         #Set Pathname
-        self.rootpath     = self.choices['rootpath']
+        if 'rootpath' in self.__dict__:
+            self.rootpath += self.choices['rootpath']
+        else:
+            self.rootpath += self.choices['rootpath']
         self.analysispath = self.rootpath+'analysis/'
         self.datapath     = self.rootpath+'data/'
         self.productpath  = self.rootpath+'products/'
