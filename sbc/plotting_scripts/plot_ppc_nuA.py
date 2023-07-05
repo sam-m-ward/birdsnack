@@ -8,8 +8,10 @@ Simple script that uses SBC fits to:
 Written by Sam M. Ward: smw92@cam.ac.uk
 """
 
+path_to_rootpath = '../'
+path_to_birdsnack_rootpath = '../../'
 import sys
-sys.path.append('model_files/')
+sys.path.append(path_to_birdsnack_rootpath+'sbc/model_files/')
 from SBC import *
 from sbc_plot_functions import *
 import argparse,yaml
@@ -40,16 +42,19 @@ BIRDSNACK_EDIT_DICT = {'analysis_parameters':
 						'CensoredData':True,'CensoredCut':1.0,
 						'AVprior':'Gamma','n_warmup':1000,'n_sampling':2000,'n_thin':1000}}
 
+path_dict = {'load_parameters':{'path_to_rootpath':path_to_rootpath,'path_to_birdsnack_rootpath':path_to_birdsnack_rootpath}}
+
 if __name__ == "__main__":
 	print (f"Plotting PPC of {loop_par_dict};")
-	with open('ppc.yaml') as f:
+	with open(f"{path_to_rootpath}ppc.yaml") as f:
 		sbc_choices = yaml.load(f, Loader=yaml.FullLoader)
 
 	GLOB_FITS = {}
 	for parvalue in loop_par_dict[loop_par]:
 		#Upload these fits
 		additional = {loop_par:parvalue,'pre_defined_hyps':{'load_file':load_file}}
-		edit_dict  = update_edit_dict_for_ppc(sbc_choices,{'simulate_parameters':additional})
+		edit_dict  = {**{'simulate_parameters':additional},**path_dict}
+		edit_dict  = update_edit_dict_for_ppc(sbc_choices,edit_dict)
 		#Get SBC_CLASS
 		sbc  = SBC_CLASS(sbc_choices,edit_dict)
 		#Get FITS
@@ -60,7 +65,7 @@ if __name__ == "__main__":
 		GLOB_FITS[parvalue] = FITS
 
 	#Real Data Fit Samples
-	with open(sbc.bs.FITSpath+f"FIT{rec_file}.pkl",'rb') as f:
+	with open(sbc.rootpath+sbc.bs.FITSpath+f"FIT{rec_file}.pkl",'rb') as f:
 		rec_samps = pickle.load(f)['df'][dfpars[plot_par]]
 
 	#Plot SBC
