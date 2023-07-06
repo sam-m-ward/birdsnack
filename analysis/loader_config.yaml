@@ -181,6 +181,9 @@ additional_cut_parameters:
   #BVcut     : True
   BVcut     : False
 
+  #BVcutval : 1.0
+  BVcutval : 0.3
+
   #magerrcut   : False
   magerrcut   : 0.3
 

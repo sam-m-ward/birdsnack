@@ -1,11 +1,6 @@
 ########################################################
 #Path to root directory relative to where analysis script is executed from
 rootpath : '../'
-
-#Parameters for loading up data from raw snpytxtfiles
-load_data_parameters :
-  GLOBAL_ANALYSIS_KEY  : ''
-
 ########################################################
 preproc_parameters:
   #key for saving/loading peak mags
@@ -21,6 +16,10 @@ preproc_parameters:
 
   #Arbitrary choice of string for denoting errors in mags pandas df
   errstr     : err
+
+additional_cut_parameters:
+  #Where BVcut is made, here only used if Censoring data in sims
+  BVcutval : 0.3
 
 analysis_parameters:
   #key for saving/loading posterior samples
