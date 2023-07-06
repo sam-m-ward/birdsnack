@@ -203,10 +203,10 @@ def get_Lines(choices, NSNe, NCens, posterior=True):
 		elif mwmode is None or mwmode=='None':
 			return 'No Milky Way Extinction Correction'
 
-	def BVcut_map(BVbool,CensoredData):
+	def BVcut_map(BVbool,CensoredData,BVcutval):
 		if CensoredData:
 			BVbool = True
-		return {True:r'$|B-V|<0.3\,\rm{mag}$ Cut', False:r'No $B-V$ Cut'}[BVbool]
+		return {True:r'$|B-V|<%s\,\rm{mag}$ Cut'%BVcutval, False:r'No $B-V$ Cut'}[BVbool]
 
 	MissingDataMap = {True:'With', False:'Without'}
 	def inflate_fac_mapper(inflate_fac):
@@ -285,7 +285,7 @@ def get_Lines(choices, NSNe, NCens, posterior=True):
 			f"Extract {colour_choice_mapper(choices['DataTransformation'])}:${''.join(choices['pblist'])}$"					,
 			f"Mag. Errors <{choices['magerrcut']} mag"     				    ,
 			mass_mode_map[choices['mass_mode']]								,
-			BVcut_map(choices['BVcut'],choices['CensoredData'])										,
+			BVcut_map(choices['BVcut'],choices['CensoredData'],choices['BVcutval'])										,
 			#get_SED_model_string(choices['IntrinsicModel'])						,
 			get_LC_shape_string(choices['include_LCshape'])					,
 			#get_lambda_string(choices['lam_choice'])					    ,
@@ -302,7 +302,7 @@ def get_Lines(choices, NSNe, NCens, posterior=True):
 	if not choices['include_LCshape']:
 		Lines.remove(get_LC_shape_string(choices['include_LCshape']))
 	if not posterior:
-		Lines.remove(BVcut_map(choices['BVcut'],choices['CensoredData']))
+		Lines.remove(BVcut_map(choices['BVcut'],choices['CensoredData'],choices['BVcutval']))
 		Lines.remove(get_AVs_prior_string(choices['AVprior']))
 	if not choices['CensoredData'] or NCens==-1:
 		Lines.remove(get_CensoredSNe_string(choices['CensoredData']))

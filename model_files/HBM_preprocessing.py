@@ -135,6 +135,7 @@ class HBM_preprocessor:
 		self.SC = 0
 		self.RetainedSNe = list(DF_M[0].index)
 		self.BVerrs_Cens = np.array([])
+		self.BVcutval    = self.choices['additional_cut_parameters']['BVcutval']
 
 		if self.choices['analysis_parameters']['CensoredData']:
 			CensoredCut = self.choices['analysis_parameters']['CensoredCut']
@@ -147,8 +148,8 @@ class HBM_preprocessor:
 			DF_M[0]['BV']          =  DF_M[0]['B']-DF_M[0]['V']
 			DF_M[0][f'BV{errstr}'] = (DF_M[0][f'B{errstr}']**2+DF_M[0][f'V{errstr}']**2)**0.5
 
-			RetainedSNe = list(DF_M[0][DF_M[0]['BV'].abs()<0.3].index)
-			CensoredSNe = list(DF_M[0][(DF_M[0]['BV'].abs()>=0.3) & (DF_M[0]['BV'].abs()<CensoredCut)].index)
+			RetainedSNe = list(DF_M[0][DF_M[0]['BV'].abs()<BVcutval].index)
+			CensoredSNe = list(DF_M[0][(DF_M[0]['BV'].abs()>=BVcutval) & (DF_M[0]['BV'].abs()<CensoredCut)].index)
 			ExcludedSNe = list(DF_M[0][DF_M[0]['BV'].abs()>=CensoredCut].index)
 			BVerrs_Cens = DF_M[0].loc[CensoredSNe][f"BV{errstr}"].values
 

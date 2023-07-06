@@ -647,8 +647,8 @@ class BIRDSNACK:
 
 		#Apply B-V<0.3 mag cosmology cut
 		if choices['BVcut']:
-			print ("###"*5+"\nApplying B-V<0.3 mag cut")
-			DF_M[0] = DF_M[0][(DF_M[0]['B']-DF_M[0]['V']).abs()<0.3]
+			print ("###"*5+"\n"+r"Applying B-V<%s mag cut"%choices['BVcutval'])
+			DF_M[0] = DF_M[0][(DF_M[0]['B']-DF_M[0]['V']).abs()<choices['BVcutval']]
 			DF_M = trim_to_common_SNS(DF_M)
 
 		#Apply host galaxy stellar mass cut
@@ -721,10 +721,11 @@ class BIRDSNACK:
 		stan_data['S']  = modelloader.S
 		stan_data['SC'] = modelloader.SC
 		stan_data['BVerrs_Cens'] = modelloader.BVerrs_Cens
+		stan_data['BVcutval']    = modelloader.BVcutval
 		if self.choices['analysis_parameters']['CensoredData']:
 			print (f"Incorporating censored data: Fitting {stan_data['S']-stan_data['SC']} SNe and {stan_data['SC']} Censored SNe")
 			print (f"Censored SNe are: {modelloader.CensoredSNe}")
-			print (f"These have 0.3<=B-V<{self.choices['analysis_parameters']['CensoredCut']}")
+			print (f"These have %s<=B-V<{self.choices['additional_cut_parameters']['BVcutval'],self.choices['analysis_parameters']['CensoredCut']}")
 			print (f"Completely Excluded SNe are: {modelloader.ExcludedSNe}")
 
 		#Incorporate LC shape data measurements
@@ -889,6 +890,7 @@ class BIRDSNACK:
 		errstr      = self.choices['preproc_parameters']['errstr']
 		tref        = self.choices['preproc_parameters']['tilist'][self.choices['preproc_parameters']['tref_index']]
 		logMcut     = self.choices['additional_cut_parameters']['logMcut']
+		BVcutval    = self.chocies['additional_cut_parameters']['BVcutval']
 		FS          = self.choices['plotting_parameters']['FS']
 		Nm          = len(pblist)
 		linestyles  = ['-',':','-.','--']
@@ -908,7 +910,7 @@ class BIRDSNACK:
 			mean_mag_err = (sum(magerrs[s*Nm:(s+1)*Nm]**2)**0.5)/Nm
 			vec_err      = (np.array([magerrs[s*Nm+_]**2 for _ in range(Nm)])+mean_mag_err**2)**0.5
 			for _ in range(Nm):
-				pl.errorbar(l_eff_rest[_]+DL,vec[_],c=colour,linestyle='None',marker={True:'o',False:'x'}[mags[s*Nm+Bind]-mags[s*Nm+Vind]<0.3],alpha=0.45,capsize=2)
+				pl.errorbar(l_eff_rest[_]+DL,vec[_],c=colour,linestyle='None',marker={True:'o',False:'x'}[mags[s*Nm+Bind]-mags[s*Nm+Vind]<BVcutval],alpha=0.45,capsize=2)
 				if s==0:	pl.annotate(pblist[_],xy=(l_eff_rest[_]-200,0.79),weight='bold',fontsize=FS+4)
 			pl.plot(l_eff_rest+DL,vec,c='black',linestyle='-',alpha=0.05)
 		#Plot RV lines
@@ -923,7 +925,7 @@ class BIRDSNACK:
 		try: pl.scatter(1000,0,c=get_mass_label(None,self.choices)[0],alpha=0.45,label='N/A')
 		except: NCOL += -1
 		pl.annotate(
-			r"      $|B-V|<0.3\,$mag        High Reddening  ",xy=(0.025, 0.05),xycoords="axes fraction",fontsize=FS-2,
+			r"      $|B-V|<%s\,$mag        High Reddening  "%BVcutval,xy=(0.025, 0.05),xycoords="axes fraction",fontsize=FS-2,
 			bbox=dict(boxstyle="round",alpha=0.25,facecolor = "white",edgecolor = "grey"))
 		#Plot high-reddening legend
 		pl.errorbar(4300,-0.7775,c='black',marker='o',alpha=0.45)
@@ -979,7 +981,7 @@ class BIRDSNACK:
 				#Initialisations
 				Cmeans = {}
 				dfBV        = (DF_M[ti]['B']-DF_M[ti]['V']).dropna().copy().values
-				highBVbools = [not BV<0.3 for BV in dfBV]
+				highBVbools = [not BV<self.choices['additional_cut_parameters']['BVcutval'] for BV in dfBV]
 				for iax,col in enumerate(col_list):
 					parname     = parnames[iax]
 					df          = DF_M[ti].dropna().copy()
@@ -1035,7 +1037,7 @@ class BIRDSNACK:
 									ax[iy,ix].errorbar(cc1,cc2,xerr=c1e,yerr=c2e,color=ccc,marker={False:'o',True:'s'}[highBVbool],capsize=0,alpha={False:0.09,True:0.45}[highBVbool],markersize=6,linestyle='none',label='High Reddening')
 									hibool = False
 								if not highBVbool and lobool and iy==1 and ix==0 and not hibool:
-									ax[iy,ix].errorbar(cc1,cc2,xerr=c1e,yerr=c2e,color=ccc,marker={False:'o',True:'s'}[highBVbool],capsize=0,alpha={False:0.09,True:0.45}[highBVbool],markersize=6,linestyle='none',label=r'$|B-V|<0.3\,$mag')
+									ax[iy,ix].errorbar(cc1,cc2,xerr=c1e,yerr=c2e,color=ccc,marker={False:'o',True:'s'}[highBVbool],capsize=0,alpha={False:0.09,True:0.45}[highBVbool],markersize=6,linestyle='none',label=r'$|B-V|<%s\,$mag'%self.choices['additional_cut_parameters']['BVcutval'])
 									lobool = False
 							else:
 								if highmass and highmassbool and iy==2 and ix==0 and highBVbool:
