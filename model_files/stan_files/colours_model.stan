@@ -22,6 +22,8 @@ data {
 	real gamma_shape;              //If 1, include LC shape term, if 0, exclude LC shape term
 	real gamma_res;                //If 1, include intrinsic colour residuals, if 0, exclude residuals
 
+	real BVcutval;								 //The upper BV value used for cutting sample, default is often 0.3~mag, this value only matters when SC>0
+
 	matrix[Nc,Nc] CC;              //Matrix to transform from 1 set of reference colours to another
 	matrix[Nc,Nc] CC_to_adj;       //Matrix to transform from 1 set of reference colours to another
 }
@@ -40,8 +42,8 @@ transformed data {
 
 parameters {
 	//Parameters
-	vector[Nc*SC] eta_cint_Cens;                       //Re-parameterised residual intrinsic deviations of Censored SNe (only BV saves on No. of parameters)
-	vector<lower=0.3>[SC] BVs_Cens;                   //The censored data which have B-V>0.3
+	vector[Nc*SC] eta_cint_Cens;                      //Re-parameterised residual intrinsic deviations of Censored SNe (only BV saves on No. of parameters)
+	vector<lower=BVcutval>[SC] BVs_Cens;              //The censored data which have B-V>0.3
 	vector<lower=0>[S] AVs;                           //Dust extinction parameters
 	//Re-parameterised Dust Parameters
 	vector<lower=0,upper=1>[S] nuRVs;                 //Re-parameterised Individual Dust-Law Shape Parameters
