@@ -111,7 +111,7 @@ def get_parlabels(choices,default=False,return_parnames_only=False):
 			pars.extend([f'muRV.{n}',f'sigRV.{n}'])
 			parnames.extend([f'mu_RV.{n}',f'sig_RV.{n}'])
 			if N_GaussRV_dists==1:	parlabels.extend(['$\\mu_{R_V}$','$\\sigma_{R_V}$'])
-			else:					parlabels.extend(['$\\mu^{%s}_{R_V}$'%alphabet[n],'$\\sigma^{%s}_{R_V}$'%alphabet[n]])
+			else:					parlabels.extend(['$\\mu^{%s}_{R_V}$'%alphabet[n-1],'$\\sigma^{%s}_{R_V}$'%alphabet[n-1]])
 			bounds.extend([[muRVmin,muRVmax],[0,None]])
 		if AVprior in ['Gamma']:
 			pars.append('nu')
@@ -306,7 +306,7 @@ def get_Lines(choices, NSNe, NCens, posterior=True):
 		for RVstyle in RVstyles:
 			if RVstyle=='Gauss':
 				if Ngauss>1:
-					x = '$\\mathcal{N}(\mu^{%s}_{R_V},\sigma^{%s}_{R_V})$'%(alphabet[counter],alphabet[counter])
+					x = '$\\mathcal{N}(\mu^{%s}_{R_V},\sigma^{%s}_{R_V})$'%(alphabet[counter-1],alphabet[counter-1])
 					counter+=1
 				else:
 					x = '$\\mathcal{N}(\mu_{R_V},\sigma_{R_V})$'
