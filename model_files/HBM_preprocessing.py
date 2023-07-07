@@ -12,6 +12,8 @@ HBM_preprocessor class:
 	Methods are:
 		get_leff_rest()
 		get_dustlaw()
+		get_BV_ordered_DF_M()
+		get_RVbin_data()
 		get_censored_data()
 		get_dm15Bs()
 		get_CM_transformation_matrix(DataTransformation=None, returner=False)
@@ -112,6 +114,97 @@ class HBM_preprocessor:
 			elif IntrinsicModel=='X-H':		#X-H colours
 				dM_fitz_block   = np.array([ M_fitz_block[i,:]-M_fitz_block[-1,:]  for i in range(M_fitz_block.shape[0]-1) ])
 			self.dM_fitz_block = dM_fitz_block
+
+	def get_BV_ordered_DF_M(self):
+		"""
+		Get BV Ordered DF_M
+
+		Method to take DF_M and order rows in increasing B-V colour
+
+		End Product(s)/Returns
+		----------
+		Returns self.DF_M now ordered by B-V colour
+		"""
+		DF_M    = copy.deepcopy(self.DF_M)
+		BVs     = DF_M[0]['B']-DF_M[0]['V']
+		BVs.sort_values(ascending=True,inplace=True)
+		self.BVs = BVs
+		ordered_sns = list(BVs.index)#Order of SNs according to B-V
+
+		#For each pandas df stored in DF_M dictionary
+		for key in self.DF_M:
+			if key not in ['extra','choices']:
+				self.DF_M[key]= self.DF_M[key].loc[ordered_sns]#Re-order
+			if key=='extra':
+				for mini_key in self.DF_M[key]:
+					self.DF_M[key][mini_key] = self.DF_M[key][mini_key].loc[ordered_sns]
+		return self.DF_M
+
+	def get_RVbin_data(self):
+		"""
+		Get RV Bin Data
+
+		Method takes in the B-V Colour Boundaries, and the ordered choices of RV distribution in each bin
+		Then gets data products required to run Stan model fit
+
+		End Product(s)
+		----------
+		self.N_RV_bins : int
+			No. of different bins for different RV distributions
+
+		self.N_GaussRV_dists : int
+		 	No. of these Bins which have a Gaussian RV distribution (and hence No. of sets of muR,sigR hyperparameters)
+
+		self.RV_bin_vec : array
+			vector denoting Bin Number for each SN
+
+		self.RVstyle_per_bin : list
+			list maps string keys for different RV distributions to float values read by Stan
+			'Gauss'->0, 'Flat'->1, 'Fix_?'->2
+
+		self.map_RVBin_to_GaussRVHyp : list
+			for each Bin, either maps to null==-1, or the nth Gaussian RV bin
+
+		self.fixed_RVs : array
+			vector denoting value to fix RV to if required, null=-1
+		"""
+		#Where RVbin info will be collected
+		BINS = pd.DataFrame()
+		#Input Choices
+		BVbinboundaries = self.choices['analysis_parameters']['BVbinboundaries']+[np.inf]
+		RVstyles        = self.choices['analysis_parameters']['RVstyles']
+		BVs             = self.BVs.values
+		#No. of bins, and no. which are Gaussian RV dist.
+		self.N_RV_bins       = int(len(BVbinboundaries))
+		self.N_GaussRV_dists = int(len([x for x in RVstyles if x=='Gauss']))
+		#Divide SNe into bins, ordered by BV colour
+		binbool = [BVs < BVbinboundaries[0]]+[(BVs >= BVbinboundaries[i-1])&(BVs < BVbinboundaries[i]) for i in range(1, len(BVbinboundaries))]
+		BINS['RV_bin_vec'] = np.select(condlist=binbool,choicelist=np.arange(self.N_RV_bins)+1)
+		BINS['Input_RVstyles'] = np.select(condlist=binbool,choicelist=RVstyles)
+		#Get info that will map float labels to specific RV distributions
+		bin_to_style    = dict(zip(np.arange(self.N_RV_bins)+1, [x.split('_')[0] for x in RVstyles]))
+		RVstylemapper   = dict(zip(['Gauss','Flat','Fix'],[0,1,2]))
+		BINS['Stan_RVstyles']   = BINS['RV_bin_vec'].apply(lambda x : bin_to_style[x])
+		BINS['RVstyle_per_bin'] = BINS['Stan_RVstyles'].apply(lambda x : RVstylemapper[x])
+		self.RV_bin_vec      = BINS['RV_bin_vec'].astype(int).values
+		self.RVstyle_per_bin = [RVstylemapper[bin_to_style[x]] for x in BINS['RV_bin_vec'].unique()]
+		#Map Gaussian bins to vector of Gaussian RV hyperparameters
+		map_RVBin_to_GaussRVHyp = [] ; counter = 1
+		for RVstyle in RVstyles:
+			if RVstyle!='Gauss':
+				map_RVBin_to_GaussRVHyp.append(-1)
+			else:
+				map_RVBin_to_GaussRVHyp.append(counter)
+				counter += 1
+		self.map_RVBin_to_GaussRVHyp = map_RVBin_to_GaussRVHyp
+		#Get vector of values where RVs is fixed
+		def get_fixed_RV(col):
+			if 'Fix' in col: return float(col.split('_')[-1])
+			else:	return -1
+		BINS['fixed_RVs'] = BINS['Input_RVstyles'].apply(get_fixed_RV)
+		self.fixed_RVs    = BINS['fixed_RVs'].values
+		#No. of SNe in each Bin
+		self.N_in_each_bin = BINS['RV_bin_vec'].value_counts().sort_index().values
 
 	def get_censored_data(self):
 		"""
@@ -352,7 +445,7 @@ class HBM_preprocessor:
 		Returns
 		----------
 		stan_init : dict
-		 	dictionary of initialisations
+			dictionary of initialisations
 		"""
 		n_chains = self.choices['analysis_parameters']['n_chains']
 		if self.choices['analysis_parameters']['IntrinsicModel']=='Deviations':
@@ -388,9 +481,8 @@ class HBM_preprocessor:
 		assert(len(stan_data['dm15B_errs'])==stan_data['S'])
 		assert(len(stan_data['BVerrs_Cens'])==stan_data['SC'])
 
-		with suppress(KeyError):
-			if self.choices['analysis_parameters']['skew_RV']:
-				assert(self.choices['analysis_parameters']['RVprior']=='Norm')
+		if 'skew_RV' in self.choices['analysis_parameters'] and self.choices['analysis_parameters']['skew_RV']:
+			assert(self.choices['analysis_parameters']['RVprior']=='Norm')
 
 		DataTransformation = self.choices['analysis_parameters']['DataTransformation']
 		IntrinsicModel     = self.choices['analysis_parameters']['IntrinsicModel']
@@ -437,7 +529,9 @@ class HBM_preprocessor:
 			if self.choices['analysis_parameters']['DataTransformation']=='mags':
 				print ("Applying Intrinsic Deviations Model to fit Apparent Magnitudes Data") #stan_file = f"{stanpath}deviations_model_fit_mags_Dirichletmuint.stan"
 				if use_full_stan_file:	stan_file = f"{stanpath}deviations_model_fit_mags_Gaussianmuintref_Full.stan"
-				else:					stan_file = f"{stanpath}deviations_model_fit_mags_Gaussianmuintref.stan"
+				elif 'BinnedRVFit' in self.choices['analysis_parameters'] and self.choices['analysis_parameters']['BinnedRVFit']:
+						stan_file = f"{stanpath}deviations_model_fit_mags_Gaussianmuintref_RVBins.stan"
+				else:	stan_file = f"{stanpath}deviations_model_fit_mags_Gaussianmuintref.stan"
 			else:
 				print (f"Applying Intrinsic Deviations Model to fit {self.choices['analysis_parameters']['DataTransformation']} Colours Data")
 				stan_file = f"{stanpath}deviations_model_fit_colours_Gaussianmuintref.stan"
