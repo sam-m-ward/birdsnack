@@ -555,7 +555,7 @@ class PARAMETER:
 			for ic,CONF in enumerate([0.68,0.95]):
 				storeinfo[CONF] = self.dfchain.par.quantile(CONF)
 
-				if xmode>0.5*(len(xgrid)-1):#If peaks at RHS
+				if imode>0.5*(len(xgrid)-1):#If peaks at RHS
 					CONF = 1-CONF
 					lg = '>'
 					irange = [None,len(xgrid)]
@@ -569,9 +569,9 @@ class PARAMETER:
 				ax[row,row].plot(np.ones(2)*x_conf,[0,KDE_conf],c=colour)
 				ax[row,row].fill_between(xgrid[irange[0]:irange[1]],np.zeros(irange[1]-irange[0]),KDE[irange[0]:irange[1]],color=colour,alpha=alph*(1-0.5*ic)*0.5)#half factor because gets doubled over
 				#For RHS Boundary
-				if irange[-1]==len(xgrid): ax[row,row].annotate(str(int(CONF*100))+str("%"),xy=(x_conf+(xgrid[1]-xgrid[0])*100,KDE_conf+0.08*KDEmode),color=colour,fontsize=FS+1,weight='bold',ha='right')
+				if irange[-1]==len(xgrid): ax[row,row].annotate(str(int(round(CONF*100,0)))+str("%"),xy=(x_conf+(xgrid[-1]-xgrid[0])*0.1,KDE_conf+0.08*KDEmode),color=colour,fontsize=FS+1,weight='bold',ha='right')
 				#For LHS Boundary
-				elif irange[0]==0:         ax[row,row].annotate(str(int(CONF*100))+str("%"),xy=(x_conf,KDE_conf),color=colour,fontsize=FS+1,weight='bold')
+				elif irange[0]==0:         ax[row,row].annotate(str(int(round(CONF*100,0)))+str("%"),xy=(x_conf,KDE_conf),color=colour,fontsize=FS+1,weight='bold')
 				if not paperstyle:
 					pl.annotate("%s %s"%(parlabel,lg),xy=(0.3  ,y0-delta_y*(row+1)),xycoords='axes fraction',fontsize=FS,color=colour,ha='right')
 					if ic==0: pl.annotate("{:.3f}".format(x_conf),  xy=(0.65 ,y0-delta_y*(row+1)),xycoords='axes fraction',fontsize=FS,color=colour,ha='right')
