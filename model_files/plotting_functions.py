@@ -27,6 +27,7 @@ Written by Sam M. Ward: smw92@cam.ac.uk
 from miscellaneous import ensure_folders_to_file_exist
 import matplotlib.pyplot as pl
 import matplotlib
+import string
 matplotlib.rcParams.update(matplotlib.rcParamsDefault)
 
 class PLOTTER:
@@ -99,13 +100,38 @@ def get_parlabels(choices,default=False,return_parnames_only=False):
 	pars,parnames,parlabels,bounds : lists
 		respectively, parameter names for user, the parameter names in MCMC chains, the parameter labels used in plots, and the prior bounds on parameters
 	'''
+	def get_binned_RV_parlabels(choice):
+		AVprior  = choices['analysis_parameters']['AVprior']
+		muRVmin  = choices['analysis_parameters']['muRVmin']
+		muRVmax  = choices['analysis_parameters']['muRVmax']
+		pars = ['tauA'] ; parnames = ['tauA'] ; parlabels = ['$\\tau_A$'] ; bounds = [[0,None]]
+		N_GaussRV_dists = len([x for x in choices['analysis_parameters']['RVstyles'] if x=='Gauss'])
+		alphabet = list(string.ascii_lowercase)
+		for n in range(1,N_GaussRV_dists+1):
+			pars.extend([f'muRV.{n}',f'sigRV.{n}'])
+			parnames.extend([f'mu_RV.{n}',f'sig_RV.{n}'])
+			if N_GaussRV_dists==1:	parlabels.extend(['$\\mu_{R_V}$','$\\sigma_{R_V}$'])
+			else:					parlabels.extend(['$\\mu^{%s}_{R_V}$'%alphabet[n],'$\\sigma^{%s}_{R_V}$'%alphabet[n]])
+			bounds.extend([[muRVmin,muRVmax],[0,None]])
+		if AVprior in ['Gamma']:
+			pars.append('nu')
+			parnames.append('nu')
+			parlabels.append('$\\nu_A$')
+			bounds.append([0,None])
+		return pars,parnames,parlabels,bounds
+
 	#Get parnames,labels,bounds
 	pars       = ['tauA','muRV','sigRV']
 	parnames   = ['tauA','mu_RV','sig_RV']
 	parlabels  = ['$\\tau_A$','$\\mu_{R_V}$','$\\sigma_{R_V}$']
 	bounds     = [ [0,None]  , [1,5], 			[0,None]]
 
-	if not default and choices!={}:
+	proceed=True
+	if 'BinnedRVFit' in choices['analysis_parameters'] and choices['analysis_parameters']['BinnedRVFit']:
+		pars,parnames,parlabels,bounds = get_binned_RV_parlabels(choices)
+		proceed=False
+
+	if not default and choices!={} and proceed:
 		AVprior  = choices['analysis_parameters']['AVprior']
 		muRVmin  = choices['analysis_parameters']['muRVmin']
 		muRVmax  = choices['analysis_parameters']['muRVmax']
@@ -273,6 +299,24 @@ def get_Lines(choices, NSNe, NCens, posterior=True):
 		else:
 			return "No Censored SNe"
 
+	def RVstylemapper(RVstyles):
+		alphabet = list(string.ascii_lowercase)
+		Ngauss = len([x for x in RVstyles if x=='Gauss']) ; counter = 1
+		strlist = []
+		for RVstyle in RVstyles:
+			if RVstyle=='Gauss':
+				if Ngauss>1:
+					x = '$\\mathcal{N}(\mu^{%s}_{R_V},\sigma^{%s}_{R_V})$'%(alphabet[counter],alphabet[counter])
+					counter+=1
+				else:
+					x = '$\\mathcal{N}(\mu_{R_V},\sigma_{R_V})$'
+			elif RVstyle=='Flat':
+				x= r'$U(%s,%s)$'%(choices['flatRVsmin'],choices['flatRVsmax'])
+			elif 'Fix' in RVstyle:
+				x= r'$R_V^*=%s$'%RVstyle.split('_')[-1]
+			strlist.append(x)
+		return strlist
+
 	choices = {key:choices[glob_key][key] for glob_key in choices for key in choices[glob_key] if glob_key!='rootpath'}
 
 	Lines = [
@@ -293,6 +337,12 @@ def get_Lines(choices, NSNe, NCens, posterior=True):
 			get_AVs_prior_string(choices['AVprior'])						#,
 			]
 
+	if 'BinnedRVFit' in choices and choices['BinnedRVFit']:
+		if len(choices['BVbinboundaries'])==1:
+			Lines.append(r'%s SNe in $B-V$ Bins using boundary at %s mag'%(list(choices['N_in_each_bin']), float(round(choices['BVbinboundaries'][0],1))))
+		else:
+			Lines.append(r'%s SNe in $B-V$ Bins using boundaries at %s mag'%(list(choices['N_in_each_bin']), [float(round(x,1)) for x in choices['BVbinboundaries']]))
+		Lines.append(r'RV distributions: [%s]'%', '.join(RVstylemapper(choices['RVstyles'])))
 
 	if choices['mass_mode']=='all_masses':
 		Lines.remove(mass_mode_map[choices['mass_mode']])
