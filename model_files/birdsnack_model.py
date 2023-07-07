@@ -16,7 +16,7 @@ BIRDSNACK class
 		get_peak_mags(savekey='Default', overwrite=False)
 		plot_lcs(sns=None,**kwargs)
 		additional_cuts(cutter=True)
-		fit_stan_model(save=True,Rhat_threshold=1.02,Rhat_check_params=['mu_RV','sig_RV','tauA'],Ntrials=3)
+		fit_stan_model(save=True,Rhat_threshold=1.02,Rhat_check_params=['mu_RV','sig_RV','tauA'],Ntrials=3,additive=False,adder=1000)
 		plot_posterior_samples()
 		plot_mag_deviations()
 		plot_colour_corner()
@@ -24,6 +24,7 @@ BIRDSNACK class
 
 Functions include:
 	get_edit_dict(choices,CYCLE_DICT,HBM_savekey)
+	def map_fit_summary(fitsummary)
 --------------------
 
 Written by Sam M. Ward: smw92@cam.ac.uk
@@ -85,9 +86,12 @@ class BIRDSNACK:
 				self.choices[glob_key] = edit_dict[glob_key]
 			else:
 				for key,value in edit_dict[glob_key].items():
-					if type(self.choices[glob_key][key])==dict:
-						self.choices[glob_key][key] = {**self.choices[glob_key][key],**value}
-					else:
+					if key in self.choices[glob_key]:#If this choice is already in .yaml
+						if type(self.choices[glob_key][key])==dict:
+							self.choices[glob_key][key] = {**self.choices[glob_key][key],**value}
+						else:
+							self.choices[glob_key][key] = value
+					else:#If this is a new entry
 						self.choices[glob_key][key] = value
 
 		#Set Pathnames
@@ -671,7 +675,7 @@ class BIRDSNACK:
 		self.sns  = list(self.lcs.keys())
 		print ('###'*5)
 
-	def fit_stan_model(self,save=True,Rhat_threshold=1.02,Rhat_check_params=['mu_RV','sig_RV','tauA'],Ntrials=3):
+	def fit_stan_model(self,save=True,Rhat_threshold=1.02,Rhat_check_params=['mu_RV','sig_RV','tauA'],Ntrials=3,additive=False,adder=1000):
 		"""
 		Fit Stan Model
 
@@ -690,6 +694,12 @@ class BIRDSNACK:
 
 		Ntrials : float (optional; default=3)
 			keep doing fit, multiplying up n_sampling, until Rhats<threshold
+
+		additive : bool (optional; default=False)
+			if True, add on to n_sampling, rather than multiplying up, for repeat trials when Rhat too large
+
+		adder : float (optional; default=1000)
+			number of samples to add on to each chain if additive=True
 
 		Returns
 		----------
@@ -715,14 +725,30 @@ class BIRDSNACK:
 		for par in analysis_parameters_list:
 			stan_data[par] = self.choices['analysis_parameters'][par]
 
-		#Incorporate Censored Data
 		modelloader = HBM_preprocessor(self.choices, DF_M)
+
+		#Add data for binned RV fit
+		if 'BinnedRVFit' in modelloader.choices['analysis_parameters'] and modelloader.choices['analysis_parameters']['BinnedRVFit']:
+			print ('Building Stan data from BinnedRVFit Parameters'+'\n'+'###'*10)
+			DF_M = modelloader.get_BV_ordered_DF_M() #print (DF_M[0]['B']-DF_M[0]['V'])
+			modelloader.get_RVbin_data()
+			for key in ['N_RV_bins','N_GaussRV_dists','RV_bin_vec','RVstyle_per_bin','map_RVBin_to_GaussRVHyp','fixed_RVs']:
+				stan_data[key] = modelloader.__dict__[key]
+				print (f"{key}:{stan_data[key]}")
+			for key in ['flatRVsmin','flatRVsmax']:
+				stan_data[key] = modelloader.choices['analysis_parameters'][key]
+			print (f"B-V Boundaries are:{modelloader.choices['analysis_parameters']['BVbinboundaries']}\nNumber of SNe in each bin is: {modelloader.N_in_each_bin}")
+			self.choices['analysis_parameters']['N_in_each_bin'] = modelloader.N_in_each_bin#Save this info for plotting
+
+		#Incorporate Censored Data
 		modelloader.get_censored_data()
 		stan_data['S']  = modelloader.S
 		stan_data['SC'] = modelloader.SC
 		stan_data['BVerrs_Cens'] = modelloader.BVerrs_Cens
 		stan_data['BVcutval']    = modelloader.BVcutval
 		if self.choices['analysis_parameters']['CensoredData']:
+			if 'BinnedRVFit' in modelloader.choices['analysis_parameters'] and modelloader.choices['analysis_parameters']['BinnedRVFit']:
+				raise Exception('Havent yet full considered combination of RVbinning models and Censored Data.')
 			print (f"Incorporating censored data: Fitting {stan_data['S']-stan_data['SC']} SNe and {stan_data['SC']} Censored SNe")
 			print (f"Censored SNe are: {modelloader.CensoredSNe}")
 			print (f"These have %s<=B-V<{self.choices['additional_cut_parameters']['BVcutval'],self.choices['analysis_parameters']['CensoredCut']}")
@@ -760,13 +786,11 @@ class BIRDSNACK:
 			stan_data['capps_errs'] = modelloader.capps_errs
 
 		#If skew_RV=True, update stan_data with skew_RV_disp_prior
-		with suppress(KeyError):
-			if modelloader.choices['analysis_parameters']['skew_RV']:
+		if 'skew_RV' in modelloader.choices['analysis_parameters'] and modelloader.choices['analysis_parameters']['skew_RV']:
 				stan_data['skew_RV_disp_prior'] = modelloader.choices['analysis_parameters']['skew_RV_disp_prior']
 
 		#If skew_int=True, update stan_data with skew_int_disp_prior
-		with suppress(KeyError):
-			if modelloader.choices['analysis_parameters']['skew_int']:
+		if 'skew_int' in modelloader.choices['analysis_parameters'] and modelloader.choices['analysis_parameters']['skew_int']:
 				stan_data['skew_int_disp_prior'] = modelloader.choices['analysis_parameters']['skew_int_disp_prior']
 
 		#Make replica copies of data and fit multiplied sample
@@ -789,7 +813,7 @@ class BIRDSNACK:
 		for itrial in range(Ntrials):
 			BREAK = True
 			#Fit Model
-			fit = posterior.sample(num_chains=n_chains, num_samples=n_sampling*(1+itrial), num_warmup = n_warmup,init=stan_init)
+			fit = posterior.sample(num_chains=n_chains, num_samples=n_sampling*(1+itrial)*(additive==False)+(n_sampling+adder)*(additive==True), num_warmup = n_warmup,init=stan_init)
 			#Get samples as pandas df
 			df  = fit.to_frame()
 
@@ -801,8 +825,7 @@ class BIRDSNACK:
 				fit = {key:np.array_split(value,n_chains) for key,value in dfdict.items()}	#change samples so split into chains
 
 			#Fitsummary including Rhat valuess
-			fitsummary = az.summary(fit)#feed dictionary into arviz to get summary stats of thinned samples
-
+			fitsummary = map_fit_summary(az.summary(fit))#feed dictionary into arviz to get summary stats of thinned samples
 			#Check for high Rhat values
 			for par in self.Rhat_check_params:
 				if fitsummary.loc[par]['r_hat']>Rhat_threshold:
@@ -855,7 +878,6 @@ class BIRDSNACK:
 		NCens      = FIT['stan_data']['SC']
 
 		pars,parnames,parlabels,bounds = get_parlabels(FIT['choices'])
-
 		Rhats      = {par:fitsummary.loc[par]['r_hat'] for par in parnames}
 		samples    = {par:np.asarray(df[par].values)   for par in parnames}
 		print ('Rhats:',Rhats)
@@ -1191,3 +1213,31 @@ def get_edit_dict(choices,CYCLE_DICT,HBM_savekey):
 	else:							edit_dict['analysis_parameters']['HBM_savekey'] =    HBM_savekey
 	#Return changes
 	return edit_dict
+
+def map_fit_summary(fitsummary):
+	"""
+	Map Fit Summary
+
+	Stan chains save e.g. mu_RV.1, mu_RV.2,
+	Whereas fitsummary save as e.g. mu_RV[0], mu_RV[1]
+	This function maps fitsummary to be similar to Stan chains
+
+	Parameters
+	----------
+	fitsummary : pandas df
+		contains e.g. Rhat values of MCMC chain
+
+	End Product(s)
+	----------
+	fitsummary with renamed index
+	"""
+	def map_str(col):
+		pattern = r'(.*)\[([0-9]+)\]'
+		try:
+			x = list(re.search(pattern,col).groups())
+			return f"{x[0]}.{int(x[1])+1}"
+		except:
+			return col
+
+	fitsummary = fitsummary.rename(index={column:map_str(column) for column in list(fitsummary.index)})
+	return fitsummary
