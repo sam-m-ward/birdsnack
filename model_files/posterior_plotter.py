@@ -30,10 +30,10 @@ PARAMETER class:
 
 Written by Sam M. Ward: smw92@cam.ac.uk
 """
+import copy,scipy
 import matplotlib.pyplot as pl
 import numpy as np
 import pandas as pd
-import scipy
 
 def kde(x_data, x_target, y_data=None, y_target=None, x_bounds=None, y_bounds=None, smoothing=1.0):
 	"""
@@ -552,16 +552,17 @@ class PARAMETER:
 		#Otherwise, posterior peaks at/near prior boundary, choose to summarise posterior using quantiles
 		else:
 			storeinfo = {}
-			for ic,CONF in enumerate([0.68,0.95]):
-				storeinfo[CONF] = self.dfchain.par.quantile(CONF)
-
+			for ic,conf in enumerate([0.68,0.95]):
 				if imode>0.5*(len(xgrid)-1):#If peaks at RHS
-					CONF = 1-CONF
+					CONF = copy.deepcopy(1-conf)
 					lg = '>'
 					irange = [None,len(xgrid)]
 				else:
+					CONF = copy.deepcopy(conf)
 					irange = [0,None]
 					lg = '<'
+
+				storeinfo[conf] = self.dfchain.par.quantile(CONF)
 
 				i_conf, x_conf, KDE_conf = self.get_KDE_values(value=self.dfchain.par.quantile(CONF))
 				irange = [i if i is not None else i_conf for i in irange]
