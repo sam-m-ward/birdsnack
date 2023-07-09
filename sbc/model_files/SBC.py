@@ -73,12 +73,20 @@ class SBC_CLASS:
 		folder    += f"_epsilon{self.epsmode}"
 		folder    += f"_FPC0m{self.FPC0m}"
 		#Dust Hyperparameters
-		folder    += f"_tauA{self.tauA}_muRV{self.muRV}_sigRV{self.sigRV}"
+		if self.RVsimdist=='Norm':
+			folder    += f"_tauA{self.tauA}_muRV{self.muRV}_sigRV{self.sigRV}"
+		elif self.RVsimdist=='AVRVBeta':
+			folder    += f"_tauA{self.tauA}_beta0{self.beta0}_beta1{self.beta1}_sigRVbeta{self.sigRVbeta}"
+		else:
+			raise Exception(f'RVsimdist is {self.RVsimdist}; see SBC.py code')
 		#AV Population Distribution
 		folder    += f"_AVsimdist{self.AVsimdist}"
 		if self.AVsimdist!='Exp':#AVsimdist (hyper)parameters
 			if self.AVsimdist in ['Gamma']:
-				folder  += f"_nuA{str(self.AV_parameters['nuA'])}"
+				folder  += f"_nuA{str(self.nuA)}"
+		if self.RVsimdist!='Norm':
+			folder += f"_RVsimdist{self.RVsimdist}"
+
 		#Intrinsic Hyps
 		folder    += f"_PredefinedIntExtHyps{self.PredefinedIntrinsicHyps}{self.PredefinedExtrinsicHyps}"
 		if self.PredefinedIntrinsicHyps or self.PredefinedExtrinsicHyps:
@@ -435,8 +443,10 @@ class SIMULATOR():
 			with open(f"{self.path_to_birdsnack_rootpath}products/stan_fits/FITS/FIT{self.pre_defined_hyps['load_file']}.pkl",'rb') as f:
 				FIT = pickle.load(f)
 			row  = FIT['df'].median(axis=0)
-			self.tauA,self.muRV,self.sigRV = row[['tauA','mu_RV','sig_RV']].values
-
+			if self.RVsimdist=='Norm':
+				self.tauA,self.muRV,self.sigRV = row[['tauA','mu_RV','sig_RV']].values
+			elif self.RVsimdist=='AVRVBeta':
+				self.tauA,self.beta0,self.beta1,self.sigRVbeta = row[['tauA','beta0.1','beta1.1','sig_RV_beta.1']].values
 		else:
 			if self.tauA is None:
 				self.tauA  = np.random.uniform(self.tauAmin,self.tauAmax)
@@ -458,11 +468,18 @@ class SIMULATOR():
 		AVs,RVs = [],[]
 		for s in range(self.S):
 			#Get AVs
-			if self.AVsimdist=='Exp': AV = np.random.exponential(self.tauA)
-			elif self.AVsimdist=='Gamma': AV = gamma.rvs(a=self.nuA,loc=0,scale=self.tauA)
+			if self.AVsimdist=='Exp':
+				AV = np.random.exponential(self.tauA)
+			elif self.AVsimdist=='Gamma':
+				AV = gamma.rvs(a=self.nuA,loc=0,scale=self.tauA)
 			AVs.append(AV)
 			#Get RVs
-			RV = truncnorm.rvs( (self.RVmin-self.muRV)/self.sigRV, (self.RVmax-self.muRV)/self.sigRV, loc=self.muRV,scale=self.sigRV)
+			if self.RVsimdist=='Norm':
+				RV = truncnorm.rvs( (self.RVmin-self.muRV)/self.sigRV, (self.RVmax-self.muRV)/self.sigRV, loc=self.muRV,scale=self.sigRV)
+			elif self.RVsimdist=='AVRVBeta':
+				muRV_beta = self.muRVmin + 1/(self.beta0 + self.beta1*AVs[-1])
+				RV        = truncnorm.rvs( (self.RVmin-muRV_beta)/self.sigRVbeta, (self.RVmax-muRV_beta)/self.sigRVbeta, loc=muRV_beta,scale=self.sigRVbeta)
+
 			RVs.append(RV)
 		#Assign Attributes
 		self.AVs      = np.asarray(AVs)
