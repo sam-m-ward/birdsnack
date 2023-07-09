@@ -732,14 +732,14 @@ class BIRDSNACK:
 			print ('Building Stan data from BinnedRVFit Parameters'+'\n'+'###'*10)
 			DF_M = modelloader.get_BV_ordered_DF_M() #print (DF_M[0]['B']-DF_M[0]['V'])
 			modelloader.get_RVbin_data()
-			for key in ['N_RV_bins','N_GaussRV_dists','RV_bin_vec','RVstyle_per_bin','map_RVBin_to_GaussRVHyp','fixed_RVs']:
+			for key in ['N_RV_bins','N_GaussRV_dists','N_AVRVBeta_dists','N_AVRVSigmoid_dists','RV_bin_vec','RVstyle_per_bin','map_RVBin_to_RVHyp','fixed_RVs']:
 				stan_data[key] = modelloader.__dict__[key]
 				print (f"{key}:{stan_data[key]}")
-			for key in ['flatRVsmin','flatRVsmax']:
-				stan_data[key] = modelloader.choices['analysis_parameters'][key]
+			for key in ['flatRVsmin','flatRVsmax','a_sigma_beta0','a_sigma_beta1','a_sigma_muAVsigmoid','a_sigma_sigAVsigmoid']:
+				stan_data[key]                           = modelloader.choices['analysis_parameters'][key]
+				self.choices['analysis_parameters'][key] = modelloader.choices['analysis_parameters'][key]#If these values are only called upon as default, save in .choices for plotting
 			print (f"B-V Boundaries are:{modelloader.choices['analysis_parameters']['BVbinboundaries']}\nNumber of SNe in each bin is: {modelloader.N_in_each_bin}")
 			self.choices['analysis_parameters']['N_in_each_bin'] = modelloader.N_in_each_bin#Save this info for plotting
-
 		#Incorporate Censored Data
 		modelloader.get_censored_data()
 		stan_data['S']  = modelloader.S
@@ -748,10 +748,11 @@ class BIRDSNACK:
 		stan_data['BVcutval']    = modelloader.BVcutval
 		if self.choices['analysis_parameters']['CensoredData']:
 			if 'BinnedRVFit' in modelloader.choices['analysis_parameters'] and modelloader.choices['analysis_parameters']['BinnedRVFit']:
-				raise Exception('Havent yet full considered combination of RVbinning models and Censored Data.')
+				if modelloader.__dict__['N_RV_bins']>1:
+					raise Exception('Havent yet full considered combination of RVbinning models and Censored Data. \nWhen applying censored data, best to use single set of population distributions')
 			print (f"Incorporating censored data: Fitting {stan_data['S']-stan_data['SC']} SNe and {stan_data['SC']} Censored SNe")
 			print (f"Censored SNe are: {modelloader.CensoredSNe}")
-			print (f"These have %s<=B-V<{self.choices['additional_cut_parameters']['BVcutval'],self.choices['analysis_parameters']['CensoredCut']}")
+			print (f"These have {self.choices['additional_cut_parameters']['BVcutval']}<=B-V<{self.choices['analysis_parameters']['CensoredCut']}")
 			print (f"Completely Excluded SNe are: {modelloader.ExcludedSNe}")
 
 		#Incorporate LC shape data measurements
