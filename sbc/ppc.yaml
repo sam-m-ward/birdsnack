@@ -22,10 +22,11 @@ simulate_parameters:
   #Filters used for simulations
   flts  : ["B_CSP", "V_CSP", "r_CSP", "i_CSP", "J_RC1", "H_RC"]
   #Population distribution of AVs parameters
-  AVsimdist : 'Gamma'
-  AVsimdist : 'Exp'
-  AV_parameters :
-    nuA : None
+  #AVsimdist : 'Gamma'
+  #AVsimdist : 'Exp'
+  AVsimdist : 'ppc'
+  nuA : 'ppc'
+  RVsimdist : 'ppc'
   #Pre-defined Intrinsic Population Hyperparameters, if True, set to posterior medians from some file
   PredefinedIntrinsicHyps : True
   PredefinedExtrinsicHyps : True
