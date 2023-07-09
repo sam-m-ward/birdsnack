@@ -105,16 +105,40 @@ def get_parlabels(choices,default=False,return_parnames_only=False):
 		muRVmin  = choices['analysis_parameters']['muRVmin']
 		muRVmax  = choices['analysis_parameters']['muRVmax']
 		pars = ['tauA'] ; parnames = ['tauA'] ; parlabels = ['$\\tau_A$'] ; bounds = [[0,None]]
-		N_GaussRV_dists = len([x for x in choices['analysis_parameters']['RVstyles'] if x=='Gauss'])
+		N_GaussRV_dists     = len([x for x in choices['analysis_parameters']['RVstyles'] if x=='Gauss'])
+		N_AVRVBeta_dists    = len([x for x in choices['analysis_parameters']['RVstyles'] if x=='AVRVBeta'])
+		N_AVRVSigmoid_dists = len([x for x in choices['analysis_parameters']['RVstyles'] if x=='AVRVSigmoid'])
 		alphabet = list(string.ascii_lowercase)
 		for n in range(1,N_GaussRV_dists+1):
-			pars.extend([f'muRV.{n}',f'sigRV.{n}'])
 			parnames.extend([f'mu_RV.{n}',f'sig_RV.{n}'])
-			if N_GaussRV_dists==1:	parlabels.extend(['$\\mu_{R_V}$','$\\sigma_{R_V}$'])
-			else:					parlabels.extend(['$\\mu^{%s}_{R_V}$'%alphabet[n-1],'$\\sigma^{%s}_{R_V}$'%alphabet[n-1]])
+			if N_GaussRV_dists==1:
+				pars.extend(['muRV','sigRV'])
+				parlabels.extend(['$\\mu_{R_V}$','$\\sigma_{R_V}$'])
+			else:
+				pars.extend([f'muRV.{n}',f'sigRV.{n}'])
+				parlabels.extend(['$\\mu^{%s}_{R_V}$'%alphabet[n-1],'$\\sigma^{%s}_{R_V}$'%alphabet[n-1]])
 			bounds.extend([[muRVmin,muRVmax],[0,None]])
+		for n in range(1,N_AVRVBeta_dists+1):
+			parnames.extend([f'beta0.{n}',f'beta1.{n}',f'sig_RV_beta.{n}'])
+			if N_AVRVBeta_dists==1:
+				pars.extend(['beta0','beta1','sigRVbeta'])
+				parlabels.extend(['$\\beta_{0}$','$\\beta_{1}$','$\\sigma_{R_V}$'])
+			else:
+				pars.extend([f'beta0.{n}',f'beta1.{n}',f'sigRVbeta.{n}'])
+				parlabels.extend(['$\\beta^{%s}_{0}$'%alphabet[n-1],'$\\beta^{%s}_{1}$'%alphabet[n-1],'$\\sigma^{%s}_{R_V}$'%alphabet[n-1]])
+			bounds.extend([[1/(muRVmax-muRVmin),None],[0,None],[0,None]])
+		for n in range(1,N_AVRVSigmoid_dists+1):
+			parnames.extend([f'muAV_sigmoid.{n}',f'sigAV_sigmoid.{n}',f'A_sigmoid.{n}',f'B_sigmoid.{n}',f'sig_RV_sigmoid.{n}'])
+			if N_AVRVSigmoid_dists==1:
+				pars.extend(['muAVsig','sigAVsig','Asig','Bsig','sigRVsig'])
+				parlabels.extend(['$\\mu_{A_V}$','$\\sigma_{A_V}$','$A_{\\rm{Sigmoid}}$','$B_{\\rm{Sigmoid}}$','$\\sigma_{R_V}$'])
+			else:
+				pars.extend([f'muAVsig.{n}',f'sigAVsig.{n}',f'Asig.{n}',f'Bsig.{n}',f'sigRVsig.{n}'])
+				parlabels.extend(['$\\mu^{%s}_{A_V}$'%alphabet[n-1],'$\\sigma^{%s}_{A_V}$'%alphabet[n-1],'$\\A^{%s}_{\\rm{Sigmoid}}$'%alphabet[n-1],'$\\B^{%s}_{\\rm{Sigmoid}}$'%alphabet[n-1],'$\\sigma^{%s}_{R_V}$'%alphabet[n-1]])
+			bounds.extend([[0,None],[0,None],[muRVmin,muRVmax],[0,None],[0,None]])#B is actually dep. on A, but ignore this effect
+
 		if AVprior in ['Gamma']:
-			pars.append('nu')
+			pars.append('nuA')
 			parnames.append('nu')
 			parlabels.append('$\\nu_A$')
 			bounds.append([0,None])
@@ -146,7 +170,7 @@ def get_parlabels(choices,default=False,return_parnames_only=False):
 		except:		skew_int = False
 
 		if AVprior in ['Gamma']:
-			pars.append('nu')
+			pars.append('nuA')
 			parnames.append('nu')
 			parlabels.append('$\\nu_A$')
 			bounds.append([0,None])
@@ -314,6 +338,10 @@ def get_Lines(choices, NSNe, NCens, posterior=True):
 				x= r'$U(%s,%s)$'%(choices['flatRVsmin'],choices['flatRVsmax'])
 			elif 'Fix' in RVstyle:
 				x= r'$R_V^*=%s$'%RVstyle.split('_')[-1]
+			elif RVstyle=='AVRVBeta':
+				x='$\\mu^s_{R_V} = %s+(\\beta_0 + \\beta_1 A_V^s)^{-1}$'%choices['muRVmin']
+			elif RVstyle=='AVRVSigmoid':
+				x='$\\mu^s_{R_V} = A+B/(1 + exp(\\frac{A_V^s-\\mu_{A_V}}{\\sigma_{A_V}}))$'
 			strlist.append(x)
 		return strlist
 
@@ -338,11 +366,15 @@ def get_Lines(choices, NSNe, NCens, posterior=True):
 			]
 
 	if 'BinnedRVFit' in choices and choices['BinnedRVFit']:
-		if len(choices['BVbinboundaries'])==1:
-			Lines.append(r'%s SNe in $B-V$ Bins using boundary at %s mag'%(list(choices['N_in_each_bin']), float(round(choices['BVbinboundaries'][0],1))))
+		if len(choices['BVbinboundaries'])==0:
+			Lines.append(r'$R_V$ distribution: %s'%', '.join(RVstylemapper(choices['RVstyles'])))
 		else:
-			Lines.append(r'%s SNe in $B-V$ Bins using boundaries at %s mag'%(list(choices['N_in_each_bin']), [float(round(x,1)) for x in choices['BVbinboundaries']]))
-		Lines.append(r'RV distributions: [%s]'%', '.join(RVstylemapper(choices['RVstyles'])))
+			if len(choices['BVbinboundaries'])==1:
+				Lines.append(r'%s SNe in $B-V$ Bins using boundary at %s mag'%(list(choices['N_in_each_bin']), float(round(choices['BVbinboundaries'][0],1))))
+				pass
+			else:
+				Lines.append(r'%s SNe in $B-V$ Bins using boundaries at %s mag'%(list(choices['N_in_each_bin']), [float(round(x,1)) for x in choices['BVbinboundaries']]))
+			Lines.append(r'$R_V$ distributions: [%s]'%', '.join(RVstylemapper(choices['RVstyles'])))
 
 	if choices['mass_mode']=='all_masses':
 		Lines.remove(mass_mode_map[choices['mass_mode']])
