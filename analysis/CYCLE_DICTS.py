@@ -107,3 +107,22 @@ CYCLE_DICT_CensoredData = {
 
 				}
 			}
+
+CYCLE_DICT_RVBins = {'COMMON_CHANGES' : {'newdict':{'BinnedRVFit':True,'n_sampling':2000},'HBMappender':''},
+
+						'RUNS' : {
+
+						'AVExp_Full_AVRVBeta'			:       {    'newdict': {'BVbinboundaries':[],'RVstyles':['AVRVBeta']},
+															 		'label':'$\\mathbf{\\beta}$-Model'},
+						'AVExp_AVRVBeta_BVcut1.0_Cens'	:       {    'newdict': {'BVbinboundaries':[],'RVstyles':['AVRVBeta'],'CensoredData':True,'BVcutval':1.0},
+															 		'label':'$\\mathbf{\\beta}$-Model Cut $B-V>1.0$~mag'},
+						'AVExp_AVRVBeta_BVcut0.3_Cens'	:       {    'newdict': {'BVbinboundaries':[],'RVstyles':['AVRVBeta'],'CensoredData':True,'BVcutval':0.3},
+															 		'label':'$\\mathbf{\\beta}$-Model Cut $B-V>0.3$~mag'},
+						'AVGamma_Full_AVRVBeta'			:       {    'newdict': {'BVbinboundaries':[],'RVstyles':['AVRVBeta'],'AVprior':'Gamma'},
+															 		'label':'$\\mathbf{\\beta}$-Model'},
+						'AVGamma_AVRVBeta_BVcut1.0_Cens'	:       {    'newdict': {'BVbinboundaries':[],'RVstyles':['AVRVBeta'],'CensoredData':True,'BVcutval':1.0,'AVprior':'Gamma'},
+															 		'label':'$\\mathbf{\\beta}$-Model Cut $B-V>1.0$~mag'},
+						'AVGamma_AVRVBeta_BVcut0.3_Cens'	:       {    'newdict': {'BVbinboundaries':[],'RVstyles':['AVRVBeta'],'CensoredData':True,'BVcutval':0.3,'AVprior':'Gamma'},
+															 		'label':'$\\mathbf{\\beta}$-Model Cut $B-V>0.3$~mag'},
+						}
+					}
