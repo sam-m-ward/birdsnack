@@ -331,16 +331,31 @@ def update_edit_dict_for_ppc(sbc_choices, edit_dict):
 	#Open original BirdSnack fit to real data
 	with open(f"{sbc_choices['load_parameters']['path_to_birdsnack_rootpath']}products/stan_fits/FITS/FIT{edit_dict['simulate_parameters']['pre_defined_hyps']['load_file']}.pkl",'rb') as f:
 		FIT = pickle.load(f)
-	#Get number of SNe (including censored SNe)
+	#Get number of SNe (including censored SNe), and simulate this number if not specified
 	candidates['S'] = FIT['stan_data']['S']
-	#Assign folder name using these values of dust hyps
-	dust_hyps = dict(zip(['tauA','muRV','sigRV'],list(FIT['df'].median(axis=0).round(4)[['tauA','mu_RV','sig_RV']].values)))
+	#Get AVsimdist, and use this distribution if not specified
+	candidates['AVsimdist'] = FIT['choices']['analysis_parameters']['AVprior']
+	#Get RVsimdist, new entry may be buggy, implemented for AVRVBeta simulations
+	if 'RVstyles' in FIT['choices']['analysis_parameters'] and FIT['choices']['analysis_parameters']['RVstyles']==['AVRVBeta']:
+			candidates['RVsimdist'] = 'AVRVBeta'
+	else:	candidates['RVsimdist'] = 'Norm'
+	#Assign folder name using these values of dust hyps ##Old Code #dust_hyps = dict(zip(['tauA','muRV','sigRV'],list(FIT['df'].median(axis=0).round(4)[['tauA','mu_RV','sig_RV']].values)))
+	import sys
+	sys.path.append(sbc_choices['load_parameters']['path_to_birdsnack_rootpath']+'model_files/')
+	from plotting_functions import get_parlabels
+	pars,parnames,parlabels,bounds = get_parlabels(FIT['choices'])
+	dust_hyps = dict(zip(pars,list(FIT['df'].median(axis=0).round(4)[parnames].values)))
+	print (dust_hyps)
 	candidates= {**candidates,**dust_hyps}
 	#Update changes
 	for key,value in candidates.items():
 		if key not in edit_dict['simulate_parameters']:
-			if sbc_choices['simulate_parameters'][key]=='ppc':
+			if key in sbc_choices['simulate_parameters']:
+				if sbc_choices['simulate_parameters'][key]=='ppc':
+					additional[key] = value
+			else:
 				additional[key] = value
+
 	#Upload additional to edit_dict
 	edit_dict['simulate_parameters'] = {**edit_dict['simulate_parameters'],**additional}
 	#Get reference band (for building full vector mu_int where ref-band has element entry=0)
