@@ -6,13 +6,17 @@ from CYCLE_DICTS import *
 from birdsnack_model import BIRDSNACK, get_edit_dict
 import argparse, shutil
 parser = argparse.ArgumentParser(description="BirdSnack Analysis Cycle Script")
-parser.add_argument("--mode",default='Science',help='Options are Science,CensoredData')
+parser.add_argument("--mode",default='Science',help='Options are Science,CensoredData,RVbins')
 MODE   = parser.parse_args().mode
-CYCLE_DICT = dict(zip(['Science','CensoredData'],[CYCLE_DICT_Science,CYCLE_DICT_CensoredData]))[MODE]
+CYCLE_DICT = dict(zip(['Science','CensoredData','RVbins'],[CYCLE_DICT_Science,CYCLE_DICT_CensoredData,CYCLE_DICT_RVBins]))[MODE]
 ###############
 #FOR Cens_inf Analysis
 #CYCLE_DICT['COMMON_CHANGES']['newdict'] = {**CYCLE_DICT['COMMON_CHANGES']['newdict'],**{'CensoredCut':'inf'}}
 #CYCLE_DICT['COMMON_CHANGES']['HBMappender'] = 'CensInf'
+###############
+#FOR N=65 SNe Analysis
+#CYCLE_DICT['COMMON_CHANGES']['newdict'] = {**CYCLE_DICT['COMMON_CHANGES']['newdict'],**{'CensoredData':False,'BVcut':True,'BVcutval':1.0}}
+#CYCLE_DICT['COMMON_CHANGES']['HBMappender'] = 'BVcut1.0'
 ###############
 
 #Load up light curves of fiducial sample of SNe, and metadata
@@ -39,7 +43,7 @@ for HBM_savekey in CYCLE_DICT['RUNS']:
     #Fit HBM to data
     if not os.path.exists(f"{bs.FITSpath}FIT{bs.choices['analysis_parameters']['HBM_savekey']}.pkl"):
         ISIM += 1
-        bs.fit_stan_model()
+        bs.fit_stan_model(additive=True)
         if periodically_delete:
             if ISIM%periodically_delete==0:
                 delete_tmp_files = glob(f'{stan_build_dir}*')#Need to do this manually otherwise files stack up in tmp/ and for loop dies
