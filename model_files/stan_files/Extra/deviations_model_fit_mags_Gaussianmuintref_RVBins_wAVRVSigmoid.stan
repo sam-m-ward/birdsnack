@@ -69,7 +69,8 @@ parameters {
 	vector<lower=muRVmin,upper=muRVmax>[N_GaussRV_dists] mu_RV;          //RV population mean hyperparameter
 	vector<lower=0>[N_GaussRV_dists] eta_sig_RV;         //Transform of RV population dispersion hyperparameter
 
-	vector<lower=0>[N_AVRVSigmoid_dists] eta_sig_RV_sigmoid;          					  //Transform of RV population dispersion hyperparameter
+	vector<lower=0>[N_AVRVSigmoid_dists] etaA_sig_RV_sigmoid;          					  //Transform of RV population dispersion hyperparameter
+  vector<lower=0>[N_AVRVSigmoid_dists] etaB_sig_RV_sigmoid;          					  //Transform of RV population dispersion hyperparameter
 	vector<lower=0,upper=pi()/2>[N_AVRVSigmoid_dists] muAV_tform_sigmoid;         //Transform of Sigmoid AV population mean hyperparameter
 	vector<lower=0,upper=pi()/2>[N_AVRVSigmoid_dists] sigAV_tform_sigmoid;        //Transform of Sigmoid AV population dispersion hyperparameter
 	vector<lower=0,upper=1>[N_AVRVSigmoid_dists] etaA_sigmoid;  //Asig for muRVs = Asig + Bsig/(1+exp((AVs-muAV)/sigAV))
@@ -100,7 +101,8 @@ transformed parameters {
 	vector<lower=0>[N_GaussRV_dists] sig_RV;                //RV population dispersion Hyperparameter
 
 	//AVRVSigmoid
-	vector<lower=0>[N_AVRVSigmoid_dists] sig_RV_sigmoid;           //RV population dispersion Hyperparameter
+	vector<lower=0>[N_AVRVSigmoid_dists] sig_RV_sigmoidA;           //RV population dispersion Hyperparameter
+  vector<lower=0>[N_AVRVSigmoid_dists] sig_RV_sigmoidB;           //RV population dispersion Hyperparameter
 	vector<lower=0>[N_AVRVSigmoid_dists] muAV_sigmoid;             //AVRVSigmoid population mean Hyperparameter
 	vector<lower=0>[N_AVRVSigmoid_dists] sigAV_sigmoid;            //AVRVSigmoid population dispersion Hyperparameter
 	vector<lower=muRVmin,upper=muRVmax>[N_AVRVSigmoid_dists] A_sigmoid;  																						//Asig for muRVs = Asig + Bsig/(1+exp((AVs-muAV)/sigAV))
@@ -115,7 +117,7 @@ transformed parameters {
 
 	real<upper=0> alpha;
 	real<lower=muRVmin,upper=muRVmax> mu_RV_sigmoid;
-	//real<lower=0> sigmoid_style_sigmaRV;
+	real<lower=0> sigmoid_style_sigmaRV;
 	//real<lower=0> nu;
 
 	//Fitzpatrick99 parameters
@@ -130,7 +132,8 @@ transformed parameters {
 	sig_RV  = eta_sig_RV*disp_sigmaRV;
 	//nu      = tan(nu_tform);
 	//AVRVSigmoid
-	sig_RV_sigmoid = eta_sig_RV_sigmoid*disp_sigmaRV;
+	sig_RV_sigmoidA = etaA_sig_RV_sigmoid*disp_sigmaRV;
+  sig_RV_sigmoidB = etaB_sig_RV_sigmoid*disp_sigmaRV;
 	muAV_sigmoid   = a_sigma_muAVsigmoid*tan(muAV_tform_sigmoid);
 	sigAV_sigmoid  = a_sigma_sigAVsigmoid*tan(sigAV_tform_sigmoid);
 	A_sigmoid      = etaA_sigmoid*(muRVmax-muRVmin) + muRVmin;
@@ -154,11 +157,9 @@ transformed parameters {
 			RVs[s] = fixed_RVs[s];
 		} else if (RVstyle==4) {
 			mu_RV_sigmoid = A_sigmoid[map_RVBin_to_RVHyp[RV_bin_vec[s]]] + B_sigmoid[map_RVBin_to_RVHyp[RV_bin_vec[s]]] / (1+exp((AVs[s]-muAV_sigmoid[map_RVBin_to_RVHyp[RV_bin_vec[s]]])/sigAV_sigmoid[map_RVBin_to_RVHyp[RV_bin_vec[s]]]) );
-			//sigmoid_style_sigmaRV = EXTRA_DOF_HERE+sig_RV_sigmoid[map_RVBin_to_RVHyp[RV_bin_vec[s]]]/(1+exp((AVs[s]-muAV_sigmoid[map_RVBin_to_RVHyp[RV_bin_vec[s]]])/sigAV_sigmoid[map_RVBin_to_RVHyp[RV_bin_vec[s]]]) );
-			//alpha         = (RVsmin - mu_RV_sigmoid)/sigmoid_style_sigmaRV;
-			//RVs[s]        = mu_RV_sigmoid - sigmoid_style_sigmaRV * ( inv_Phi ( nuRVs[s] * Phi (-alpha) ) );
-			alpha         = (RVsmin - mu_RV_sigmoid)/sig_RV_sigmoid[map_RVBin_to_RVHyp[RV_bin_vec[s]]];
-			RVs[s]        = mu_RV_sigmoid - sig_RV_sigmoid[map_RVBin_to_RVHyp[RV_bin_vec[s]]] * ( inv_Phi ( nuRVs[s] * Phi (-alpha) ) );
+			sigmoid_style_sigmaRV = sig_RV_sigmoidA[map_RVBin_to_RVHyp[RV_bin_vec[s]]]+sig_RV_sigmoidB[map_RVBin_to_RVHyp[RV_bin_vec[s]]]/(1+exp((AVs[s]-muAV_sigmoid[map_RVBin_to_RVHyp[RV_bin_vec[s]]])/sigAV_sigmoid[map_RVBin_to_RVHyp[RV_bin_vec[s]]]) );
+			alpha         = (RVsmin - mu_RV_sigmoid)/sigmoid_style_sigmaRV;
+			RVs[s]        = mu_RV_sigmoid - sigmoid_style_sigmaRV * ( inv_Phi ( nuRVs[s] * Phi (-alpha) ) );
 		}
 	}
 
@@ -226,7 +227,8 @@ model {
 	mu_RV          ~ uniform(muRVmin,muRVmax);
 	eta_sig_RV     ~ std_normal();
 	//AVRVSigmoid
-	eta_sig_RV_sigmoid  ~ std_normal();
+	etaA_sig_RV_sigmoid  ~ std_normal();
+  etaB_sig_RV_sigmoid  ~ std_normal();
 	muAV_tform_sigmoid  ~ uniform(0,pi()/2);
 	sigAV_tform_sigmoid ~ uniform(0,pi()/2);
 	etaA_sigmoid    		~ uniform(0,1);
