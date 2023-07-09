@@ -27,7 +27,7 @@ data {
 	int N_GaussRV_dists;
 	array[S] int RV_bin_vec;
 	vector[N_RV_bins] RVstyle_per_bin;
-	array[N_RV_bins] int map_RVBin_to_GaussRVHyp;
+	array[N_RV_bins] int map_RVBin_to_RVHyp;
 	vector[S] fixed_RVs;
 	real flatRVsmin;
 	real flatRVsmax;
@@ -116,8 +116,8 @@ transformed parameters {
 	for (s in 1:S) {
 		RVstyle = RVstyle_per_bin[RV_bin_vec[s]];
 		if (RVstyle==0) {
-			alpha  = (RVsmin - mu_RV[map_RVBin_to_GaussRVHyp[RV_bin_vec[s]]])/sig_RV[map_RVBin_to_GaussRVHyp[RV_bin_vec[s]]];
-			RVs[s] = mu_RV[map_RVBin_to_GaussRVHyp[RV_bin_vec[s]]] - sig_RV[map_RVBin_to_GaussRVHyp[RV_bin_vec[s]]] * ( inv_Phi ( nuRVs[s] * Phi (-alpha) ) );
+			alpha  = (RVsmin - mu_RV[map_RVBin_to_RVHyp[RV_bin_vec[s]]])/sig_RV[map_RVBin_to_RVHyp[RV_bin_vec[s]]];
+			RVs[s] = mu_RV[map_RVBin_to_RVHyp[RV_bin_vec[s]]] - sig_RV[map_RVBin_to_RVHyp[RV_bin_vec[s]]] * ( inv_Phi ( nuRVs[s] * Phi (-alpha) ) );
 		} else if (RVstyle==1) {
 			RVs[s] = nuRVs[s]*(flatRVsmax-flatRVsmin) + flatRVsmin;
 		} else if (RVstyle==2) {
