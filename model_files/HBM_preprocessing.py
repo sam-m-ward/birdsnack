@@ -531,30 +531,30 @@ class HBM_preprocessor:
 		----------
 		self.stan_file
 		"""
-		#Check whether to use more complicated stan file for more analysis variants, harder for human to parse
-		use_full_stan_file = False
+		#Check whether to use stan file with skewint, skewRV, studenttRV
+		use_skew_stan_file = False
 		with suppress(KeyError):
-			if self.choices['analysis_parameters']['RVprior']!='Norm': 	use_full_stan_file = True
+			if self.choices['analysis_parameters']['RVprior']!='Norm': 	use_skew_stan_file = True
 		with suppress(KeyError):
-			if self.choices['analysis_parameters']['skew_RV']: 			use_full_stan_file = True
+			if self.choices['analysis_parameters']['skew_RV']: 			use_skew_stan_file = True
 		with suppress(KeyError):
-			if self.choices['analysis_parameters']['skew_int']: 	   	use_full_stan_file = True
-		#This more complicated file is only valud for Devations model fitted to magnitudes data
-		if use_full_stan_file:
+			if self.choices['analysis_parameters']['skew_int']: 	   	use_skew_stan_file = True
+		#This more complicated file is only valid for Devations model fitted to magnitudes data
+		if use_skew_stan_file:
 			assert(self.choices['analysis_parameters']['IntrinsicModel']=='Deviations')
 			assert(self.choices['analysis_parameters']['DataTransformation']=='mags')
 		#Get stan file
 		if self.choices['analysis_parameters']['IntrinsicModel']=='Deviations':
 			if self.choices['analysis_parameters']['DataTransformation']=='mags':
 				print ("Applying Intrinsic Deviations Model to fit Apparent Magnitudes Data") #stan_file = f"{stanpath}deviations_model_fit_mags_Dirichletmuint.stan"
-				if use_full_stan_file:	stan_file = f"{stanpath}deviations_model_fit_mags_Gaussianmuintref_Full.stan"
+				if use_skew_stan_file:	stan_file = f"{stanpath}Extra/deviations_model_fit_mags_Gaussianmuintref_Skew.stan"
 				elif 'BinnedRVFit' in self.choices['analysis_parameters'] and self.choices['analysis_parameters']['BinnedRVFit']:
 					if 'AVRVBeta' in self.choices['analysis_parameters']['RVstyles']:#NOTE, HC(0,1) Hyperparameters are reason for files not running, so can either score these parameters out when not in use, OR (as done here) just load in different stan files
-						stan_file = f"{stanpath}deviations_model_fit_mags_Gaussianmuintref_RVBins_wAVRVBeta.stan"
+						stan_file = f"{stanpath}Extra/deviations_model_fit_mags_Gaussianmuintref_RVBins_wAVRVBeta.stan"
 					elif 'AVRVSigmoid' in self.choices['analysis_parameters']['RVstyles']:
-						stan_file = f"{stanpath}deviations_model_fit_mags_Gaussianmuintref_RVBins_wAVRVSigmoid.stan"
+						stan_file = f"{stanpath}Extra/deviations_model_fit_mags_Gaussianmuintref_RVBins_wAVRVSigmoid.stan"
 					else:
-						stan_file = f"{stanpath}deviations_model_fit_mags_Gaussianmuintref_RVBins.stan"
+						stan_file = f"{stanpath}Extra/deviations_model_fit_mags_Gaussianmuintref_RVBins.stan"
 				else:	stan_file = f"{stanpath}deviations_model_fit_mags_Gaussianmuintref.stan"
 			else:
 				print (f"Applying Intrinsic Deviations Model to fit {self.choices['analysis_parameters']['DataTransformation']} Colours Data")
@@ -564,7 +564,7 @@ class HBM_preprocessor:
 			stan_file = f"{stanpath}colours_model.stan"
 
 		self.stan_file = stan_file
-		self.use_full_stan_file = use_full_stan_file
+		self.use_skew_stan_file = use_skew_stan_file
 
 	def modify_stan_file(self):
 		"""
