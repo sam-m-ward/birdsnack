@@ -12,6 +12,7 @@ from sbc_plot_functions import update_edit_dict_for_ppc
 if __name__ == "__main__":
 	Nsims = 100
 
+	'''
 	FITS = [
 	'AVExp_Full',
 	'AVExp_CensInf',
@@ -26,6 +27,24 @@ if __name__ == "__main__":
 				'Gamma $A_V^s$ Fit to Full Samp. (69 SNe)',
 				'Gamma $A_V^s$ Fit to Low $B-V$ Samp. (62 SNe) \nw/ Censored Data (7 SNe)',
 				'Gamma $A_V^s$ Fit to Low $B-V$ Samp. (62 SNe) \nw/ Censored Data (3 SNe)']
+	#'''
+	#'''
+	FITS = [
+	'AVExp_Full_AVRVBeta',
+	'AVExp_AVRVBeta_BVcut1.0_Cens',
+	'AVExp_AVRVBeta_BVcut0.3_Cens',
+	'AVGamma_Full_AVRVBeta',
+	'AVGamma_AVRVBeta_BVcut1.0_Cens',
+	'AVGamma_AVRVBeta_BVcut0.3_Cens',
+	]
+	titles = [	'Exp. $A_V^s$ Fit to Full Samp. (69 SNe) \nw/ $\\mathbf{\\beta}$-Model for $\\mu^s_{R_V}|A_V^s$',
+				'Exp. $A_V^s$ Fit to $B-V<1.0\,$mag Samp. (65 SNe) \nw/ $\\mathbf{\\beta}$-Model for $\\mu^s_{R_V}|A_V^s$ & 4 Cens. SNe',
+				'Exp. $A_V^s$ Fit to $B-V<0.3\,$mag Samp. (62 SNe) \nw/ $\\mathbf{\\beta}$-Model for $\\mu^s_{R_V}|A_V^s$ & 7 Cens. SNe',
+				'Gamma $A_V^s$ Fit to Full Samp. (69 SNe) \nw/ $\\mathbf{\\beta}$-Model for $\\mu^s_{R_V}|A_V^s$',
+				'Gamma $A_V^s$ Fit to $B-V<1.0\,$mag Samp. (65 SNe) \nw/ $\\mathbf{\\beta}$-Model for $\\mu^s_{R_V}|A_V^s$ & 4 Cens. SNe',
+				'Gamma $A_V^s$ Fit to $B-V<0.3\,$mag Samp. (62 SNe) \nw/ $\\mathbf{\\beta}$-Model for $\\mu^s_{R_V}|A_V^s$ & 7 Cens. SNe',
+				]
+	#'''
 	mapper = dict(zip(FITS,titles))
 
 	load_samples_path = path_to_birdsnack_rootpath+'/products/stan_fits/FITS/'
@@ -43,6 +62,7 @@ if __name__ == "__main__":
 
 		#Get SBC_CLASS
 		sbc = SBC_CLASS(sbc_choices,edit_dict)
+		print (sbc.simfolder)
 		#Simulate SNe Datasets
 		print ('Simulating SN Datasets')
 		sbc.simulate_truths()
@@ -76,7 +96,8 @@ if __name__ == "__main__":
 			elif choices['CensoredData'] and choices['CensoredCut']=='inf':pl.plot(3,4,marker='o',c='r',markersize=20,fillstyle='none',linestyle='None',label='Real Data')
 			else: raise Exception()
 		except:
-			if 'Full' in file or 'CensInf' in file: pl.plot(3,4,marker='o',c='r',markersize=20,fillstyle='none',linestyle='None',label='Real Data')
+			if 'Full' in file or 'CensInf' in file or 'BVcut1.0_Cens' in file or 'BVcut0.3_Cens' in file:
+				pl.plot(3,4,marker='o',c='r',markersize=20,fillstyle='none',linestyle='None',label='Real Data')
 			elif 'Cens1.0' in file: pl.plot(3,0,marker='o',c='r',markersize=20,fillstyle='none',linestyle='None',label='Real Data')
 
 		pl.scatter(Ncens['mid'],Ncens['high'],alpha=0.2,label='Simulations')
