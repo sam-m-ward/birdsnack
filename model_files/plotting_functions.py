@@ -128,14 +128,14 @@ def get_parlabels(choices,default=False,return_parnames_only=False):
 				parlabels.extend(['$\\beta^{%s}_{0}$'%alphabet[n-1],'$\\beta^{%s}_{1}$'%alphabet[n-1],'$\\sigma^{%s}_{R_V}$'%alphabet[n-1]])
 			bounds.extend([[1/(muRVmax-muRVmin),None],[0,None],[0,None]])
 		for n in range(1,N_AVRVSigmoid_dists+1):
-			parnames.extend([f'muAV_sigmoid.{n}',f'sigAV_sigmoid.{n}',f'A_sigmoid.{n}',f'B_sigmoid.{n}',f'sig_RV_sigmoid.{n}'])
+			parnames.extend([f'muAV_sigmoid.{n}',f'sigAV_sigmoid.{n}',f'A_sigmoid.{n}',f'B_sigmoid.{n}',f'sig_RV_sigmoidA.{n}',f'sig_RV_sigmoidB.{n}'])
 			if N_AVRVSigmoid_dists==1:
-				pars.extend(['muAVsig','sigAVsig','Asig','Bsig','sigRVsig'])
-				parlabels.extend(['$\\mu_{A_V}$','$\\sigma_{A_V}$','$A_{\\rm{Sigmoid}}$','$B_{\\rm{Sigmoid}}$','$\\sigma_{R_V}$'])
+				pars.extend(['muAVsig','sigAVsig','Asig','Bsig','sigRVAsig','sigRVBsig'])
+				parlabels.extend(['$\\mu_{A_V}$','$\\sigma_{A_V}$','$A_{\\rm{Sigmoid}}$','$B_{\\rm{Sigmoid}}$','$\\sigma_{R_V;A}$','$\\sigma_{R_V;B}$'])
 			else:
-				pars.extend([f'muAVsig.{n}',f'sigAVsig.{n}',f'Asig.{n}',f'Bsig.{n}',f'sigRVsig.{n}'])
-				parlabels.extend(['$\\mu^{%s}_{A_V}$'%alphabet[n-1],'$\\sigma^{%s}_{A_V}$'%alphabet[n-1],'$\\A^{%s}_{\\rm{Sigmoid}}$'%alphabet[n-1],'$\\B^{%s}_{\\rm{Sigmoid}}$'%alphabet[n-1],'$\\sigma^{%s}_{R_V}$'%alphabet[n-1]])
-			bounds.extend([[0,None],[0,None],[muRVmin,muRVmax],[0,None],[0,None]])#B is actually dep. on A, but ignore this effect
+				pars.extend([f'muAVsig.{n}',f'sigAVsig.{n}',f'Asig.{n}',f'Bsig.{n}',f'sigRVAsig.{n}',f'sigRVBsig.{n}'])
+				parlabels.extend(['$\\mu^{%s}_{A_V}$'%alphabet[n-1],'$\\sigma^{%s}_{A_V}$'%alphabet[n-1],'$\\A^{%s}_{\\rm{Sigmoid}}$'%alphabet[n-1],'$\\B^{%s}_{\\rm{Sigmoid}}$'%alphabet[n-1],'$\\sigma^{%s}_{R_V;A}$'%alphabet[n-1],'$\\sigma^{%s}_{R_V;B}$'%alphabet[n-1]])
+			bounds.extend([[0,None],[0,None],[muRVmin,muRVmax],[0,None],[0,None],[0,None]])#B is actually dep. on A, but ignore this effect
 
 		if AVprior in ['Gamma']:
 			pars.append('nuA')
