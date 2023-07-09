@@ -27,16 +27,19 @@ args = parser.parse_args().__dict__
 loop_pars = [s for s in args["loop_pars"].split(',')]
 parnames,dfpars,parlabels = get_pars()
 
-Nsim_keep = 5
+Nsim_keep = 100
 Rhat_threshold = 1.05
 rec_file = 'AVExp_Cens1.0'#FILE USED FOR SIMULATING; FIT TO REAL DATA
+rec_file = 'AVExp_BVcut1.0'
 #Choices for applying HBM to simulated data
 BIRDSNACK_EDIT_DICT = {'analysis_parameters':
-						{'HBM_savekey':'PPC_LowBVwCens_DevFitDev',
-						#'HBM_savekey':'PPC_CensoredCut1.0_DevFitXH',
-						'CensoredData':True}}
+						{#'HBM_savekey':'PPC_CensoredCut1.0_DevFitXH',
+						#'CensoredData':True
+						'HBM_savekey':'PPC_DevFitDev'
+						}}
 
-edit_dict = {'simulate_parameters':{'S':250,'pre_defined_hyps':{'load_file':'AVExp_Cens1.0'}}}
+#edit_dict = {'simulate_parameters':{'S':250,'pre_defined_hyps':{'load_file':'AVExp_Cens1.0'}}}
+edit_dict = {'simulate_parameters':{'S':250,'pre_defined_hyps':{'load_file':'AVExp_BVcut1.0'}}}
 path_dict = {'load_parameters':{'path_to_rootpath':path_to_rootpath,'path_to_birdsnack_rootpath':path_to_birdsnack_rootpath}}
 edit_dict = {**edit_dict,**path_dict}
 
@@ -63,7 +66,7 @@ if __name__ == "__main__":
 	fig,axs = pl.subplots(len(loop_pars),1,figsize=(8,6*len(loop_pars)))
 	for iax,par in enumerate(loop_pars):
 		plotter = SBC_FITS_PLOTTER(iax,fig.axes,[sbc.__dict__[par],par,dfpars[par],parlabels[par]],FITS,sbc.bs.choices['analysis_parameters'],sbc.path_to_birdsnack_rootpath,quantilemode=args['quantilemode'])
-		plotter.plot_sbc_panel(Ncred=False,Parcred=False,annotate_true=False,plot_true=False,include_pmedian=False,real_data_samps=rec_samps[dfpars[par]])
+		plotter.plot_sbc_panel(Ncred=False,Parcred=False,annotate_true=False,plot_true=False,include_pmedian=False,real_data_samps=rec_samps[dfpars[par]],FAC=500)
 		fig.axes[iax].set_xlabel(r'$%s$'%parlabels[par],fontsize=plotter.FS)
 		fig.axes[iax].plot(sbc.__dict__[par]*np.ones(2),[0,fig.axes[iax].get_ylim()[1]],c='C3',linewidth=2,linestyle='-')
 
