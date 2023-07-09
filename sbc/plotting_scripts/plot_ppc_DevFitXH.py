@@ -28,20 +28,28 @@ args = parser.parse_args().__dict__
 plot_par  = args['plot_par']
 parnames,dfpars,parlabels = get_pars()
 
-Nsim_keep = 10#0
+Nsim_keep = 100
 Rhat_threshold = 1.05
 
 #For X-H Sims (X-H model applied to Deviations-simulated SNe)
 BIRDSNACK_EDIT_DICT = {'analysis_parameters':
-						{'HBM_savekey':'PPC_CensoredCut1.0_DevFitXH',
-						'CensoredData':True,'CensoredCut':1.0,
+						{#'HBM_savekey':'PPC_CensoredCut1.0_DevFitXH',
+						#'CensoredData':True,'CensoredCut':1.0,
+						'HBM_savekey':'PPC_DevFitXH',
 						'IntrinsicModel':'X-H','DataTransformation' : 'X-H'}}
 
 path_dict = {'load_parameters':{'path_to_rootpath':path_to_rootpath,'path_to_birdsnack_rootpath':path_to_birdsnack_rootpath}}
 #Choices for simulating data based on previous stan fit with BirdSnack
-edit_dict1 = {**{'simulate_parameters':{'Nsims':20,'S':250,'pre_defined_hyps':{'load_file':'AVExp_Cens1.0'}}},**path_dict}
-edit_dict2 = {**{'simulate_parameters':{'Nsims':20,        'pre_defined_hyps':{'load_file':'AVExp_Cens1.0'}}},**path_dict}
+#edit_dict1 = {**{'simulate_parameters':{'Nsims':100,'S':250,'pre_defined_hyps':{'load_file':'AVExp_Cens1.0'}}},**path_dict}
+#edit_dict2 = {**{'simulate_parameters':{'Nsims':100,        'pre_defined_hyps':{'load_file':'AVExp_Cens1.0'}}},**path_dict}
+edit_dict1 = {**{'simulate_parameters':{'Nsims':100,'S':250,'pre_defined_hyps':{'load_file':'AVExp_BVcut1.0'}}},**path_dict}
+edit_dict2 = {**{'simulate_parameters':{'Nsims':100,        'pre_defined_hyps':{'load_file':'AVExp_BVcut1.0'}}},**path_dict}
 editdicts = dict(zip([250,65],[edit_dict1,edit_dict2]))
+
+#XH_noLCfile = f"XHCols_Cens1.0"
+#XH_wLCfile  = f"XHCols_wLCshape_Cens1.0"
+XH_noLCfile = f"XHCols_BVcut1.0"
+XH_wLCfile  = f"XHCols_wLCshape_BVcut1.0"
 
 
 if __name__ == "__main__":
@@ -70,11 +78,9 @@ if __name__ == "__main__":
 	for iim,S in enumerate(GLOB_FITS):
 		FITS    = GLOB_FITS[S]
 		plotter = SBC_FITS_PLOTTER(0,[pl.gca()],[true_plot_par,plot_par,dfpars[plot_par],parlabels[plot_par]],FITS,sbc.bs.choices['analysis_parameters'],sbc.path_to_birdsnack_rootpath,quantilemode=args['quantilemode'])
-		plotter.plot_sbc_panel(Ncred=False,annotate_true=False,plot_ind=False,plot_true=False,plot_medians=False,dress_figure=False,fill_between=False,color=f"C{1-iim}",linestyle=['--','-'][iim],line_sap_title='Sim. Posterior')
+		plotter.plot_sbc_panel(Ncred=False,annotate_true=False,plot_ind=False,plot_true=False,plot_medians=False,dress_figure=False,fill_between=False,color=f"C{1-iim}",linestyle=['--','-'][iim],line_sap_title='Sim. Posterior',FAC=400)
 
 	#Real Data Fit Samples
-	XH_noLCfile = f"XHCols_Cens1.0"
-	XH_wLCfile  = f"XHCols_wLCshape_Cens1.0"
 	with open(sbc.rootpath+sbc.bs.FITSpath+f"FIT{XH_noLCfile}.pkl",'rb') as f:	XH_noLC = pickle.load(f)['df'][dfpars[plot_par]]
 	with open(sbc.rootpath+sbc.bs.FITSpath+f"FIT{XH_wLCfile}.pkl",'rb') as f:	XH_wLC  = pickle.load(f)['df'][dfpars[plot_par]]
 	#Plot real data fits
