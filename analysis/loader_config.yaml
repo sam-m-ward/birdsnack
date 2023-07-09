@@ -271,6 +271,11 @@ analysis_parameters:
   #Dispersion of Normal prior on alpha_skew_int
   skew_int_disp_prior : 2
 
+  #For BinnedRVFits
+  BinnedRVFit : False
+  BVbinboundaries : []
+  RVstyles : []
+
   #Option to make multiple copies of sample to fit
   copymode : 1
   copymode : False
