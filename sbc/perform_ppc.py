@@ -21,12 +21,12 @@ from sbc_plot_functions import update_edit_dict_for_ppc
 
 #PPC Recovery of nuA=1; Applying Gamma dist. to fit Exp-simulated Data
 BIRDSNACK_EDIT_DICT = {'analysis_parameters':
-						{'HBM_savekey':'PPC_CensoredCut1.0_ExpFitGamma',
-						'CensoredData':True,'CensoredCut':1.0,
+						{'HBM_savekey':'PPC_ExpFitGamma',
 						'AVprior':'Gamma','n_warmup':1000,'n_sampling':3000,'n_thin':1000}}
 
 #Choices for simulating data based on previous stan fit with BirdSnack
-edit_dict = {'simulate_parameters':{'Nsims':20,'S':250,'pre_defined_hyps':{'load_file':'AVExp_Cens1.0'}}}
+#edit_dict = {'simulate_parameters':{'Nsims':100,'pre_defined_hyps':{'load_file':'AVExp_BVcut1.0'}}}
+edit_dict = {'simulate_parameters':{'Nsims':100,'S':250,'pre_defined_hyps':{'load_file':'AVExp_BVcut1.0'}}}
 
 
 #Directory to periodically_delete stan build, conserve memory
