@@ -79,7 +79,7 @@ preproc_parameters:
   pblist : ['B','V','r','i','J','H']
   #List of phases to interpolate to
   tilist     : [0]
-  #The python index in tclist taken as reference time
+  #The python index in tilist taken as reference time
   tref_index : 0
 
   #Defines extra features beyond those in pblist,tilist to extract
