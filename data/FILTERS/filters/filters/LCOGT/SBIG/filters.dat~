@@ -1,0 +1,13 @@
+Ulcogt u_stritzinger 14.186  Ubessel on LCOGT 1m
+Blcogt b_stritzinger 15.289  Bbessel on LCOGT 1m
+Vlcogt v_stritzinger 14.860  Vbessel on LCOGT 1m
+Rlcogt r_stritzinger 15.046  Rbessel on LCOGT 1m
+Ilcogt i_stritzinger 14.546  Ibessel on LCOGT 1m
+ulcogt sdss_u.dat 12.4757864000 sloan u on LCOGT 1m
+glcogt sdss_g.dat 14.2013159905 sloan g on LCOGT 1m
+rlcogt sdss_r.dat 14.2156544329 sloan r on LCOGT 1m
+ilcogt sdss_i.dat 13.7775438954 sloan i on LCOGT 1m
+zlcogt sdss_z.dat 11.8525822106 sloan z on LCOGT 1m (Pan-Starrs)
+b b_stritzinger VegaB=0 Bbessel on LCOGT 1m
+v v_stritzinger VegaB=0 Vbessel on LCOGT 1m
+z sdss_z.dat 11.8525822106 sloan z on LCOGT 1m (Pan-Starrs)

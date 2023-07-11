@@ -1,0 +1,5 @@
+g_PS1 g_filt_revised.txt VegaB=0 g-band Tonry YSE
+r_PS1 r_filt_tonry.txt VegaB=0 r-band Tonry YSE
+i_PS1 i_filt_tonry.txt VegaB=0 i-band Tonry YSE 
+z_PS1 z_filt_tonry.txt VegaB=0 z-band Tonry YSE 
+y_PS1 y_filt_tonry.txt VegaB=0 y-band Tonry YSE
