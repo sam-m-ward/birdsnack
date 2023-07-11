@@ -35,6 +35,8 @@ simulate_parameters:
   #Population distribution of AVs parameters
   AVsimdist : 'Gamma'
   AVsimdist : 'Exp'
+  #Population distirbution of RVs
+  RVsimdist : 'Norm'
   #nuA : 3
   nuA : None
   #Pre-defined Intrinsic Population Hyperparameters, if True, set to posterior medians from some file
