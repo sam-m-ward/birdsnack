@@ -1,0 +1,4 @@
+uvF475W wfc3_uvis_uvF475W.dat VegaB=0.0 F475W  (g)
+uvF625W wfc3_uvis_uvF625W.dat VegaB=0.0 F625W (r)
+uvF814W wfc3_uvis_uvF814W.dat VegaB=0.0 F814W (i)
+f160w wfc3_ir_f160w.dat VegaB=0.0 F160W (H) band on WFC3
