@@ -12,3 +12,8 @@ This pipeline uses:
 Checkout out [**demo_notebook.ipynb**](https://github.com/sam-m-ward/birdsnack/blob/dev/demo_notebook.ipynb) for a quick introduction to how Bird-Snack works.
 
 See also [**demo_sbc_ppc.ipynb**](https://github.com/sam-m-ward/birdsnack/blob/dev/demo_sbc_ppc.ipynb) for introduction to simulating and fitting fake datasets with Bird-Snack.
+
+To build the Bird-Snack conda environment, see instructions in [**installation.txt**](https://github.com/sam-m-ward/birdsnack/blob/dev/installation.txt)
+
+---
+
