@@ -345,7 +345,7 @@ def update_edit_dict_for_ppc(sbc_choices, edit_dict):
 	from plotting_functions import get_parlabels
 	pars,parnames,parlabels,bounds = get_parlabels(FIT['choices'])
 	dust_hyps = dict(zip(pars,list(FIT['df'].median(axis=0).round(4)[parnames].values)))
-	print (dust_hyps)
+	#print (dust_hyps)
 	candidates= {**candidates,**dust_hyps}
 	#Update changes
 	for key,value in candidates.items():
