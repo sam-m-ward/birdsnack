@@ -19,7 +19,7 @@ cd birdsnack/data/FILTERS/
 python update_conda_env_filters.py
 
 #Bird-snack installation is now good to go, try running
-cd birdsnack/analysis
+cd ../../analysis
 python analyse_fiducial_sample.py
 
 #Some scripts require BayeSN for simulating data.
