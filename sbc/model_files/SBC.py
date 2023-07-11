@@ -274,6 +274,7 @@ class SBC_CLASS:
 		#Initialise Bird-Snack Model
 		sys.path.append(f"{self.path_to_birdsnack_rootpath}model_files/")
 		from birdsnack_model import BIRDSNACK
+		edit_dict['rootpath'] = self.path_to_birdsnack_rootpath
 		bs      = BIRDSNACK(configname=f"{self.rootpath}{self.birdsnack_yaml}.yaml",edit_dict=edit_dict)
 		pblist  = bs.choices['preproc_parameters']['pblist']
 		errstr  = bs.choices['preproc_parameters']['errstr']
@@ -303,6 +304,7 @@ class SBC_CLASS:
 						delete_tmp_files = glob(f'{outputdir}*')#Need to do this manually otherwise files stack up in tmp/ and for loop dies
 						for file in delete_tmp_files:
 							shutil.rmtree(file)
+		print ('Completed fitting simulated datasets')
 
 	def get_fits(self,edit_dict={},TRUTHS_DICT=None):
 		"""
@@ -331,6 +333,7 @@ class SBC_CLASS:
 		#Initialise Bird-Snack Model
 		sys.path.append(f"{self.path_to_birdsnack_rootpath}model_files/")
 		from birdsnack_model import BIRDSNACK
+		edit_dict['rootpath'] = self.path_to_birdsnack_rootpath
 		bs = BIRDSNACK(configname=f"{self.rootpath}{self.birdsnack_yaml}.yaml",edit_dict=edit_dict)
 		#Load FITS
 		FITS = {}
