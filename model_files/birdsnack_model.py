@@ -913,7 +913,7 @@ class BIRDSNACK:
 		errstr      = self.choices['preproc_parameters']['errstr']
 		tref        = self.choices['preproc_parameters']['tilist'][self.choices['preproc_parameters']['tref_index']]
 		logMcut     = self.choices['additional_cut_parameters']['logMcut']
-		BVcutval    = self.chocies['additional_cut_parameters']['BVcutval']
+		BVcutval    = self.choices['additional_cut_parameters']['BVcutval']
 		FS          = self.choices['plotting_parameters']['FS']
 		Nm          = len(pblist)
 		linestyles  = ['-',':','-.','--']
