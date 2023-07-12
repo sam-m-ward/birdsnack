@@ -16,7 +16,7 @@ BIRDSNACK class
 		get_peak_mags(savekey='Default', overwrite=False)
 		plot_lcs(sns=None,**kwargs)
 		additional_cuts(cutter=True)
-		fit_stan_model(save=True,Rhat_threshold=1.02,Rhat_check_params=['mu_RV','sig_RV','tauA'],Ntrials=3,additive=False,adder=1000)
+		fit_stan_model(save=True,Rhat_threshold=1.02,Ntrials=3,additive=False,adder=1000)
 		plot_posterior_samples()
 		plot_mag_deviations()
 		plot_colour_corner()
@@ -675,7 +675,7 @@ class BIRDSNACK:
 		self.sns  = list(self.lcs.keys())
 		print ('###'*5)
 
-	def fit_stan_model(self,save=True,Rhat_threshold=1.02,Rhat_check_params=['mu_RV','sig_RV','tauA'],Ntrials=3,additive=False,adder=1000):
+	def fit_stan_model(self,save=True,Rhat_threshold=1.02,Ntrials=3,additive=False,adder=1000):
 		"""
 		Fit Stan Model
 
@@ -688,9 +688,6 @@ class BIRDSNACK:
 
 		Rhat_threshold : float (optional; default=1.02)
 			default value of Rhat for Rhat_check_params which cannot be exceeded else fit will be done again with more samples
-
-		Rhat_check_params : list (optional; default=['mu_RV','sig_RV','tauA'])
-			list of strs where strs are parameters for which Rhat will be checked
 
 		Ntrials : float (optional; default=3)
 			keep doing fit, multiplying up n_sampling, until Rhats<threshold
