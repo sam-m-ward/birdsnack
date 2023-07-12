@@ -8,22 +8,15 @@ Contains:
 --------------------
 GPFitObj Class:
     inputs: x,y,yerr,hyperparameters,gp
-    class that stores important GP fit information
 
-get_x_pred(xmin=None,xmax=None,x=None,Ngrid=10000):
-    function to return grid of x-values where predictions are made based off some xmin and xmax
-
-GP_1D_squaredexp(x,y,yerr,x_pred=None,xmin=None,xmax=None,tau_guess=10, return_cov=False):
-    function to interpolate x,y,yerr data with GP 1D squared exponential kernel, outputs GPFitObj class
-
-GP_2D_Matern(x,y,yerr,lambdaC,wavelengths,x_pred=None,xmin=None,xmax=None,tau_guess=10, return_cov=False):
-    function to interpolate x,y,yerr and wavelengths with GP 2D Matern kernel, outputs GPFitObj class
+Functions are:
+    get_x_pred(xmin=None,xmax=None,x=None,Ngrid=10000)
+    GP_1D_squaredexp(x,y,yerr,x_pred=None,xmin=None,xmax=None,tau_guess=10, return_cov=False)
+    GP_2D_Matern(x,y,yerr,lambdaC,wavelengths,x_pred=None,xmin=None,xmax=None,tau_guess=10,return_cov=False)
 
 -------------------
-Functions use simple operations + george gp. object
-
 Written by Sam M. Ward: smw92@cam.ac.uk
-Credits Boone19 https://github.com/kboone/avocado/tree/master
+2DGP Interpolation Credits Boone19 https://github.com/kboone/avocado/tree/master
 """
 
 import george
