@@ -13,7 +13,7 @@ HBM_preprocessor class:
 		get_leff_rest()
 		get_dustlaw()
 		get_BV_ordered_DF_M()
-		get_RVbin_data(flatRVsmin=1, flatRVsmax=6, a_sigma_beta0=1, a_sigma_beta1=1, a_sigma_muAVsigmoid=1, a_sigma_sigAVsigmoid=1))
+		get_RVbin_data(flatRVsmin=1, flatRVsmax=6, a_sigma_beta0=1, a_sigma_beta1=1, a_sigma_muAVsigmoid=1, a_sigma_sigAVsigmoid=1)
 		get_censored_data()
 		get_dm15Bs()
 		get_CM_transformation_matrix(DataTransformation=None, returner=False)
