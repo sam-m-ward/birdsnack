@@ -1123,11 +1123,17 @@ class BIRDSNACK:
 		Plot of muRV posteriors
 		"""
 		if FITS is None:
+			#FITS = {
+			#'AVexp_Cens1.0':{'label':'Deviations'},
+			#'AdjCols_Cens1.0':{'label':'Adjacent Colours'},
+			#'BXCols_Cens1.0':{'label':'$B-X$ Colours'},
+			#'XHCols_Cens1.0':{'label':'$X-H$ Colours'},
+			#}
 			FITS = {
-			'AVexp_Cens1.0':{'label':'Deviations'},
-			'AdjCols_Cens1.0':{'label':'Adjacent Colours'},
-			'BXCols_Cens1.0':{'label':'$B-X$ Colours'},
-			'XHCols_Cens1.0':{'label':'$X-H$ Colours'},
+			'AVExp_BVcut1.0':{'label':'Deviations'},
+			'AdjCols_BVcut1.0':{'label':'Adjacent Colours'},
+			'BXCols_BVcut1.0':{'label':'$B-X$ Colours'},
+			'XHCols_BVcut1.0':{'label':'$X-H$ Colours'},
 			}
 		FS = self.choices['plotting_parameters']['FS']
 		pl.figure(figsize=(8,6))
