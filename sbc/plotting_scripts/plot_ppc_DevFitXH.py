@@ -35,8 +35,13 @@ Rhat_threshold = 1.05
 BIRDSNACK_EDIT_DICT = {'analysis_parameters':
 						{#'HBM_savekey':'PPC_CensoredCut1.0_DevFitXH',
 						#'CensoredData':True,'CensoredCut':1.0,
-						'HBM_savekey':'PPC_DevFitXH',
-						'IntrinsicModel':'X-H','DataTransformation' : 'X-H'}}
+						#'HBM_savekey':'PPC_DevFitXH',
+						#'IntrinsicModel':'X-H','DataTransformation' : 'X-H'}
+						#'HBM_savekey':'PPC_DevFitBX',
+						#'IntrinsicModel':'B-X','DataTransformation' : 'B-X'}
+						'HBM_savekey':'PPC_DevFitAdj',
+						'IntrinsicModel':'Adjacent','DataTransformation' : 'Adjacent'}
+						}
 
 path_dict = {'load_parameters':{'path_to_rootpath':path_to_rootpath,'path_to_birdsnack_rootpath':path_to_birdsnack_rootpath}}
 #Choices for simulating data based on previous stan fit with BirdSnack
