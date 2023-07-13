@@ -532,9 +532,9 @@ class PARAMETER:
 		condition2 = not (KDE[0]>=hh*KDEmode or KDE[-1]>=hh*KDEmode)
 
 		#If typical Gaussian-like posterior, plot median, 16 and 84th percentiles
+		print (f"5%, 50%, 68%, 95% quantiles: {round(self.dfchain.par.quantile(0.05),2)}, {round(self.dfchain.par.quantile(0.5),2)}, {round(self.dfchain.par.quantile(0.68),2)},{round(self.dfchain.par.quantile(0.95),2)}")
 		if condition1 and condition2:
 			print (f"{parname}: {round(self.samp_median,2)} +/- {round(self.samp_std,2)}; 16th and 84th intervals: -{round(self.dfchain.par.quantile(0.5)-self.dfchain.par.quantile(0.16),2)}+{round(self.dfchain.par.quantile(0.84)-self.dfchain.par.quantile(0.5),2)}")
-			print (f"5%, 68%, 95% quantiles: {round(self.dfchain.par.quantile(0.05),2)}, {round(self.dfchain.par.quantile(0.68),2)},{round(self.dfchain.par.quantile(0.95),2)}")
 			#Plot median and 16th 84th quantiles
 			i_med, x_med, KDE_med = self.get_KDE_values(value=self.samp_median)
 			ax[row,row].plot(np.ones(2)*x_med,[0,KDE_med],c=colour)
