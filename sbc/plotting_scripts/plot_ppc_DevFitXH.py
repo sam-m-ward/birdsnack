@@ -81,8 +81,8 @@ if __name__ == "__main__":
 		plotter.plot_sbc_panel(Ncred=False,annotate_true=False,plot_ind=False,plot_true=False,plot_medians=False,dress_figure=False,fill_between=False,color=f"C{1-iim}",linestyle=['--','-'][iim],line_sap_title='Sim. Posterior',FAC=400)
 
 	#Real Data Fit Samples
-	with open(sbc.rootpath+sbc.bs.FITSpath+f"FIT{XH_noLCfile}.pkl",'rb') as f:	XH_noLC = pickle.load(f)['df'][dfpars[plot_par]]
-	with open(sbc.rootpath+sbc.bs.FITSpath+f"FIT{XH_wLCfile}.pkl",'rb') as f:	XH_wLC  = pickle.load(f)['df'][dfpars[plot_par]]
+	with open(sbc.bs.FITSpath+f"FIT{XH_noLCfile}.pkl",'rb') as f:	XH_noLC = pickle.load(f)['df'][dfpars[plot_par]]
+	with open(sbc.bs.FITSpath+f"FIT{XH_wLCfile}.pkl",'rb') as f:	XH_wLC  = pickle.load(f)['df'][dfpars[plot_par]]
 	#Plot real data fits
 	import sys
 	sys.path.append(sbc.path_to_birdsnack_rootpath+'model_files/')

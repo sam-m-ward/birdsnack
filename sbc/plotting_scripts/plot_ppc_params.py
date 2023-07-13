@@ -29,7 +29,7 @@ parnames,dfpars,parlabels = get_pars()
 
 Nsim_keep = 100
 Rhat_threshold = 1.05
-rec_file = 'AVExp_Cens1.0'#FILE USED FOR SIMULATING; FIT TO REAL DATA
+#rec_file = 'AVExp_Cens1.0'#FILE USED FOR SIMULATING; FIT TO REAL DATA
 rec_file = 'AVExp_BVcut1.0'
 #Choices for applying HBM to simulated data
 BIRDSNACK_EDIT_DICT = {'analysis_parameters':
@@ -59,14 +59,14 @@ if __name__ == "__main__":
 		FITS = trim_to_KEEPERS({'dummy':FITS},get_KEEPERS({'dummy':FITS},Nsim_keep,Rhat_threshold,par,dfpars[par]))['dummy']
 
 	#Real Data Fit Samples
-	with open(sbc.rootpath+sbc.bs.FITSpath+f"FIT{rec_file}.pkl",'rb') as f:
+	with open(sbc.bs.FITSpath+f"FIT{rec_file}.pkl",'rb') as f:
 		rec_samps = pickle.load(f)['df']
 
 	#Plot SBC
 	fig,axs = pl.subplots(len(loop_pars),1,figsize=(8,6*len(loop_pars)))
 	for iax,par in enumerate(loop_pars):
 		plotter = SBC_FITS_PLOTTER(iax,fig.axes,[sbc.__dict__[par],par,dfpars[par],parlabels[par]],FITS,sbc.bs.choices['analysis_parameters'],sbc.path_to_birdsnack_rootpath,quantilemode=args['quantilemode'])
-		plotter.plot_sbc_panel(Ncred=False,Parcred=False,annotate_true=False,plot_true=False,include_pmedian=False,real_data_samps=rec_samps[dfpars[par]],FAC=500)
+		plotter.plot_sbc_panel(Ncred=False,Parcred=False,annotate_true=False,plot_true=False,include_pmedian=False,real_data_samps=rec_samps[dfpars[par]],FAC=400)
 		fig.axes[iax].set_xlabel(r'$%s$'%parlabels[par],fontsize=plotter.FS)
 		fig.axes[iax].plot(sbc.__dict__[par]*np.ones(2),[0,fig.axes[iax].get_ylim()[1]],c='C3',linewidth=2,linestyle='-')
 

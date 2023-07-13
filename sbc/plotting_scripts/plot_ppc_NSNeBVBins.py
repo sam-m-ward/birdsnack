@@ -12,7 +12,7 @@ from sbc_plot_functions import update_edit_dict_for_ppc
 if __name__ == "__main__":
 	Nsims = 100
 
-	'''
+	#'''
 	FITS = [
 	'AVExp_Full',
 	'AVExp_CensInf',
@@ -28,7 +28,7 @@ if __name__ == "__main__":
 				'Gamma $A_V^s$ Fit to Low $B-V$ Samp. (62 SNe) \nw/ Censored Data (7 SNe)',
 				'Gamma $A_V^s$ Fit to Low $B-V$ Samp. (62 SNe) \nw/ Censored Data (3 SNe)']
 	#'''
-	#'''
+	'''
 	FITS = [
 	'AVExp_Full_AVRVBeta',
 	'AVExp_AVRVBeta_BVcut1.0_Cens',

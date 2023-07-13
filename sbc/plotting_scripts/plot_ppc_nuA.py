@@ -20,7 +20,7 @@ import matplotlib.pyplot as pl
 parser = argparse.ArgumentParser(description="SBC Input Dust Hyperparameters")
 parser.add_argument("--plot_par",   default='nu',          help='Set parameter to plot')
 parser.add_argument("--loop_par",   default='S',           help='Set parameter to change in each panel')
-parser.add_argument("--loop_S",     default='65,125,250',  help='NSNe on each panel')
+parser.add_argument("--loop_S",     default='65,250',  help='NSNe on each panel')
 parser.add_argument("--save",	default=True,		      help='Save plot')
 parser.add_argument("--show",	default=False,		      help='Show plot')
 parser.add_argument("--quantilemode",	default=True,	  help='If True, annotate with 16,84, False, use sample std.')
@@ -32,15 +32,18 @@ loop_par = args['loop_par']
 loop_par_dict = {loop_par:[int(s) for s in args["loop_S"].split(',')]}
 parnames,dfpars,parlabels = get_pars()
 
-Nsim_keep = 5
+Nsim_keep = 100
 Rhat_threshold = 1.1
-load_file = 'AVExp_Cens1.0'#FILE USED FOR SIMULATING; FIT TO REAL DATA
-rec_file  = 'AVGamma_Cens1.0'#FILE USED FOR RECOVERY; FIT TO REAL DATA
+#load_file = 'AVExp_Cens1.0'#FILE USED FOR SIMULATING; FIT TO REAL DATA
+#rec_file  = 'AVGamma_Cens1.0'#FILE USED FOR RECOVERY; FIT TO REAL DATA
+load_file = 'AVExp_BVcut1.0'#FILE USED FOR SIMULATING; FIT TO REAL DATA
+rec_file  = 'AVGamma_BVcut1.0'#FILE USED FOR RECOVERY; FIT TO REAL DATA
 #Choices for applying HBM to simulated data
 BIRDSNACK_EDIT_DICT = {'analysis_parameters':
-						{'HBM_savekey':'PPC_CensoredCut1.0_ExpFitGamma',
-						'CensoredData':True,'CensoredCut':1.0,
-						'AVprior':'Gamma','n_warmup':1000,'n_sampling':2000,'n_thin':1000}}
+						{#'HBM_savekey':'PPC_CensoredCut1.0_ExpFitGamma',
+						#'CensoredData':True,'CensoredCut':1.0,
+						'HBM_savekey':'PPC_ExpFitGamma',
+						'AVprior':'Gamma'}}#,'n_warmup':1000,'n_sampling':2000,'n_thin':1000}}
 
 path_dict = {'load_parameters':{'path_to_rootpath':path_to_rootpath,'path_to_birdsnack_rootpath':path_to_birdsnack_rootpath}}
 
@@ -65,15 +68,16 @@ if __name__ == "__main__":
 		GLOB_FITS[parvalue] = FITS
 
 	#Real Data Fit Samples
-	with open(sbc.rootpath+sbc.bs.FITSpath+f"FIT{rec_file}.pkl",'rb') as f:
+	with open(sbc.bs.FITSpath+f"FIT{rec_file}.pkl",'rb') as f:
 		rec_samps = pickle.load(f)['df'][dfpars[plot_par]]
 
 	#Plot SBC
-	fig,axs = pl.subplots(len(GLOB_FITS),1,figsize=(8,14),sharex=True,gridspec_kw={'height_ratios': [1.5, 1, 1]})
+	#fig,axs = pl.subplots(len(GLOB_FITS),1,figsize=(8,14),sharex=True,gridspec_kw={'height_ratios': [1.5, 1, 1]})
+	fig,axs = pl.subplots(len(GLOB_FITS),1,figsize=(8,14),sharex=True,gridspec_kw={'height_ratios': [1.5, 1]})
 	for iax,true_loop_par in enumerate(GLOB_FITS):
 		FITS    = GLOB_FITS[true_loop_par]
 		plotter = SBC_FITS_PLOTTER(iax,fig.axes,[true_plot_par,plot_par,dfpars[plot_par],parlabels[plot_par]],FITS,sbc.bs.choices['analysis_parameters'],sbc.path_to_birdsnack_rootpath,quantilemode=args['quantilemode'])
-		plotter.plot_sbc_panel(Ncred=False,Parcred=True,annotate_true=False,real_data_samps=rec_samps if iax==0 else False,line_rec_title='Real Data Posterior w/ Gamma')
+		plotter.plot_sbc_panel(Ncred=False,Parcred=True,annotate_true=False,real_data_samps=rec_samps if iax==0 else False,line_rec_title='Real Data Posterior w/ Gamma',FAC=200)
 		fig.axes[iax].annotate(f'No. of Simulated SNe = {true_loop_par}',	xy=(0.95,0.475+0.02-0.05),xycoords='axes fraction',fontsize=plotter.FS,ha='right',weight='bold')
 
 	fig.axes[-1].set_xlabel(r'$%s$'%parlabels[plot_par],fontsize=plotter.FS)
