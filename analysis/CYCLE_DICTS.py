@@ -16,8 +16,8 @@ CYCLE_DICT_Science = {
 				}
 			}
 
-CYCLE_DICT_CensoredData = {
-				'COMMON_CHANGES' : {'newdict':{'CensoredData':True,'CensoredCut':1.0},'HBMappender':'Cens1.0'},
+CYCLE_DICT_BVcut1 = {
+				'COMMON_CHANGES' : {'newdict':{'CensoredData':False,'BVcut':True,'BVcutval':1.0},'HBMappender':'BVcut1.0'},
 
 				'RUNS' : {
 
@@ -26,8 +26,8 @@ CYCLE_DICT_CensoredData = {
 				'AVGamma'               :       {    'newdict': {'AVprior':'Gamma','n_sampling':10000},
 													 'label':'$A_V^s \sim $ Gamma$(\\nu_A,\\tau_A)$'},
 				###############
-				#'uBVriJH'				:		{	 'newdict':{'DF_savekey':'uBVriJH','pblist':[s for s in 'uBVriJH'],'lam_choice':'central'},
-				#										'label':'$uBVriJH$'},
+				'uBVriJH'				:		{	 'newdict':{'DF_savekey':'uBVriJH','pblist':[s for s in 'uBVriJH'],'lam_choice':'central'},
+														'label':'$uBVriJH$'},
 				###############
 				'Central_Lam'				:       {   'newdict': {'lam_choice':'central','n_sampling':3000},
 											'label':'Central-$\\lambda$'},
@@ -85,26 +85,19 @@ CYCLE_DICT_CensoredData = {
 				'Phasemax2'             :       {   'newdict': {'phase_max':2},
 											'label':'Data within 2 days of Peak'},
 				###############
-				#'PreSubEBVMW_Phasemax4' :       {   'newdict': {'phase_max':4,'apply_EBVMW_corrections':'Presubtract','n_sampling':3000,'DF_savekey':'EBVMWpresubtract','extra_drop_SNe':{'13duj':'Dropped in non-EBVMW DF, so drop here (on borderline of 4days)'}},
-				#							'label':'Pre-subtract $E(B-V)_{MW}$; Data within 4 days of Peak'},
-				#'AVGamma_PreSubEBVMW_Phasemax4':{    'newdict': {'AVprior':'Gamma','n_sampling':12000,'phase_max':4,'apply_EBVMW_corrections':'Presubtract','DF_savekey':'EBVMWpresubtract','extra_drop_SNe':{'13duj':'Dropped in non-EBVMW DF, so drop here (on borderline of 4days)'}},
-				#									 'label':'$A_V^s \sim $ Gamma$(\\nu_A,\\tau_A)$; Pre-subtract $E(B-V)_{MW}$; Data within 4 days of Peak'},
-				#'AVGamma_Phasemax4'		:		{    'newdict': {'AVprior':'Gamma','n_sampling':12000,'phase_max':4},
-				#									 'label':'$A_V^s \sim $ Gamma$(\\nu_A,\\tau_A)$; Data within 4 days of Peak'},
-				###############
-				#'Deviations_NoIntVar'   :		 {    'newdict': {
-				#											'n_sampling':1000,'n_warmup':1000,'include_residuals':False},
-				#							'label':'Deviations no Int. Var.'},
-				#'AdjCols_NoIntVar'      :       {    'newdict': {'DataTransformation':'Adjacent','IntrinsicModel':'Adjacent',
-				#											'n_sampling':1000,'n_warmup':1000, 'include_residuals':False},
-				#							'label':'Adjacent Colours no Int. Var.'},
-				#'BXCols_NoIntVar'          :       {    'newdict': {'DataTransformation':'B-X','IntrinsicModel':'B-X',
-				#											'n_sampling':1000,'n_warmup':1000, 'include_residuals':False},
-				#							'label':'$B-X$ Colours no Int. Var.'},
-				#'XHCols_NoIntVar'          :       {    'newdict': {'DataTransformation':'X-H','IntrinsicModel':'X-H',
-				#											'n_sampling':1000,'n_warmup':1000, 'include_residuals':False},
-				#							'label':'$X-H$ Colours no Int. Var.'},
-
+				'Deviations_NoIntVar'   :		 {    'newdict': {
+															'n_sampling':1000,'n_warmup':1000,'include_residuals':False},
+											'label':'Deviations no Int. Var.'},
+				'AdjCols_NoIntVar'      :       {    'newdict': {'DataTransformation':'Adjacent','IntrinsicModel':'Adjacent',
+															'n_sampling':1000,'n_warmup':1000, 'include_residuals':False},
+											'label':'Adjacent Colours no Int. Var.'},
+				'BXCols_NoIntVar'          :       {    'newdict': {'DataTransformation':'B-X','IntrinsicModel':'B-X',
+															'n_sampling':1000,'n_warmup':1000, 'include_residuals':False},
+											'label':'$B-X$ Colours no Int. Var.'},
+				'XHCols_NoIntVar'          :       {    'newdict': {'DataTransformation':'X-H','IntrinsicModel':'X-H',
+															'n_sampling':1000,'n_warmup':1000, 'include_residuals':False},
+											'label':'$X-H$ Colours no Int. Var.'},
+				################
 				}
 			}
 
