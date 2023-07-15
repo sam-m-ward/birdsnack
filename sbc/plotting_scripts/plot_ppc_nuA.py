@@ -20,7 +20,7 @@ import matplotlib.pyplot as pl
 parser = argparse.ArgumentParser(description="SBC Input Dust Hyperparameters")
 parser.add_argument("--plot_par",   default='nu',          help='Set parameter to plot')
 parser.add_argument("--loop_par",   default='S',           help='Set parameter to change in each panel')
-parser.add_argument("--loop_S",     default='65,250',  help='NSNe on each panel')
+parser.add_argument("--loop_S",     default='65,125,250',  help='NSNe on each panel')
 parser.add_argument("--save",	default=True,		      help='Save plot')
 parser.add_argument("--show",	default=False,		      help='Show plot')
 parser.add_argument("--quantilemode",	default=True,	  help='If True, annotate with 16,84, False, use sample std.')
@@ -47,6 +47,7 @@ BIRDSNACK_EDIT_DICT = {'analysis_parameters':
 
 path_dict = {'load_parameters':{'path_to_rootpath':path_to_rootpath,'path_to_birdsnack_rootpath':path_to_birdsnack_rootpath}}
 
+XGRID = [0.25,3,100]#xmin,xmax,Nsteps
 if __name__ == "__main__":
 	print (f"Plotting PPC of {loop_par_dict};")
 	with open(f"{path_to_rootpath}ppc.yaml") as f:
@@ -72,12 +73,11 @@ if __name__ == "__main__":
 		rec_samps = pickle.load(f)['df'][dfpars[plot_par]]
 
 	#Plot SBC
-	#fig,axs = pl.subplots(len(GLOB_FITS),1,figsize=(8,14),sharex=True,gridspec_kw={'height_ratios': [1.5, 1, 1]})
-	fig,axs = pl.subplots(len(GLOB_FITS),1,figsize=(8,14),sharex=True,gridspec_kw={'height_ratios': [1.5, 1]})
+	fig,axs = pl.subplots(len(GLOB_FITS),1,figsize=(8,14),sharex=True,gridspec_kw={'height_ratios': [1.5, 1, 1]})
 	for iax,true_loop_par in enumerate(GLOB_FITS):
 		FITS    = GLOB_FITS[true_loop_par]
 		plotter = SBC_FITS_PLOTTER(iax,fig.axes,[true_plot_par,plot_par,dfpars[plot_par],parlabels[plot_par]],FITS,sbc.bs.choices['analysis_parameters'],sbc.path_to_birdsnack_rootpath,quantilemode=args['quantilemode'])
-		plotter.plot_sbc_panel(Ncred=False,Parcred=True,annotate_true=False,real_data_samps=rec_samps if iax==0 else False,line_rec_title='Real Data Posterior w/ Gamma',FAC=200)
+		plotter.plot_sbc_panel(Ncred=False,Parcred=True,annotate_true=False,real_data_samps=rec_samps if iax==0 else False,line_rec_title='Real Data Posterior w/ Gamma',XGRID=XGRID)#FAC=25+60*(iax==1)+100*(iax==2))
 		fig.axes[iax].annotate(f'No. of Simulated SNe = {true_loop_par}',	xy=(0.95,0.475+0.02-0.05),xycoords='axes fraction',fontsize=plotter.FS,ha='right',weight='bold')
 
 	fig.axes[-1].set_xlabel(r'$%s$'%parlabels[plot_par],fontsize=plotter.FS)
