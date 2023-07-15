@@ -18,7 +18,7 @@ POSTERIOR_PLOTTER class:
 		corner(fig_ax, Ngrid=100, colour="C0", warn_tolerance=0.05, FS=15)
 		corner_plot()
 PARAMETER class:
-	inputs: chain,parname,parlabel,lim,bound,Rhat,row,choices,smoothing
+	inputs: chain,parname,parlabel,lim,bound,Rhat,row,choices,smoothing=2,XGRID=None
 
 	Methods are:
 		get_xgrid(fac=0.1)
@@ -356,15 +356,18 @@ class PARAMETER:
 		xgrid : array
 			grid points for KDE
 		"""
-		lim   = self.lim
-		bound = self.bound
-		Ngrid = int(self.Nsamps*fac)
-		#If Bounds is not None, make xgrid larger, to allow for reflection KDE (i.e. KDE extends beyond prior boundary, then is reflected and doubled over within boundary)
-		xgrid = np.linspace(lim[0] - (bound[0] is not None) * (lim[1]-lim[0]),
-							lim[1] + (bound[1] is not None) * (lim[1]-lim[0]),
-							Ngrid*int(1 + (bound[0] is not None) + (bound[1] is not None))
-							)
-		self.xgrid = xgrid
+		if self.XGRID is None:
+			lim   = self.lim
+			bound = self.bound
+			Ngrid = int(self.Nsamps*fac)
+			#If Bounds is not None, make xgrid larger, to allow for reflection KDE (i.e. KDE extends beyond prior boundary, then is reflected and doubled over within boundary)
+			xgrid = np.linspace(lim[0] - (bound[0] is not None) * (lim[1]-lim[0]),
+								lim[1] + (bound[1] is not None) * (lim[1]-lim[0]),
+								Ngrid*int(1 + (bound[0] is not None) + (bound[1] is not None))
+								)
+			self.xgrid = xgrid
+		else:
+			self.xgrid = np.linspace(self.XGRID[0],self.XGRID[1],self.XGRID[2])
 
 	def slice_reflection_KDE(self):
 		"""
@@ -397,7 +400,7 @@ class PARAMETER:
 		self.xgrid = xgrid
 		self.KDE   = KDE
 
-	def __init__(self,chain,parname,parlabel,lim,bound,Rhat,row,choices,smoothing=2):
+	def __init__(self,chain,parname,parlabel,lim,bound,Rhat,row,choices,smoothing=2,XGRID=None):
 		"""
 		See POSTERIOR_PLOTTER class docstring for input descriptions
 		"""
@@ -410,6 +413,7 @@ class PARAMETER:
 		self.row       = row
 		self.choices   = choices
 		self.smoothing = smoothing #Smoothing for 1D marginal KDE
+		self.XGRID     = XGRID
 
 		self.Nsamps      = len(self.chain)
 		self.samp_median = np.median(self.chain)
