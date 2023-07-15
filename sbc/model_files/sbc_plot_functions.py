@@ -11,7 +11,7 @@ SBC_FITS_PLOTTER class
 	Methods are:
 		get_SAMPS()
 		get_QUANTILES()
-		plot_sbc_panel(Ncred=True,Parcred=False,annotate_true=True,real_data_samps=False,plot_ind=True,plot_true=True,plot_medians=True,include_pmedian=True,dress_figure=True,fill_between=True,color='C0',linestyle='-',Lside=False,FAC=None,line_sap_title=None,line_rec_title=None)
+		plot_sbc_panel(Ncred=True,Parcred=False,annotate_true=True,real_data_samps=False,plot_ind=True,plot_true=True,plot_medians=True,include_pmedian=True,dress_figure=True,fill_between=True,color='C0',linestyle='-',Lside=False,FAC=None,XGRID=None,line_sap_title=None,line_rec_title=None)
 
 Functions are:
 	get_KEEPERS(GLOB_FITS,Nsim_keep,Rhat_threshold,loop_par,dfpar)
@@ -74,7 +74,7 @@ class SBC_FITS_PLOTTER:
 		QUANTILES = pd.DataFrame(data={q:[self.FITS[ISIM]['df'][self.dfpar].quantile(q) for ISIM in self.FITS] for q in self.Quantiles})
 		return QUANTILES
 
-	def plot_sbc_panel(self,Ncred=True,Parcred=False,annotate_true=True,real_data_samps=False,plot_ind=True,plot_true=True,plot_medians=True,include_pmedian=True,dress_figure=True,fill_between=True,color='C0',linestyle='-',Lside=False,FAC=None,line_sap_title=None,line_rec_title=None):
+	def plot_sbc_panel(self,Ncred=True,Parcred=False,annotate_true=True,real_data_samps=False,plot_ind=True,plot_true=True,plot_medians=True,include_pmedian=True,dress_figure=True,fill_between=True,color='C0',linestyle='-',Lside=False,FAC=None,XGRID=None,line_sap_title=None,line_rec_title=None):
 		"""
 		Plot SBC Panel
 
@@ -110,6 +110,8 @@ class SBC_FITS_PLOTTER:
 			if True, put annotations on LHS of panel
 		FAC : float (optional; default=None)
 			factor to reduce KDE grid for simulation-averaed posterior by compared to No.of samples
+		XGRID : list (optional; default=None)
+			[xmin,xmax,Nsteps] for .xgrid
 		line_sap_title : str (optional; default=None)
 			string used in legend for simulation-averaged posterior, defaults to 'Simulation-Averaged Posterior'
 		line_rec_title : str (optional; default=None)
@@ -172,7 +174,7 @@ class SBC_FITS_PLOTTER:
 		#Real-Data Posterior Fit
 		if real_data_samps is not False:
 			if line_rec_title is None: line_rec_title   = 'Real-Data Posterior'
-			samps = PARAMETER(real_data_samps,dfpar,parlabel,lims[loop_par],bounds[loop_par],-1,iax,{})
+			samps = PARAMETER(real_data_samps,dfpar,parlabel,lims[loop_par],bounds[loop_par],-1,iax,{},XGRID=XGRID)
 			samps.get_xgrid_KDE()
 			ax[iax].plot(samps.xgrid,samps.KDE,alpha=1,linewidth=3,color='C3',label=f"{line_rec_title} \n"+r'$%s = %s ^{+%s}_{-%s}$'%(parlabel,real_data_samps.quantile(0.5).round(2),round(real_data_samps.quantile(0.84)-real_data_samps.quantile(0.5),2),round(real_data_samps.quantile(0.5)-real_data_samps.quantile(0.16),2)))
 			simavheight = samps.KDE[np.argmin(np.abs(real_data_samps.quantile(0.5)-samps.xgrid))]
@@ -182,7 +184,7 @@ class SBC_FITS_PLOTTER:
 		if plot_ind:
 			KDEmax = 0
 			for ISIM in SAMPS:
-				samps = PARAMETER(SAMPS[ISIM],dfpar,parlabel,lims[loop_par],bounds[loop_par],FITS[ISIM]['fitsummary'].loc[dfpar]['r_hat'],iax,{})
+				samps = PARAMETER(SAMPS[ISIM],dfpar,parlabel,lims[loop_par],bounds[loop_par],FITS[ISIM]['fitsummary'].loc[dfpar]['r_hat'],iax,{},XGRID=XGRID)
 				samps.get_xgrid_KDE()
 				KDEmax = max(KDEmax,np.amax(samps.KDE))
 				ax[iax].plot(samps.xgrid,samps.KDE,alpha=0.08,color=color)
@@ -195,11 +197,12 @@ class SBC_FITS_PLOTTER:
 
 
 		###Plot and Simulation Averaged Posterior
-		samps = PARAMETER(SAMPS.stack(),dfpar,parlabel,lims[loop_par],bounds[loop_par],None,iax,{})
+		samps = PARAMETER(SAMPS.stack(),dfpar,parlabel,lims[loop_par],bounds[loop_par],None,iax,{},XGRID=XGRID)
 		sap_chain = samps.chain
 		#Plot and label
-		if FAC is None:	samps.Nsamps /= 10
-		else:			samps.Nsamps /= FAC
+		if XGRID is None:
+			if FAC is None:	samps.Nsamps /= 10
+			else:			samps.Nsamps /= FAC
 		samps.get_xgrid_KDE()
 		if line_sap_title is None: line_sap_title = 'Simulation-Averaged Posterior'
 		if self.quantilemode:	line_sap_summary = r'$%s = %s ^{+%s}_{-%s}$'%(parlabel,sap_chain.quantile(0.5).round(2),round(sap_chain.quantile(0.84)-sap_chain.quantile(0.5),2),round(sap_chain.quantile(0.5)-sap_chain.quantile(0.16),2))
@@ -233,11 +236,14 @@ class SBC_FITS_PLOTTER:
 			ax[iax].tick_params(labelsize=FS)
 
 		#Set appropriate limits
-		FAC  = 3
-		XLIM =  FAC*np.array([sap_chain.quantile(0.16),sap_chain.quantile(0.84)])-(FAC-1)*sap_chain.quantile(0.5)#XLIMS
-		with suppress(TypeError): XLIM[0] = max([XLIM[0],bounds[loop_par][0]])
-		with suppress(TypeError): XLIM[1] = min([XLIM[1],bounds[loop_par][1]])
-		ax[iax].set_xlim(XLIM)
+		if XGRID is None:
+			FAC  = 3
+			XLIM =  FAC*np.array([sap_chain.quantile(0.16),sap_chain.quantile(0.84)])-(FAC-1)*sap_chain.quantile(0.5)#XLIMS
+			with suppress(TypeError): XLIM[0] = max([XLIM[0],bounds[loop_par][0]])
+			with suppress(TypeError): XLIM[1] = min([XLIM[1],bounds[loop_par][1]])
+			ax[iax].set_xlim(XLIM)
+		else:
+			ax[iax].set_xlim(XGRID[:2])
 
 
 
