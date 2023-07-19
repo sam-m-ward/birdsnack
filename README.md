@@ -3,6 +3,8 @@
 ---
 ![Logo](logo/BirdSnackLogo.png)
 
+Bird-Snack is a step-by-step pipeline for rapid hierarchical Bayesian inference of Type Ia supernova host galaxy dust distributions. It uses estimates of SN Ia apparent magnitudes at time of peak brightness, and decomposes them into intrinsic, extrinsic and achromatic contributions. Bird-Snack facilitates rapid exploration of custom analysis choices, and can fit many simulated datasets for better interpretation of real-data inferences.   
+
 This pipeline uses:
 
 1) [**SNooPy**](https://csp.obs.carnegiescience.edu/data/snpy) to apply K-corrections and Milky Way extinction corrections to SN Ia light curves.
