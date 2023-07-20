@@ -551,8 +551,10 @@ class PARAMETER:
 				pl.annotate("$\pm$ {:.3f}".format(self.samp_std),xy=(0.665,y0-delta_y*(row+1)),xycoords='axes fraction',fontsize=FS,color=colour,ha='left' )
 			elif paperstyle:
 				ax[row,row].set_title(parlabel + " = {:.2f} $\pm$ {:.2f}".format(self.samp_median, self.samp_std), fontsize=FS)
-				summary = ["{:.2f}".format(x) for x in [self.samp_median, self.samp_std,self.dfchain.par.quantile(0.95),self.dfchain.par.quantile(0.05)]]
-				Summary_Str = f"${summary[0]}\\pm {summary[1]}^{str('{')}\\,\\,{summary[2]}{str('}')}_{str('{')}\\,\\,{summary[3]}{str('}')}$"
+				summary = ["{:.2f}".format(x) for x in [self.samp_median, self.dfchain.par.quantile(0.84)-self.samp_median,self.samp_median-self.dfchain.par.quantile(0.16)]]
+				Summary_Str = f"${summary[0]}^{str('{')}+{summary[1]}{str('}')}_{str('{')}-{summary[2]}{str('}')}$"
+				#summary = ["{:.2f}".format(x) for x in [self.samp_median, self.samp_std,self.dfchain.par.quantile(0.95),self.dfchain.par.quantile(0.05)]]
+				#Summary_Str = f"${summary[0]}\\pm {summary[1]}^{str('{')}\\,\\,{summary[2]}{str('}')}_{str('{')}\\,\\,{summary[3]}{str('}')}$"
 		#Otherwise, posterior peaks at/near prior boundary, choose to summarise posterior using quantiles
 		else:
 			storeinfo = {}
