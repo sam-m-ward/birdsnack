@@ -13,7 +13,7 @@ This pipeline uses:
 
 ## Getting Started
 
-Build a new conda environment using instructions in [**installation.txt**](https://github.com/sam-m-ward/birdsnack/blob/dev/installation.txt).
+Build a new conda environment using instructions in [**installation.md**](https://github.com/sam-m-ward/birdsnack/blob/dev/installation.md).
 
 Check out [**demo_notebook.ipynb**](https://github.com/sam-m-ward/birdsnack/blob/dev/demo_notebook.ipynb) for a quick introduction to how Bird-Snack works.
 
