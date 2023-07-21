@@ -23,7 +23,7 @@ data {
 	real gamma_res;                //If 1, include intrinsic colour residuals, if 0, exclude residuals
 
 	real zero_index;               //Index denoting reference band that is set to zero in mu_int
-	real BVcutval;								 //The upper BV value used for cutting sample, default is often 0.3~mag, this value only matters when SC>0
+	real BVcutval;                 //The upper BV value used for cutting sample, default is often 0.3~mag, this value only matters when SC>0
 }
 
 transformed data {
