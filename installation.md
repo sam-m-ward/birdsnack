@@ -4,23 +4,28 @@
 
 `bash install-snpy birdsnack`
 
-#### Next, activate new conda environment and pip install additional packages
+## Next, activate new conda environment and pip install additional packages
 `conda activate birdsnack`
 
 `pip install pandas==1.3.5 arviz==0.12.1 george==0.4.0 extinction==0.4.6 h5py==3.7.0 sncosmo==2.8.0 pystan==3.3.0 jupyter==1.0.0`
 
-#### Create a new folder to clone the birdsnack github repo into
+## Create a new folder to clone the birdsnack github repo into
 `cd ../`
+
 `mkdir birdsnack-clone`
+
 `cd birdsnack-clone`
+
 `git clone git@github.com:sam-m-ward/birdsnack.git`
 
-#### Next, update snoopy filters using complete filter set in Bird-Snack repo
+## Next, update snoopy filters using complete filter set in Bird-Snack repo
 `cd birdsnack/data/FILTERS/`
+
 `python update_conda_env_filters.py`
 
-#### Bird-snack installation is now good to go, try running
+## Bird-snack installation is now good to go, try running
 `cd ../../analysis`
+
 `python analyse_fiducial_sample.py`
 
 #### Some scripts require BayeSN for simulating data.
