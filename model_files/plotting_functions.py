@@ -147,7 +147,7 @@ def get_parlabels(choices,default=False,return_parnames_only=False):
 	#Get parnames,labels,bounds
 	pars       = ['tauA','muRV','sigRV']
 	parnames   = ['tauA','mu_RV','sig_RV']
-	parlabels  = ['$\\tau_A$','$\\mu_{R_V}$','$\\sigma_{R_V}$']
+	parlabels  = ['$\\tau_{A}$','$\\mu_{R_V}$','$\\sigma_{R_V}$']
 	bounds     = [ [0,None]  , [1,5], 			[0,None]]
 
 	proceed=True
@@ -172,7 +172,7 @@ def get_parlabels(choices,default=False,return_parnames_only=False):
 		if AVprior in ['Gamma']:
 			pars.append('nuA')
 			parnames.append('nu')
-			parlabels.append('$\\nu_A$')
+			parlabels.append('$\\nu_{A}$')
 			bounds.append([0,None])
 		if RVprior=='StudentT':
 			pars.append('nuR')
