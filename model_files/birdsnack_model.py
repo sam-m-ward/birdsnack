@@ -1153,7 +1153,10 @@ class BIRDSNACK:
 			samps = PARAMETER(df[par],par,parlabels[ipar],lims,bounds[ipar],0,0,{},2)
 			samps.get_xgrid_KDE()
 			pl.plot(samps.dfchain.quantile(0.5).values[0]*np.ones(2),[0,np.amax(samps.KDE)],c=colour	,linewidth=2)
-			pl.plot(samps.xgrid,samps.KDE,alpha=1,color=colour,linestyle=ls,linewidth=3,label=FITS[file]['label']+'\n'+r'$%s\pm%s$'%(round(samps.dfchain.quantile(0.5).values[0],2),round(samps.dfchain.std().values[0],2)))
+			pl.plot(samps.xgrid,samps.KDE,alpha=1,color=colour,linestyle=ls,linewidth=3,
+					#label=FITS[file]['label']+'\n'+r'$%s\pm%s$'%(round(samps.dfchain.quantile(0.5).values[0],2),round(samps.dfchain.std().values[0],2))
+					label=FITS[file]['label']+'\n'+r'$%s^{+%s}_{-%s}$'%(round(samps.dfchain.quantile(0.5).values[0],2),round(samps.dfchain.quantile(0.84).values[0]-samps.dfchain.quantile(0.5).values[0],2),round(samps.dfchain.quantile(0.50).values[0]-samps.dfchain.quantile(0.16).values[0],2)  )
+					)
 			pl.xlim(lims)
 		pl.tick_params(labelsize=FS)
 		pl.yticks([])
