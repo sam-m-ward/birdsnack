@@ -4,13 +4,13 @@ CYCLE_DICT_Science = {
 				'RUNS' : {
 
 				'AVExp_Full'                 :       {    'newdict': {'AVprior':'Exp'},
-													 'label':'$A^s_V \sim \\rm{Exp}(\\tau_A)$'},
+													 'label':'$A^s_V \sim \\rm{Exp}(\\tau_A)$ Full'},
 				'AVGamma_Full'               :       {    'newdict': {'AVprior':'Gamma','n_sampling':5000},
-													 'label':'$A_V^s \sim $ Gamma$(\\nu_A,\\tau_A)$\\tnote{b}'},
+													 'label':'$A_V^s \sim $ Gamma$(\\nu_A,\\tau_A)$ Full'},
 				'AVExp_lowBV'           :       {    'newdict': {'AVprior':'Exp','BVcut':True},
-													 'label':'$A^s_V \sim \\rm{Exp}(\\tau_A)$'},
+													 'label':'$A^s_V \sim \\rm{Exp}(\\tau_A)$ low BV'},
 				'AVGamma_lowBV'         :       {    'newdict': {'AVprior':'Gamma','n_sampling':5000,'BVcut':True},
-													 'label':'$A_V^s \sim $ Gamma$(\\nu_A,\\tau_A)$\\tnote{b}'},
+													 'label':'$A_V^s \sim $ Gamma$(\\nu_A,\\tau_A)$ low BV'},
 				#'uBVriJH'				:		{	 'newdict':{'DF_savekey':'uBVriJH','pblist':[s for s in 'uBVriJH'],'lam_choice':'central'},
 				#										'label':'$uBVriJH$'},
 				}
