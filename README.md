@@ -11,6 +11,9 @@ This pipeline uses:
 2) A 2D Gaussian process to interpolate rest-frame photometry to peak time.
 3) A hierarchial Bayesian model to constrain population distributions in intrinsic and extrinsic components.
 
+---
+## Getting Started
+
 To get started, build a new conda environment using instructions in [**installation.txt**](https://github.com/sam-m-ward/birdsnack/blob/dev/installation.txt).
 
 Check out [**demo_notebook.ipynb**](https://github.com/sam-m-ward/birdsnack/blob/dev/demo_notebook.ipynb) for a quick introduction to how Bird-Snack works.
