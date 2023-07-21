@@ -20,7 +20,7 @@ import matplotlib.pyplot as pl
 
 parser = argparse.ArgumentParser(description="SBC Input Dust Hyperparameters")
 parser.add_argument("--plot_par",   default='muRV',          help='Set parameter to plot')
-parser.add_argument("--quantilemode",	default=False,	  help='If True, annotate with 16,84, False, use sample std.')
+parser.add_argument("--quantilemode",	default=True,	  help='If True, annotate with 16,84, False, use sample std.')
 parser.add_argument("--save",	default=True,		      help='Save plot')
 parser.add_argument("--show",	default=False,		      help='Show plot')
 
@@ -28,24 +28,27 @@ args = parser.parse_args().__dict__
 plot_par  = args['plot_par']
 parnames,dfpars,parlabels = get_pars()
 
-Nsim_keep = 10#0
+Nsim_keep = 100
 Rhat_threshold = 1.1
 #Choices for applying HBM to simulated data
 BIRDSNACK_EDIT_DICT1 = {'analysis_parameters':
-						{'HBM_savekey':'PPC_muRV2.5sigRV0.1tauA0.5_LowBVNoCens',
+						{'HBM_savekey':'PPC_muRV2.5sigRV0.5tauA0.5_LowBVNoCens',
 						'CensoredData':True,'CensoredCut':0.3}}
 BIRDSNACK_EDIT_DICT2 = {'analysis_parameters':
-						{'HBM_savekey':'PPC_muRV2.5sigRV0.1tauA0.5_WithCensoredData',
+						{'HBM_savekey':'PPC_muRV2.5sigRV0.5tauA0.5_WithCensoredData',
 						'CensoredData':True,'CensoredCut':'inf'}}
 
-#edit_dict = {'simulate_parameters':{'S':100,'tauA':0.5,'muRV':2.5,'sigRV':0.5,'PredefinedExtrinsicHyps':False,
-#			'pre_defined_hyps':{'load_file':'AVExp_Cens1.0'}}}
-edit_dict = {'simulate_parameters':{'S':100,'tauA':0.5,'muRV':2.5,'sigRV':0.1,'PredefinedExtrinsicHyps':False,
+edit_dict = {'simulate_parameters':{'S':100,'tauA':0.5,'muRV':2.5,'sigRV':0.5,'PredefinedExtrinsicHyps':False,
 			'pre_defined_hyps':{'load_file':'AVExp_Cens1.0'}}}
+#edit_dict = {'simulate_parameters':{'S':100,'tauA':0.5,'muRV':2.5,'sigRV':0.1,'PredefinedExtrinsicHyps':False,
+#			'pre_defined_hyps':{'load_file':'AVExp_Cens1.0'}}}
 
 edit_dict['load_parameters'] = {'path_to_rootpath':path_to_rootpath,'path_to_birdsnack_rootpath':path_to_birdsnack_rootpath}
 
 BS_editdicts = dict(zip([False,True],[BIRDSNACK_EDIT_DICT1,BIRDSNACK_EDIT_DICT2]))
+
+if plot_par=='muRV':XGRID = [1.5,4.0,100]
+if plot_par=='tauA':XGRID = [0.1,0.85,100]
 
 if __name__ == "__main__":
 	print (f"Plotting PPC of Censored Data for {plot_par};")
@@ -71,10 +74,10 @@ if __name__ == "__main__":
 	#Plot SBC
 	fig,axs = pl.subplots(len(GLOB_FITS),1,figsize=(8,12),sharex=True)
 	for iax,include_cens in enumerate(GLOB_FITS):
-		Lside   = False#True if include_cens and plot_par=='tauA' else False
+		Lside   = True if include_cens and plot_par=='tauA' else False
 		FITS    = GLOB_FITS[include_cens]
 		plotter = SBC_FITS_PLOTTER(iax,fig.axes,[true_plot_par,plot_par,dfpars[plot_par],parlabels[plot_par]],FITS,sbc.bs.choices['analysis_parameters'],sbc.path_to_birdsnack_rootpath,quantilemode=args['quantilemode'])
-		plotter.plot_sbc_panel(annotate_true=False,color={0:'C0',1:'indigo'}[iax],Lside=Lside,FAC=100)
+		plotter.plot_sbc_panel(annotate_true=False,color={0:'C0',1:'indigo'}[iax],Lside=Lside,XGRID=XGRID)
 		if include_cens:
 			fig.axes[iax].annotate(f'Include Censored Data',xy=(0.95-(0.95-0.0225)*Lside,0.52-0.13/2+0.13/3*(iax==1)),xycoords='axes fraction',fontsize=plotter.FS,ha={True:'left',False:'right'}[Lside],weight='bold')
 		fig.axes[iax].annotate(r'$A_V^s \sim\,$Exp$(\tau_A)$'+'\n'+r'$|B-V|<0.3\,$mag',xy=(0.95-(0.95-0.0225)*Lside,0.52+0.13/3*(iax==1)),xycoords='axes fraction',fontsize=plotter.FS,ha={True:'left',False:'right'}[Lside])
