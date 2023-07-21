@@ -9,7 +9,7 @@ This pipeline uses:
 
 1) [**SNooPy**](https://csp.obs.carnegiescience.edu/data/snpy) to apply K-corrections and Milky Way extinction corrections to SN Ia light curves.
 2) A 2D Gaussian process to interpolate rest-frame photometry to peak time.
-3) A hierarchial Bayesian model to constrain population distributions in intrinsic and extrinsic components.
+3) A [**hierarchial Bayesian model**](https://github.com/sam-m-ward/birdsnack/blob/main/model_files/stan_files/deviations_model_fit_mags_Gaussianmuintref.stan) to constrain population distributions in intrinsic and extrinsic components.
 
 ## Getting Started
 
