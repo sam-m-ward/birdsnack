@@ -346,6 +346,7 @@ def get_Lines(choices, NSNe, NCens, posterior=True):
 		return strlist
 
 	choices = {key:choices[glob_key][key] for glob_key in choices for key in choices[glob_key] if glob_key!='rootpath'}
+	if 'BVcutval' not in choices: choices['BVcutval'] = 0.3
 
 	Lines = [
 			f"$N_{{SNe}}={NSNe}$"									,
