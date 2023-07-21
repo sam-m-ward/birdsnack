@@ -13,11 +13,11 @@ This pipeline uses:
 
 ## Getting Started
 
-Build a new conda environment using instructions in [**installation.md**](https://github.com/sam-m-ward/birdsnack/blob/dev/installation.md).
+Build a new conda environment using instructions in [**installation.md**](https://github.com/sam-m-ward/birdsnack/blob/main/installation.md).
 
-Check out [**demo_notebook.ipynb**](https://github.com/sam-m-ward/birdsnack/blob/dev/demo_notebook.ipynb) for a quick introduction to how Bird-Snack works.
+Check out [**demo_notebook.ipynb**](https://github.com/sam-m-ward/birdsnack/blob/main/demo_notebook.ipynb) for a quick introduction to how Bird-Snack works.
 
-See also [**demo_sbc_ppc.ipynb**](https://github.com/sam-m-ward/birdsnack/blob/dev/demo_sbc_ppc.ipynb) for introduction to simulating and fitting fake datasets with Bird-Snack.
+See also [**demo_sbc_ppc.ipynb**](https://github.com/sam-m-ward/birdsnack/blob/main/demo_sbc_ppc.ipynb) for introduction to simulating and fitting fake datasets with Bird-Snack.
 
 ## Acknowledgements
 
