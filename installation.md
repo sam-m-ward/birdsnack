@@ -1,4 +1,4 @@
-## Begin Bird-Snack installation by first setting up a snpy conda environment
+# Begin Bird-Snack installation by first setting up a snpy conda environment
 #### Navigate to https://csp.obs.carnegiescience.edu/data/snpy/installing_snoopy2
 #### Follow instructions, i.e. download snpy install script, and create new conda environment with choice of environment name, e.g. birdsnack, via:
 
