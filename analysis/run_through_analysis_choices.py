@@ -11,12 +11,14 @@ MODE   = parser.parse_args().mode
 CYCLE_DICT = dict(zip(['Science','BVcut1','RVbins'],[CYCLE_DICT_Science,CYCLE_DICT_BVcut1,CYCLE_DICT_RVBins]))[MODE]
 ###############
 #FOR Cens_inf Analysis
-#CYCLE_DICT['COMMON_CHANGES']['newdict'] = {**CYCLE_DICT['COMMON_CHANGES']['newdict'],**{'CensoredCut':'inf'}}
+#CYCLE_DICT['COMMON_CHANGES']['newdict'] = {**CYCLE_DICT['COMMON_CHANGES']['newdict'],**{'CensoredData':True,'CensoredCut':'inf','BVcut':False,'BVcutval':0.3}}
 #CYCLE_DICT['COMMON_CHANGES']['HBMappender'] = 'CensInf'
 ###############
 #FOR N=62(+3) SNe Analysis
-#CYCLE_DICT['COMMON_CHANGES']['newdict'] = {**CYCLE_DICT['COMMON_CHANGES']['newdict'],**{'CensoredData':True,'CensoredCut':1.0}}
+#CYCLE_DICT['COMMON_CHANGES']['newdict'] = {**CYCLE_DICT['COMMON_CHANGES']['newdict'],**{'CensoredData':True,'CensoredCut':1.0,'BVcut':False,'BVcutval':0.3}}
 #CYCLE_DICT['COMMON_CHANGES']['HBMappender'] = 'Cens1.0'
+###############
+#CYCLE_DICT['RUNS'] = {key:value for key,value in CYCLE_DICT['RUNS'].items() if key in ['AVExp','AVGamma']}
 ###############
 
 #Load up light curves of fiducial sample of SNe, and metadata
