@@ -755,5 +755,5 @@ def get_pars():
 	"""
 	parnames      = ['muRV','sigRV','tauA','nu','nuR','askewRV','askewint']
 	dfpars        = dict(zip(parnames,['mu_RV','sig_RV','tauA','nu','nuR','alpha_skew_RV','alpha_skew_int']))
-	parlabels     = dict(zip(parnames,['\mu_{R_V}','\sigma_{R_V}','\\tau_A','\\nu_{A}','\\nu_{R_V}','\\alpha^{\\rm{skew}}_{R_V}','\\alpha^{\\rm{skew}}_{\\rm{int}}']))
+	parlabels     = dict(zip(parnames,['\mu_{R_V}','\sigma_{R_V}','\\tau_{A}','\\nu_{A}','\\nu_{R_V}','\\alpha^{\\rm{skew}}_{R_V}','\\alpha^{\\rm{skew}}_{\\rm{int}}']))
 	return parnames,dfpars,parlabels
