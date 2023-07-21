@@ -24,7 +24,7 @@ BIRDSNACK class
 
 Functions include:
 	get_edit_dict(choices,CYCLE_DICT,HBM_savekey)
-	def map_fit_summary(fitsummary)
+	map_fit_summary(fitsummary)
 --------------------
 
 Written by Sam M. Ward: smw92@cam.ac.uk
