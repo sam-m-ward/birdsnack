@@ -13,7 +13,7 @@ SBC_CLASS class
 		simulate_truths()
 		get_truths(index=None)
 		get_leffs_df(TRUTHS_DICT=None)
-		fit_truths(edit_dict={}, TRUTHS_DICT=None, Rhat_threshold=1.05, periodically_delete=False, outputdir='')
+		fit_truths(edit_dict={}, TRUTHS_DICT=None, Rhat_threshold=1.05, periodically_delete=False, outputdir='', additional_pars=[])
 		get_fits(edit_dict={},TRUTHS_DICT=None)
 
 SIMULATOR class
@@ -30,8 +30,9 @@ SIMULATOR class
 
 Functions include:
 	get_Lint_prior_samples(Nc=6,savefolder='products/Lint_sims/',generator_file='generator.stan',n_sampling=10000,n_chains=1,n_warmup=10)
-	def get_DF_M_from_truths(truths,pblist,errstr,tref)
-	def get_pars()
+	get_DF_M_from_truths(truths,pblist,errstr,tref)
+	get_pars()
+	get_additional_pars_list(columns,additional_pars)
 --------------------
 
 Written by Sam M. Ward: smw92@cam.ac.uk
@@ -239,7 +240,7 @@ class SBC_CLASS:
 		self.lameff_df = df
 		return self.lameff_df
 
-	def fit_truths(self, edit_dict={}, TRUTHS_DICT=None, Rhat_threshold=1.05, periodically_delete=False, outputdir=''):
+	def fit_truths(self, edit_dict={}, TRUTHS_DICT=None, Rhat_threshold=1.05, periodically_delete=False, outputdir='', additional_pars=[]):
 		"""
 		Fit Truths Method
 
@@ -259,6 +260,9 @@ class SBC_CLASS:
 
 		outputdir : str
 			path/to/stan/build
+
+		additional_pars : list of str (optional; default=[])
+			e.g. ['AVs','RVs'] to include in saving of file
 
 		End Product(s)
 		----------
@@ -294,7 +298,7 @@ class SBC_CLASS:
 				bs.fit_stan_model(save=False,Rhat_threshold=Rhat_threshold)
 				#Extract FIT, thin df to dust hyperparameters
 				FIT = bs.FIT
-				FIT['df'] = FIT['df'][bs.Rhat_check_params]
+				FIT['df'] = FIT['df'][bs.Rhat_check_params+get_additional_pars_list(list(FIT['df'].columns),additional_pars)]
 				#Save FIT
 				with open(save_filename,'wb') as f:
 					pickle.dump(FIT,f)
@@ -757,3 +761,29 @@ def get_pars():
 	dfpars        = dict(zip(parnames,['mu_RV','sig_RV','tauA','nu','nuR','alpha_skew_RV','alpha_skew_int']))
 	parlabels     = dict(zip(parnames,['\mu_{R_V}','\sigma_{R_V}','\\tau_{A}','\\nu_{A}','\\nu_{R_V}','\\alpha^{\\rm{skew}}_{R_V}','\\alpha^{\\rm{skew}}_{\\rm{int}}']))
 	return parnames,dfpars,parlabels
+
+def get_additional_pars_list(columns,additional_pars):
+	"""
+	Get additional parameters list
+
+	Simple function to include additional stan_fit chain columns for saving (more columns==high space complexity)
+
+	Parameters
+	----------
+	columns : lst
+		list of columns in stan fit
+
+	additional_pars : lst
+		list of keys to map to columns
+
+	Returns
+	----------
+	additional_pars_list : lst
+		list of columns in stan fit to save
+	"""
+	additional_pars_list = []
+	if 'AVs' in additional_pars:
+		additional_pars_list.extend([col for col in columns if 'AVs.' in col and 'nu' not in col])
+	if 'RVs' in additional_pars:
+		additional_pars_list.extend([col for col in columns if 'RVs.' in col and 'nu' not in col])
+	return additional_pars_list
