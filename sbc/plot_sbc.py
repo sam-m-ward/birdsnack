@@ -31,9 +31,9 @@ args = parser.parse_args().__dict__
 parnames,dfpars,parlabels = get_pars()
 loop_par      = args['loop_par']
 loop_par_dict = {loop_par:[float(s) for s in args[f"loop_{args['loop_par']}"].split(',')]}
-non_loop_pars = {par:args[par] for par in parnames if par!=args['loop_par']}
+non_loop_pars = {par:args[par] for par in parnames if par!=args['loop_par'] and par in ['muRV','sigRV','tauA']}
 
-Nsim_keep = 20
+Nsim_keep = 100
 Rhat_threshold = 1.05
 
 if __name__ == "__main__":
