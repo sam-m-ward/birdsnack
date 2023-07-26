@@ -66,10 +66,6 @@ class BIRDSNACK:
 
 	update_vars : bool (optional; default=False)
 		if True, reload BIRDSNACK with updated .yaml choices
-
-	Methods
-	----------
-
 	"""
 
 	def __init__(self,configname='analysis_config.yaml',loader={},edit_dict = {},dfmeta=None,update_vars=False):
