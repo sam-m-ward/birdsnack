@@ -18,6 +18,7 @@ sbc/BAYESN_GITHUB/pysynphot_downloads/
 sbc/model_files/__pycache__/
 sbc/build/
 sbc/products/
+sbc/plotting_scripts/PERSONAL/
 sbc/DLAMS/DLAM_NEW.txt
 model_files/stan_files/Extra/Other
 analysis/PERSONAL/
