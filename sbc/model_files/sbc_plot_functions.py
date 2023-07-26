@@ -156,7 +156,7 @@ class SBC_FITS_PLOTTER:
 		self.bounds = bounds
 
 		#Plot N68, N95
-		N68   = abs(SAMPS.median()-true_par)/(SAMPS.quantile(0.84)-SAMPS.quantile(0.16)) < 1 ; N95   = abs(SAMPS.median()-true_par)/(SAMPS.quantile(0.975)-SAMPS.quantile(0.025)) < 1
+		N68   = (SAMPS.quantile(0.16) <= true_par) & (true_par < SAMPS.quantile(0.84)) ; N95   = (SAMPS.quantile(0.025) <= true_par) & (true_par < SAMPS.quantile(0.975))
 		N68   = SAMPS.transpose()[N68.values].shape[0] 										 ; N95   = SAMPS.transpose()[N95.values].shape[0]
 		print(round(100*(N68/SAMPS.shape[1]),1),'%',round(100*(N95/SAMPS.shape[1]),1),'%')
 		if Ncred:
