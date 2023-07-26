@@ -18,6 +18,8 @@ sys.path.append('model_files/')
 from SBC import *
 import yaml
 from sbc_plot_functions import update_edit_dict_for_ppc
+#additional_pars = ['AVs','RVs']#Save these as well as dust hyperparameters, optional
+additional_pars = []#Just save dust hyperparameters
 
 #PPC Recovery of nuA=1; Applying Gamma dist. to fit Exp-simulated Data
 BIRDSNACK_EDIT_DICT = {'analysis_parameters':{'HBM_savekey':'PPC_ExpFitGamma','AVprior':'Gamma','n_warmup':1000,'n_sampling':3000,'n_thin':1000}}
@@ -53,4 +55,4 @@ if __name__ == "__main__":
 	#Loop through Simulated Datasets and fit BirdSnack HBM
 	#BIRDSNACK_EDIT_DICT implements e.g. fit with AVprior='Gamma'
 	print ('Begin Fitting SN Datasets')
-	sbc.fit_truths(edit_dict=BIRDSNACK_EDIT_DICT,periodically_delete=periodically_delete,outputdir=stan_build_dir)
+	sbc.fit_truths(edit_dict=BIRDSNACK_EDIT_DICT,periodically_delete=periodically_delete,outputdir=stan_build_dir,additional_pars=additional_pars)
