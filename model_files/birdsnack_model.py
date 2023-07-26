@@ -44,31 +44,34 @@ class BIRDSNACK:
 	"""
 	BIRDSNACK Class Object
 
-	Master class object that in snana light curve files
+	Master class object that takes in snana light curve files
 	Performs preprocessing cuts
 	Uses GP to get peak apparent colours
 	Uses stan to fit for intrinsic/extrinsic components
-
-	Parameters
-	----------
-	configname: str (optional; default='analysis_config.yaml')
-		name of config.yaml file used for analysis
-
-	loader : dict (optional; default={})
-		dictionary of information important to analysis
-		e.g. loader['path_file_survey'] = [path,file,survey]
-
-	edit_dict: dict (optional; default={})
-		used to edit individual key,value pairs in the config.yaml choices file
-
-	dfmeta : pandas df (optional; default = None)
-		DataFrame of SN host galaxy stellar masses and spectroscopic subclassifications
-
-	update_vars : bool (optional; default=False)
-		if True, reload BIRDSNACK with updated .yaml choices
 	"""
 
 	def __init__(self,configname='analysis_config.yaml',loader={},edit_dict = {},dfmeta=None,update_vars=False):
+		"""
+		Initialisation
+
+		Parameters
+		----------
+		configname: str (optional; default='analysis_config.yaml')
+			name of config.yaml file used for analysis
+
+		loader : dict (optional; default={})
+			dictionary of information important to analysis
+			e.g. loader['path_file_survey'] = [path,file,survey]
+
+		edit_dict: dict (optional; default={})
+			used to edit individual key,value pairs in the config.yaml choices file
+
+		dfmeta : pandas df (optional; default = None)
+			DataFrame of SN host galaxy stellar masses and spectroscopic subclassifications
+
+		update_vars : bool (optional; default=False)
+			if True, reload BIRDSNACK with updated .yaml choices
+		"""
 		#Set Configname
 		self.configname   = configname
 

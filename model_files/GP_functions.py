@@ -31,29 +31,32 @@ class GPFitObj:
     GPfit class object
 
     A convenient way of storing GP fit for a single object's light curves
-
-    Parameters
-    ----------
-    x,y,yerr: each np.array
-        the GP interpolations
-
-    hyperparameters: np.array
-        the MLE hyperparameters
-
-    gp: the george gp object
-
-    Returns
-    ---------
-    self.df: pandas dataframe
-        columns are x,y,yerr
     """
     def __init__(self,x,y,yerr,hyperparameters,gp):
+        """
+        Initialisation
+
+        Parameters
+        ----------
+        x,y,yerr: each np.array
+            the GP interpolations
+
+        hyperparameters: np.array
+            the MLE hyperparameters
+
+        gp: the george gp object
+
+        End Product(s)
+        ---------
+        self.df: pandas dataframe
+            columns are x,y,yerr
+        """
         self.x    = x
         self.y    = y
         self.yerr = yerr
-        self.df   = pd.DataFrame({'x':x,'y':y,'yerr':yerr})
         self.hyperparameters = hyperparameters
         self.gp   = gp
+        self.df   = pd.DataFrame({'x':x,'y':y,'yerr':yerr})
 
 
 def get_x_pred(xmin=None,xmax=None,x=None,Ngrid=10000):

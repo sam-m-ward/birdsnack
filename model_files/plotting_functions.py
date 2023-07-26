@@ -33,6 +33,17 @@ matplotlib.rcParams.update(matplotlib.rcParamsDefault)
 class PLOTTER:
 
 	def __init__(self, plotting_parameters, plotpath):
+		"""
+		Initialisation
+
+		Parameters
+		----------
+		choices : dict
+			the 'plotting_parameters' dictionary from config.yaml
+
+		plotpath : str
+			path/to/directory/to/save/plots
+		"""
 		self.choices  = plotting_parameters
 		self.plotpath = plotpath
 

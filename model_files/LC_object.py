@@ -33,6 +33,16 @@ import matplotlib.pyplot as pl
 class LCObj:
 
 	def __init__(self,lc,choices):
+		"""
+		Initialisation
+
+		Parameters
+		----------
+		lc : snana object
+			snana lc astropy table
+		choices : dict
+			config.yaml choices
+		"""
 		self.lc      = lc
 		self.choices = choices
 

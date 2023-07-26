@@ -8,7 +8,7 @@ Used to take in posterior samples and plot up corner plot
 Contains:
 --------------------
 Functions:
-	kde()
+	kde(x_data, x_target, y_data=None, y_target=None, x_bounds=None, y_bounds=None, smoothing=1.0)
 
 POSTERIOR_PLOTTER class:
 	inputs: samples, parnames, parlabels, bounds, Rhats, choices, smoothing=2
@@ -187,7 +187,7 @@ class POSTERIOR_PLOTTER:
 		choices : dict
 			plotting_parameters choices
 
-		smoothing : float
+		smoothing : float (optional; default=2)
 			smoothing of KDEs for 1D and 2D marginals
 		"""
 		self.samples   = samples

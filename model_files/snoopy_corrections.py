@@ -7,8 +7,9 @@ Used to transform snpy object with corrections, saves Tmax_Kcorrdict, snpy_produ
 
 Contains:
 --------------------
-get_Tmax_Kcorrdict_foldername(snpy_params):
-	get folder name for Tmax and Kcorrections dictionary, pre-computed for all analysis variants in one go to save on time complexity
+Functions:
+	get_Tmax_Kcorrdict_foldername(snpy_params)
+		get folder name for Tmax and Kcorrections dictionary, pre-computed for all analysis variants in one go to save on time complexity
 
 SNOOPY_CORRECTIONS class:
 	inputs: choices, outputdir
@@ -303,6 +304,17 @@ class SNOOPY_CORRECTIONS:
 
 
 	def __init__(self, choices, outputdir):
+		"""
+		Initialisation
+
+		Parameters
+		----------
+		choices : dict
+			config.yaml choices
+
+		outputdir : str
+			path/to/products/folder/
+		"""
 		self.choices     = choices
 		self.snpychoices = self.choices['snpy_parameters']
 		self.outputdir   = outputdir
