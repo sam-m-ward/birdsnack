@@ -18,7 +18,7 @@ LCObj class:
 		get_GP_interpolation()
 		extract_interpolations()
 		update_DF_M(DF_M, sn)
-		plot_lc(plotter, mjd_or_phase=None, bright_mode=None)
+		plot_lc(self, plotter, mjd_or_phase=None, bright_mode=None, include_peak_time_line=False)
 --------------------
 
 Written by Sam M. Ward: smw92@cam.ac.uk
@@ -470,7 +470,7 @@ class LCObj:
 
 		return DF_M
 
-	def plot_lc(self, plotter, mjd_or_phase=None, bright_mode=None):
+	def plot_lc(self, plotter, mjd_or_phase=None, bright_mode=None, include_peak_time_line=False):
 		"""
 		Plot GP Interpolation
 
@@ -486,6 +486,9 @@ class LCObj:
 
 		bright_mode : str or None (optional; default=None)
 			choice of LC data to plot, if None, uses self.choices['bright_mode']
+
+		include_peak_time_line : bool (optional; default=False)
+			if True, plot a line at t=0
 
 		End product(s)
 		----------
@@ -532,7 +535,8 @@ class LCObj:
 					pl.annotate(flt,xy=(phase+0.5, bright+const*(bright_mode=='mag')),weight='bold',fontsize=15)
 			else:
 				print (f'Only 1 data point for Band: {flt}; therefore, no GP plotted')
-
+		if include_peak_time_line:
+			pl.plot([0,0],pl.gca().get_ylim(),c='black',linestyle='-',linewidth=2)
 		#Finishing touches
 		xlabel   = {'phase':'rest-frame phase (days)', 'mjd':'MJD'}[mjd_or_phase]
 		ylabel   = bright_mode+' + const.'*(bright_mode=='mag')

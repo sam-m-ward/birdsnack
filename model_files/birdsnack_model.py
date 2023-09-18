@@ -552,6 +552,8 @@ class BIRDSNACK:
 				for key in choices[glob_key]:
 					if key==kkey:
 						choices[glob_key][key] = value
+		#Choice to include a line at t=0
+		include_peak_time_line = bool('include_peak_time_line' in kwargs.keys() and kwargs['include_peak_time_line'])
 
 		#List of sns to plot
 		if sns is None:
@@ -567,7 +569,7 @@ class BIRDSNACK:
 			#Interpolate data
 			lcobj.get_GP_interpolation()
 			#Plot light curve interpolation
-			lcobj.plot_lc(PLOTTER(choices['plotting_parameters'],self.plotpath))
+			lcobj.plot_lc(PLOTTER(choices['plotting_parameters'],self.plotpath),include_peak_time_line=include_peak_time_line)
 
 
 	def additional_cuts(self, cutter=True):
