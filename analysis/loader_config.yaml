@@ -276,6 +276,9 @@ analysis_parameters:
   BVbinboundaries : []
   RVstyles : []
 
+  #Fix the intrinsic model
+  fixint : False #Otherwise use the name of the HBM_savekey from which to take posterior median intrinsic model
+
   #Option to make multiple copies of sample to fit
   copymode : 1
   copymode : False
