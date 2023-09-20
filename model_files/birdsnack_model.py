@@ -738,6 +738,7 @@ class BIRDSNACK:
 				self.choices['analysis_parameters'][key] = modelloader.choices['analysis_parameters'][key]#If these values are only called upon as default, save in .choices for plotting
 			print (f"B-V Boundaries are:{modelloader.choices['analysis_parameters']['BVbinboundaries']}\nNumber of SNe in each bin is: {modelloader.N_in_each_bin}")
 			self.choices['analysis_parameters']['N_in_each_bin'] = modelloader.N_in_each_bin#Save this info for plotting
+
 		#Incorporate Censored Data
 		modelloader.get_censored_data()
 		stan_data['S']  = modelloader.S
@@ -752,6 +753,16 @@ class BIRDSNACK:
 			print (f"Censored SNe are: {modelloader.CensoredSNe}")
 			print (f"These have {self.choices['additional_cut_parameters']['BVcutval']}<=B-V<{self.choices['analysis_parameters']['CensoredCut']}")
 			print (f"Completely Excluded SNe are: {modelloader.ExcludedSNe}")
+
+		#If the intrinsic model is fixed, load this up from another fit with HBM_savekey=fixint
+		if self.choices['analysis_parameters']['fixint'] is not False:
+			modelloader.get_intrinsic_model(self.FITSpath)
+			stan_data['L_mint'] = modelloader.L_mint
+			stan_data['FPC0']	= modelloader.FPC0
+			stan_data['FPC1']	= modelloader.FPC1
+			print (stan_data['L_mint'])
+			print (stan_data['FPC0'])
+			print (stan_data['FPC1'])
 
 		#Incorporate LC shape data measurements
 		modelloader.get_dm15Bs()

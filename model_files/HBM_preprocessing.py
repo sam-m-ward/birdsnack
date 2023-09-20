@@ -15,6 +15,7 @@ HBM_preprocessor class:
 		get_BV_ordered_DF_M()
 		get_RVbin_data(flatRVsmin=1, flatRVsmax=6, a_sigma_beta0=1, a_sigma_beta1=1, a_sigma_muAVsigmoid=1, a_sigma_sigAVsigmoid=1)
 		get_censored_data()
+		get_intrinsic_model(FITSpath)
 		get_dm15Bs()
 		get_CM_transformation_matrix(DataTransformation=None, returner=False)
 		get_CC_transformation_matrices()
@@ -29,12 +30,11 @@ HBM_preprocessor class:
 Written by Sam M. Ward: smw92@cam.ac.uk
 """
 
-import copy
+import copy, pickle, re
 import numpy as np
 from snpy import fset
 import pandas as pd
 import spline_utils
-import re
 from contextlib import suppress
 
 class HBM_preprocessor:
@@ -272,6 +272,46 @@ class HBM_preprocessor:
 
 			self.S  = int(len(RetainedSNe)+len(CensoredSNe))
 			self.SC = int(len(CensoredSNe))
+
+	def get_intrinsic_model(self, FITSpath):
+		"""
+		Get Intrinsic Model
+
+		Method to get posterior median L_mint, FPC0 and FPC1 from a previous fit, to fix these values in a new fit
+
+		Parameters
+		----------
+		FITSpath : str
+			path/to/where .pkl FITs files are saved
+
+		End Product(s)
+		----------
+		self.L_mint, self.FPC0, self.FPC1 : matrix, array, array
+			The intrinsic hyperparameters
+		"""
+		#The fixint .yaml choice is the strname of the HBM_savekey
+		savekey = self.choices['analysis_parameters']['fixint']
+		if savekey is not False and type(savekey) is str:
+			#Load up FIT
+			filename = f'{FITSpath}FIT{savekey}.pkl'
+			with open(filename,'rb') as f:
+				FIT = pickle.load(f)
+			#Ensure both old and new model is intrinsic deviations
+			assert(self.choices['analysis_parameters']['IntrinsicModel']=='Deviations')
+			assert(FIT['choices']['analysis_parameters']['IntrinsicModel']=='Deviations')
+			#Perparations
+			df     = FIT['df']
+			Nm     = int(len(self.choices['preproc_parameters']['pblist']))
+			L_mint = np.zeros((Nm,Nm))
+			#Get posterior median intrinsic hyperparameters, and update hyperparameters
+			for i in range(L_mint.shape[0]):
+				for j in range(L_mint.shape[1]):
+					L_mint[i,j] = df[f'L_mint.{i+1}.{j+1}'].median()
+			self.L_mint = L_mint
+			self.FPC0   = df[[col for col in df.columns if 'FPC0.' in col]].median(axis=0).values
+			self.FPC1   = df[[col for col in df.columns if 'FPC1.' in col]].median(axis=0).values
+		else:
+			raise Exception('To fix the intrinsic model, set fixint in .yaml to the str name of a HBM_savekey')
 
 	def get_dm15Bs(self):
 		"""
@@ -555,6 +595,8 @@ class HBM_preprocessor:
 						stan_file = f"{stanpath}Extra/deviations_model_fit_mags_Gaussianmuintref_RVBins_wAVRVSigmoid.stan"
 					else:
 						stan_file = f"{stanpath}Extra/deviations_model_fit_mags_Gaussianmuintref_RVBins.stan"
+				elif self.choices['analysis_parameters']['fixint'] is not False:
+						stan_file = f"{stanpath}Extra/deviations_model_fit_mags_Gaussianmuintref_fixedint.stan"
 				else:	stan_file = f"{stanpath}deviations_model_fit_mags_Gaussianmuintref.stan"
 			else:
 				print (f"Applying Intrinsic Deviations Model to fit {self.choices['analysis_parameters']['DataTransformation']} Colours Data")
