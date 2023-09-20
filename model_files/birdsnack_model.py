@@ -760,10 +760,7 @@ class BIRDSNACK:
 			stan_data['L_mint'] = modelloader.L_mint
 			stan_data['FPC0']	= modelloader.FPC0
 			stan_data['FPC1']	= modelloader.FPC1
-			print (stan_data['L_mint'])
-			print (stan_data['FPC0'])
-			print (stan_data['FPC1'])
-
+			
 		#Incorporate LC shape data measurements
 		modelloader.get_dm15Bs()
 		stan_data['dm15Bs']     = modelloader.dm15Bs
