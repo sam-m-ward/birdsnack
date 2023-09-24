@@ -596,6 +596,9 @@ class HBM_preprocessor:
 					else:
 						stan_file = f"{stanpath}Extra/deviations_model_fit_mags_Gaussianmuintref_RVBins.stan"
 				elif self.choices['analysis_parameters']['fixint'] is not False:
+					if self.choices['analysis_parameters']['AVprior']=='Gauss':
+						stan_file = f"{stanpath}Extra/deviations_model_fit_mags_Gaussianmuintref_fixedint_GaussAV.stan"
+					else:
 						stan_file = f"{stanpath}Extra/deviations_model_fit_mags_Gaussianmuintref_fixedint.stan"
 				else:	stan_file = f"{stanpath}deviations_model_fit_mags_Gaussianmuintref.stan"
 			else:
