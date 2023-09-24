@@ -85,13 +85,20 @@ class SBC_CLASS:
 		if self.AVsimdist!='Exp':#AVsimdist (hyper)parameters
 			if self.AVsimdist in ['Gamma']:
 				folder  += f"_nuA{str(self.nuA)}"
+			elif self.AVsimdist in ['Gauss']:
+				folder  += f"_sigAV{str(self.sigAV)}"
 		if self.RVsimdist!='Norm':
 			folder += f"_RVsimdist{self.RVsimdist}"
 
 		#Intrinsic Hyps
 		folder    += f"_PredefinedIntExtHyps{self.PredefinedIntrinsicHyps}{self.PredefinedExtrinsicHyps}"
 		if self.PredefinedIntrinsicHyps or self.PredefinedExtrinsicHyps:
-			folder += f"_loadedfrom{self.pre_defined_hyps['load_file']}"
+			if 'load_ext_file' in list(self.pre_defined_hyps.keys()) or 'load_int_file' in list(self.pre_defined_hyps.keys()):
+				assert(self.pre_defined_hyps['load_ext_file'] is not 'None')
+				assert(self.pre_defined_hyps['load_int_file'] is not 'None')
+				folder += f"_loadedfromInt{self.pre_defined_hyps['load_int_file']}Ext{self.pre_defined_hyps['load_ext_file']}"
+			else:
+				folder += f"_loadedfrom{self.pre_defined_hyps['load_file']}"
 		#Final Addition to make it a folder
 		folder += '/'
 
@@ -447,13 +454,16 @@ class SIMULATOR():
 		tauA,muRV,sigRV
 		"""
 		if self.PredefinedExtrinsicHyps:
-			with open(f"{self.path_to_birdsnack_rootpath}products/stan_fits/FITS/FIT{self.pre_defined_hyps['load_file']}.pkl",'rb') as f:
+			load_file = self.pre_defined_hyps['load_ext_file'] if self.pre_defined_hyps['load_ext_file'] is not 'None' else self.pre_defined_hyps['load_file']
+			with open(f"{self.path_to_birdsnack_rootpath}products/stan_fits/FITS/FIT{load_file}.pkl",'rb') as f:
 				FIT = pickle.load(f)
 			row  = FIT['df'].median(axis=0)
 			if self.RVsimdist=='Norm':
 				self.tauA,self.muRV,self.sigRV = row[['tauA','mu_RV','sig_RV']].values
 			elif self.RVsimdist=='AVRVBeta':
 				self.tauA,self.beta0,self.beta1,self.sigRVbeta = row[['tauA','beta0.1','beta1.1','sig_RV_beta.1']].values
+			if self.AVsimdist=='Gauss':
+				self.sigAV = row[['sig_AV']].values[0]
 		else:
 			if self.tauA is None:
 				self.tauA  = np.random.uniform(self.tauAmin,self.tauAmax)
@@ -479,6 +489,8 @@ class SIMULATOR():
 				AV = np.random.exponential(self.tauA)
 			elif self.AVsimdist=='Gamma':
 				AV = gamma.rvs(a=self.nuA,loc=0,scale=self.tauA)
+			elif self.AVsimdist=='Gauss':
+				AV = np.abs(np.random.normal(self.tauA,self.sigAV))
 			AVs.append(AV)
 			#Get RVs
 			if self.RVsimdist=='Norm':
@@ -504,7 +516,8 @@ class SIMULATOR():
 		L_mint, sigma_mints, FPC0m
 		"""
 		if self.PredefinedIntrinsicHyps:
-			with open(f"{self.path_to_birdsnack_rootpath}products/stan_fits/FITS/FIT{self.pre_defined_hyps['load_file']}.pkl",'rb') as f:
+			load_file = self.pre_defined_hyps['load_int_file'] if self.pre_defined_hyps['load_int_file'] is not 'None' else self.pre_defined_hyps['load_file']
+			with open(f"{self.path_to_birdsnack_rootpath}products/stan_fits/FITS/FIT{load_file}.pkl",'rb') as f:
 				FIT = pickle.load(f)
 			row    = FIT['df'].median(axis=0)
 			FPC0m  = row[[col for col in row.keys() if 'FPC0m' in col and 'simp' not in col and 'mbar' not in col]].values
@@ -757,9 +770,9 @@ def get_pars():
 	----------
 	parnames,dfpars,parlabels : list, dict, dict
 	"""
-	parnames      = ['muRV','sigRV','tauA','nu','nuR','askewRV','askewint']
-	dfpars        = dict(zip(parnames,['mu_RV','sig_RV','tauA','nu','nuR','alpha_skew_RV','alpha_skew_int']))
-	parlabels     = dict(zip(parnames,['\mu_{R_V}','\sigma_{R_V}','\\tau_{A}','\\nu_{A}','\\nu_{R_V}','\\alpha^{\\rm{skew}}_{R_V}','\\alpha^{\\rm{skew}}_{\\rm{int}}']))
+	parnames      = ['muRV','sigRV','tauA','nu','nuR','askewRV','askewint','sigAV']
+	dfpars        = dict(zip(parnames,['mu_RV','sig_RV','tauA','nu','nuR','alpha_skew_RV','alpha_skew_int','sig_AV']))
+	parlabels     = dict(zip(parnames,['\mu_{R_V}','\sigma_{R_V}','\\tau_{A}','\\nu_{A}','\\nu_{R_V}','\\alpha^{\\rm{skew}}_{R_V}','\\alpha^{\\rm{skew}}_{\\rm{int}}','\sigma_{A_V}']))
 	return parnames,dfpars,parlabels
 
 def get_additional_pars_list(columns,additional_pars):
