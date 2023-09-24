@@ -295,10 +295,10 @@ class POSTERIOR_PLOTTER:
 					ax[row,col].set_ylim(ax[row,0].get_ylim())
 				ax[row,col].tick_params(labelsize=FS)
 				if row == d-1:
-					ax[row,col].set_xlabel(names[col],fontsize=FS)
+					ax[row,col].set_xlabel(names[col]+' (mag)'*(names[col] in ['$\\tau_{A}$','$\\sigma_{A}$']),fontsize=FS)
 					if lims is not None:
 						ax[row,col].set_xlim(*lims[col])
-		ax[d-1,d-1].set_xlabel(names[d-1],fontsize=FS)
+		ax[d-1,d-1].set_xlabel(names[d-1]+' (mag)'*(names[d-1] in ['$\\tau_{A}$','$\\sigma_{A}$']),fontsize=FS)
 		ax[d-1,d-1].tick_params(labelsize=FS)
 		fig.subplots_adjust(top=0.9)
 		fig.subplots_adjust(wspace=0.075, hspace=0.075)
