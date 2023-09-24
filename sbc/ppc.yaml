@@ -32,6 +32,8 @@ simulate_parameters:
   PredefinedExtrinsicHyps : True
   pre_defined_hyps :
     load_file : 'None'
+    load_int_file : 'None' #If int and ext file need to differ, use these
+    load_ext_file : 'None'
     ppc_zero_index : 'None'
     ppc_IntrinsicModel : 'None'
 
