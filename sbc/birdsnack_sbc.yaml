@@ -95,6 +95,9 @@ analysis_parameters:
   #Dispersion of Normal prior on alpha_skew_int
   skew_int_disp_prior : 2
 
+  #Fix the intrinsic model
+  fixint : False #Otherwise use the name of the HBM_savekey from which to take posterior median intrinsic model
+
   #Option to make multiple copies of sample to fit
   copymode : 1
   copymode : False
