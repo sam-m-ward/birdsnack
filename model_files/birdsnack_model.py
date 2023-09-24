@@ -760,7 +760,9 @@ class BIRDSNACK:
 			stan_data['L_mint'] = modelloader.L_mint
 			stan_data['FPC0']	= modelloader.FPC0
 			stan_data['FPC1']	= modelloader.FPC1
-			
+			if self.choices['analysis_parameters']['AVprior']=='Gauss':
+				stan_data['disp_sigmaAV'] = self.choices['analysis_parameters']['disp_sigmaAV']
+
 		#Incorporate LC shape data measurements
 		modelloader.get_dm15Bs()
 		stan_data['dm15Bs']     = modelloader.dm15Bs
