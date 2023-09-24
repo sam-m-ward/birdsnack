@@ -185,6 +185,11 @@ def get_parlabels(choices,default=False,return_parnames_only=False):
 			parnames.append('nu')
 			parlabels.append('$\\nu_{A}$')
 			bounds.append([0,None])
+		if AVprior in ['Gauss']:
+			pars.append('sigAV')
+			parnames.append('sig_AV')
+			parlabels.append('$\\sigma_{A}$')
+			bounds.append([0,None])
 		if RVprior=='StudentT':
 			pars.append('nuR')
 			parnames.append('nuR')
