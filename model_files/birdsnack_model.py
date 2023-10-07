@@ -19,7 +19,7 @@ BIRDSNACK class
 		fit_stan_model(save=True,Rhat_threshold=1.02,Ntrials=3,additive=False,adder=1000)
 		plot_posterior_samples()
 		plot_mag_deviations()
-		plot_colour_corner()
+		plot_colour_corner(use_intrinsic_mean=False)
 		plot_int_model_posteriors(PAR='muRV',FITS=None)
 
 Functions include:
@@ -969,11 +969,17 @@ class BIRDSNACK:
 		plotter = PLOTTER(self.choices['plotting_parameters'], self.plotpath)
 		plotter.finish_plot(r'$\lambda (\AA)$',r'$\delta N_i - \langle \delta N_i \rangle_i + A_V \delta \xi_i$ (mag)',savename='MagDeviations.pdf')
 
-	def plot_colour_corner(self):
+	def plot_colour_corner(self,use_intrinsic_mean=False):
 		"""
 		Plot Colour Colour
 
 		Function to plot colour colour corner plot
+
+		Parameters
+		----------
+		use_intrinsic_mean : bool (optional; default=False)
+			if False, centre dust projections and sample's 5% quantiles.
+			Otherwise, specify the string name of the file to load intrinsic hyperparameters from
 
 		Returns
 		-----------
@@ -1002,6 +1008,24 @@ class BIRDSNACK:
 		FS        = 15
 		Nsim      = 100
 		DC        = 0.1
+
+		##########################
+		#Get Intrinsic Mean Hyperparamter from Fiducial Analysis if use_intrinsic_mean!=False
+		if use_intrinsic_mean is not False:
+			file = copy.deepcopy(use_intrinsic_mean)
+			use_intrinsic_mean = True
+			assert(type(file)==str)
+			with open(f"{self.FITSpath}FIT{file}.pkl",'rb') as f:
+				FIT = pickle.load(f)
+			df     = FIT['df']
+			mu_int = np.array([df[f'FPC0.{i}'].median() for i in range(1,7)])
+			CM = np.zeros((5,6))
+			for _ in range(5):
+				CM[_,_]   =  1
+				CM[_,_+1] = -1
+			c_int  = CM@mu_int
+		##########################
+
 		for ti in tilist:
 			for gname in grid_names:
 				#Set up grid
@@ -1035,7 +1059,8 @@ class BIRDSNACK:
 					ax[iax,iax].set_ylim([0,None])
 					ax[iax,iax].set_xlim([min(c1s)-0.1, max(c1s)+0.1])
 					ax[iax,iax].set_yticks([])
-					Cmeans[col]  = [x05, min(c1s)-DC, max(c1s)+DC ]
+					if use_intrinsic_mean:	Cmeans[col]  = [c_int[iax], min(c1s)-DC, max(c1s)+DC ]
+					else:					Cmeans[col]  = [x05,        min(c1s)-DC, max(c1s)+DC ]
 					ax[len(col_list)-1,iax].set_xlabel(parname,fontsize=FS)
 					if iax>0:
 						ax[iax,0].set_ylabel(parname,fontsize=FS)
@@ -1047,6 +1072,9 @@ class BIRDSNACK:
 				lobool=True ; hibool=True ; highmassbool = True; lowmassbool = True
 				for ix,c1 in enumerate(col_list[:-1]):
 					for ic2,c2 in enumerate(col_list[ix+1:]):
+						if ix==0 and ic2==0 and use_intrinsic_mean:
+							ax[0,0].scatter(Cmeans[c1][0]-10, Cmeans[c2][0],marker='*', color='black',s=100,zorder=100,label='Intrinsic \nPop. Mean')
+							ax[0,0].legend(fontsize=FS,bbox_to_anchor=(5.225, -2.17),loc='upper right',handletextpad=0.1)
 						iy  = ic2+ix+1
 						df  = DF_M[ti].dropna().copy()
 						sns = list(df.index)
@@ -1088,6 +1116,7 @@ class BIRDSNACK:
 						for iRV,RV in enumerate(RVS):
 							gradient = (fitz(lam(c2[0]),RV)-fitz(lam(c2[1]),RV))/(fitz(lam(c1[0]),RV)-fitz(lam(c1[1]),RV))
 							Y = Cmeans[c2][0] + (X-Cmeans[c1][0])*gradient
+							if use_intrinsic_mean: ax[iy,ix].scatter(Cmeans[c1][0], Cmeans[c2][0], marker='*', color='black',s=100,zorder=100)
 							ax[iy,ix].plot(X,Y,color=f"C{3-iRV}",linestyle=[':','-','-.'][::-1][iRV],label=f'$R_V={RV}$'*(iy==len(col_list)-1 and ix==len(col_list)-2))#*(ix==0 and iy==1))
 							ax[iy,ix].plot([Cmeans[c1][0],Cmeans[c1][0]+fitz(lam(c1[0]),RV)-fitz(lam(c1[1]),RV)],[Cmeans[c2][0],Cmeans[c2][0]+fitz(lam(c2[0]),RV)-fitz(lam(c2[1]),RV)],color=f"C{3-iRV}",linestyle=[':','-','-.'][iRV-iRV+1],linewidth=5,alpha=0.4)
 							if iy==len(col_list)-1 and ix==len(col_list)-2:
