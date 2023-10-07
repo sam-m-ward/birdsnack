@@ -23,7 +23,7 @@ bs.additional_cuts()
 #bs.plot_mag_deviations()
 
 #Plot Colours
-#bs.plot_colour_corner()
+#bs.plot_colour_corner(use_intrinsic_mean='AVExp_BVcut1.0')
 
 #Plot LCs
 #bs.plot_lcs()
