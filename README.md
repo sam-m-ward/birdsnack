@@ -21,7 +21,7 @@ See also [**demo_sbc_ppc.ipynb**](https://github.com/sam-m-ward/birdsnack/blob/m
 
 ## Acknowledgements
 
-Bird-Snack was developed by Sam M. Ward (@sam-m-ward). Please cite [**Ward et al. 2023**](https://arxiv.org/search/?searchtype=author&query=Ward%2C+S+M), *MNRAS*, when using this code.
+Bird-Snack was developed by Sam M. Ward (@sam-m-ward). Please cite [**Ward et al. 2023**](https://arxiv.org/abs/2310.07753), *MNRAS*, when using this code.
 
 This repo builds on [**SNooPy**](https://csp.obs.carnegiescience.edu/data/snpy), applies the methods from [**avocado**](https://github.com/kboone/avocado) for Gaussian process regression with [**george**](https://george.readthedocs.io/en/latest/), and uses [**BayeSN**](https://github.com/bayesn/bayesn-public) to generate SED-integrated datasets, and interact with snana light curve files.
 
