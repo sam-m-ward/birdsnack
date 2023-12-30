@@ -83,12 +83,12 @@ if __name__ == "__main__":
 	import sys
 	sys.path.append(sbc.path_to_birdsnack_rootpath+'model_files/')
 	from posterior_plotter import PARAMETER
-	samps = PARAMETER(XH_noLC,dfpars[plot_par],parlabels[plot_par],plotter.lims[plot_par],plotter.bounds[plot_par],0,0,{})
+	samps = PARAMETER(XH_wLC,dfpars[plot_par],parlabels[plot_par],plotter.lims[plot_par],plotter.bounds[plot_par],0,0,{})
 	samps.get_xgrid_KDE()
 	pl.plot(samps.xgrid,samps.KDE,alpha=0.5,linewidth=3,color='C0',linestyle='-.',
 				#label=r"Real Posterior"+'\n'+r"(w/ $\Delta m_{15}(B)$ term)"+'\n'+r'$%s = %s \pm %s$'%(parlabels[plot_par],XH_wLC.quantile(0.5).round(2),XH_wLC.std().round(2)))
 				label=r"Real Posterior"+'\n'+r"(w/ $\Delta m_{15}(B)$ term)"+'\n'+r'$%s = %s^{+%s}_{-%s}$'%(parlabels[plot_par],XH_wLC.quantile(0.5).round(2),(XH_wLC.quantile(0.84)-XH_wLC.quantile(0.5)).round(2),(XH_wLC.quantile(0.5)-XH_wLC.quantile(0.16)).round(2)))
-	samps = PARAMETER(XH_wLC,dfpars[plot_par],parlabels[plot_par],plotter.lims[plot_par],plotter.bounds[plot_par],0,0,{})
+	samps = PARAMETER(XH_noLC,dfpars[plot_par],parlabels[plot_par],plotter.lims[plot_par],plotter.bounds[plot_par],0,0,{})
 	samps.get_xgrid_KDE()
 	pl.plot(samps.xgrid,samps.KDE,alpha=0.5,linewidth=3,color='C0',linestyle=':',
 				#label=r"Real Posterior"+ '\n'+r'$%s = %s \pm %s$'%(parlabels[plot_par],XH_noLC.quantile(0.5).round(2),XH_noLC.std().round(2)))
